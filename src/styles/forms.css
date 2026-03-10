@@ -1,0 +1,77 @@
+/* Form Styles */
+.form-group {
+  margin-bottom: 0;
+}
+
+.form-row {
+  display: flex;
+  gap: 16px;
+}
+
+.form-row .form-group {
+  flex: 1;
+}
+
+.modal-buttons {
+  margin-top: 24px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+/* Close Button - Danger Red */
+.close-btn {
+  background: linear-gradient(135deg, var(--accent-danger), var(--accent-danger-strong));
+  color: white;
+  padding: 12px 24px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 14px;
+  transition: filter 0.2s ease;
+}
+
+.close-btn:hover {
+  filter: brightness(0.97);
+}
+
+.close-btn:active {
+  filter: brightness(0.92);
+}
+
+/* Save Button - Primary Blue */
+.save-btn {
+  background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+  color: white;
+  padding: 12px 24px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 14px;
+  transition: filter 0.2s ease;
+}
+
+.save-btn:hover {
+  filter: brightness(0.97);
+}
+
+.save-btn:active {
+  filter: brightness(0.92);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .modal-buttons {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .close-btn,
+  .save-btn {
+    width: 100%;
+    padding: 10px 16px;
+    font-size: 13px;
+  }
+}

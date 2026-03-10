@@ -1,183 +1,25 @@
-/* General Layout */
-body {
-  margin: 0;
-  font-family: Arial, sans-serif;
-  background-color: #f4f6f9;
-}
-
-.dashboard {
-  padding: 20px;
-}
-
-/* Header */
-.header {
-  background-color: #003366;
-  color: white;
-  padding: 15px;
-  text-align: center;
-}
-
-.header h1 {
-  margin: 0;
-  font-size: 24px;
-}
-
-/* Upload Section */
-.upload-section {
-  margin: 20px 0;
-  text-align: center;
-}
-
-.file-input {
-  padding: 8px;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-}
-
-.upload-btn {
-  background-color: #28a745;
-  color: white;
-  padding: 10px 20px;
-  border: none;
-  margin-left: 10px;
-  cursor: pointer;
-  font-weight: bold;
-  border-radius: 5px;
-}
-
-.upload-btn:hover {
-  opacity: 0.85;
-}
-
-.note {
-  margin-top: 10px;
-  font-size: 14px;
-  color: #555;
-}
-
-/* Student Dashboard */
-.student-dashboard {
-  margin: 20px auto;
-  width: 95%;
-}
-
-.student-dashboard h2 {
-  text-align: left;
-  margin-bottom: 10px;
-  color: #003366;
-}
-
-/* Table Styling */
-table {
-  width: 100%;
-  border-collapse: collapse;
-  background: white;
-}
-
-th, td {
-  border: 1px solid #ddd;
-  padding: 12px;
-  text-align: center;
-}
-
-th {
-  background-color: #003366;
-  color: white;
-}
-
-tr:nth-child(even) {
-  background-color: #f2f2f2;
-}
-
-tr:hover {
-  background-color: #e6f0ff;
-}
-
-/* Checklist Box */
-.checklist-box {
-  width: 18px;
-  height: 18px;
-  cursor: pointer;
-}
-
-/* Action Buttons inside table */
-.action-btn {
-  background: #0055a5;
-  color: white;
-  border: none;
-  padding: 6px 12px;
-  cursor: pointer;
-  border-radius: 4px;
-  font-size: 13px;
-}
-
-.action-btn:hover {
-  opacity: 0.9;
-}
-
-/* Modal */
-.modal {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0,0,0,0.6);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 2000;
-}
-
-.modal-content {
-  background: white;
-  padding: 20px;
-  border-radius: 8px;
-  width: 400px;
-  text-align: left;
-  box-shadow: 0 4px 8px rgba(0,0,0,0.3);
-}
-
-.modal-content h2 {
-  margin-top: 0;
-  color: #003366;
-}
-
-.modal-content label {
-  display: block;
-  margin-top: 10px;
-  font-weight: bold;
-}
-
-.modal-content input {
-  width: 100%;
-  padding: 8px;
-  margin-top: 5px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-}
-
-.modal-buttons {
-  margin-top: 15px;
-  display: flex;
-  justify-content: space-between;
-}
-
-.close-btn {
-  background-color: #dc3545;
-  color: white;
-  padding: 8px 15px;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-}
-
-.close-btn:hover {
-  opacity: 0.9;
-}
-
-.save-btn {
-  background-color: #007bff;
-  color: white;
-  padding: 8px 15;
-}
+/* 
+  ========================================
+  CSS ORGANIZATION NOTICE
+  ========================================
+  
+  All CSS styles have been organized and separated into modular files
+  located in the /styles directory for better maintainability.
+  
+  CSS Files:
+  - styles/variables.css      → Theme colors and CSS variables
+  - styles/header.css         → Header and theme toggle
+  - styles/navigation.css     → Navigation tabs
+  - styles/upload-section.css → Upload section and buttons
+  - styles/search.css         → Search box styling
+  - styles/dashboard.css      → Dashboard container
+  - styles/table.css          → Table and checklist
+  - styles/buttons.css        → Action buttons
+  - styles/modal.css          → Modal dialogs
+  - styles/forms.css          → Form elements
+  - styles/responsive.css     → Mobile responsive design
+  
+  Main import file: index.css
+  
+  ========================================
+*/

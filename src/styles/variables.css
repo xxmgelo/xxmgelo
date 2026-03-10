@@ -1,0 +1,123 @@
+@font-face {
+  font-family: 'Montserrat';
+  src: url('../assets/fonts/Montserrat-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Montserrat';
+  src: url('../assets/fonts/Montserrat-Medium.ttf') format('truetype');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Montserrat';
+  src: url('../assets/fonts/Montserrat-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Montserrat';
+  src: url('../assets/fonts/Montserrat-Black.ttf') format('truetype');
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* CSS Variables for Theme */
+:root {
+  --font-family-base: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-family-display: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+
+  /* Light Mode Colors */
+  --bg-primary: #E7F2EF;
+  --bg-secondary: #FFFFFF;
+  --text-primary: #000000;
+  --text-secondary: #19183B;
+  --accent-primary: #708993;
+  --accent-secondary: #19183B;
+  --accent-success: #A1C2BD;
+  --accent-warning: #A1C2BD;
+  --accent-danger: #D13F3F;
+  --accent-danger-strong: #B93030;
+  --border-color: #A1C2BD;
+  --shadow: 0 6px 24px rgba(25, 24, 59, 0.14);
+  --table-header-bg: #19183B;
+  --table-header-text: #FFFFFF;
+  --table-row-hover: #E7F2EF;
+  --table-row-even: #F3F8F6;
+  --sidebar-hover-bg: rgba(112, 137, 147, 0.14);
+  --sidebar-active-bg: rgba(112, 137, 147, 0.24);
+  --modal-overlay: rgba(16, 18, 28, 0.58);
+  --input-bg: #FFFFFF;
+
+  /* RGB helpers for consistent translucent effects */
+  --accent-primary-rgb: 112, 137, 147;
+  --accent-secondary-rgb: 25, 24, 59;
+  --accent-success-rgb: 161, 194, 189;
+  --accent-mint-rgb: 231, 242, 239;
+  --accent-danger-rgb: 209, 63, 63;
+}
+
+.dark-mode {
+  --bg-primary: #19183B;
+  --bg-secondary: #262547;
+  --text-primary: #FFFFFF;
+  --text-secondary: #DDEAE7;
+  --accent-primary: #A1C2BD;
+  --accent-secondary: #708993;
+  --accent-success: #A1C2BD;
+  --accent-warning: #E7F2EF;
+  --accent-danger: #E05555;
+  --accent-danger-strong: #C53C3C;
+  --border-color: #4C6671;
+  --shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
+  --table-header-bg: #30424B;
+  --table-header-text: #FFFFFF;
+  --table-row-hover: #302F56;
+  --table-row-even: #222145;
+  --sidebar-hover-bg: rgba(161, 194, 189, 0.16);
+  --sidebar-active-bg: rgba(161, 194, 189, 0.24);
+  --modal-overlay: rgba(6, 8, 14, 0.72);
+  --input-bg: #1E1D3E;
+
+  --accent-primary-rgb: 161, 194, 189;
+  --accent-secondary-rgb: 112, 137, 147;
+  --accent-success-rgb: 161, 194, 189;
+  --accent-mint-rgb: 231, 242, 239;
+  --accent-danger-rgb: 224, 85, 85;
+}
+
+/* General Layout */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-family-base);
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-family-display);
+}
+
+input, textarea, select, button {
+  font-family: inherit;
+}
+
+.dashboard {
+  min-height: 100vh;
+  transition: background-color 0.3s ease;
+  display: flex;
+  flex-direction: column;
+}

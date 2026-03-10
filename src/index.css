@@ -1,13 +1,13 @@
-body {
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-    monospace;
-}
+/* Import all CSS modules */
+@import './styles/variables.css';
+@import './styles/header.css';
+@import './styles/sidebar.css';
+@import './styles/button-system.css';
+@import './styles/upload-section.css';
+@import './styles/search.css';
+@import './styles/dashboard.css';
+@import './styles/table.css';
+@import './styles/buttons.css';
+@import './styles/modal.css';
+@import './styles/forms.css';
+@import './styles/responsive.css';

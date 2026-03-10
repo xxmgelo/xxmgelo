@@ -1,0 +1,238 @@
+/* ========================================
+   BUTTON DESIGN SYSTEM
+   ======================================== */
+
+/* Base Button Styles */
+button {
+  font-family: inherit;
+  cursor: pointer;
+  border: none;
+  transition: background-color 0.2s ease, color 0.2s ease, filter 0.2s ease;
+}
+
+/* Button Size Variants */
+.btn-sm {
+  padding: 8px 16px;
+  font-size: 12px;
+  border-radius: 6px;
+}
+
+.btn-md {
+  padding: 12px 24px;
+  font-size: 14px;
+  border-radius: 8px;
+}
+
+.btn-lg {
+  padding: 14px 28px;
+  font-size: 15px;
+  border-radius: 10px;
+}
+
+/* ========================================
+   PRIMARY BUTTON (Blue)
+   Used for: Main actions, Save, Add, Upload
+   ======================================== */
+.btn-primary,
+.upload-btn,
+.add-student-btn,
+.save-btn,
+.edit-btn {
+  background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+  color: white;
+  font-weight: 600;
+}
+
+.btn-primary:hover,
+.upload-btn:hover,
+.add-student-btn:hover,
+.save-btn:hover,
+.edit-btn:hover {
+  filter: brightness(0.97);
+}
+
+.btn-primary:active,
+.upload-btn:active,
+.add-student-btn:active,
+.save-btn:active,
+.edit-btn:active {
+  filter: brightness(0.92);
+}
+
+/* ========================================
+   DANGER BUTTON (Red)
+   Used for: Delete, Close, Cancel
+   ======================================== */
+.btn-danger,
+.delete-btn,
+.close-btn {
+  background: linear-gradient(135deg, var(--accent-danger), var(--accent-danger-strong));
+  color: white;
+  font-weight: 600;
+}
+
+.btn-danger:hover,
+.delete-btn:hover,
+.close-btn:hover {
+  filter: brightness(0.97);
+}
+
+.btn-danger:active,
+.delete-btn:active,
+.close-btn:active {
+  filter: brightness(0.92);
+}
+
+/* ========================================
+   SUCCESS BUTTON (Green)
+   Used for: Pay, Confirm, Approve
+   ======================================== */
+.btn-success,
+.pay-btn {
+  background: linear-gradient(135deg, var(--accent-success), var(--accent-primary));
+  color: white;
+  font-weight: 600;
+}
+
+.btn-success:hover,
+.pay-btn:hover {
+  filter: brightness(0.97);
+}
+
+.btn-success:active,
+.pay-btn:active {
+  filter: brightness(0.92);
+}
+
+/* ========================================
+   WARNING BUTTON (Orange)
+   Used for: Remind, Alert, Caution
+   ======================================== */
+.btn-warning,
+.remind-btn {
+  background: linear-gradient(135deg, var(--accent-warning), var(--accent-secondary));
+  color: white;
+  font-weight: 600;
+}
+
+.btn-warning:hover,
+.remind-btn:hover {
+  filter: brightness(0.97);
+}
+
+.btn-warning:active,
+.remind-btn:active {
+  filter: brightness(0.92);
+}
+
+/* ========================================
+   ACTION BUTTONS (Table Buttons)
+   ======================================== */
+.action-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+}
+
+.action-btn {
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  transition: all 0.3s ease;
+}
+
+.action-btn .btn-icon {
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
+}
+
+/* ========================================
+   BUTTON ICON STYLING
+   ======================================== */
+.btn-icon {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+}
+
+.upload-btn .btn-icon,
+.add-student-btn .btn-icon {
+  width: 20px;
+  height: 20px;
+}
+
+.add-student-btn .btn-icon {
+  filter: brightness(0) invert(1);
+}
+
+/* ========================================
+   DISABLED STATE
+   ======================================== */
+button:disabled,
+.btn-primary:disabled,
+.btn-danger:disabled,
+.btn-success:disabled,
+.btn-warning:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+button:disabled:hover,
+.btn-primary:disabled:hover,
+.btn-danger:disabled:hover,
+.btn-success:disabled:hover,
+.btn-warning:disabled:hover {
+  transform: none;
+  box-shadow: none;
+  filter: none;
+}
+
+/* ========================================
+   RESPONSIVE BUTTON SIZING
+   ======================================== */
+@media (max-width: 768px) {
+  .upload-btn,
+  .add-student-btn,
+  .save-btn,
+  .close-btn {
+    padding: 10px 16px;
+    font-size: 13px;
+  }
+
+  .action-btn {
+    padding: 6px 10px;
+    font-size: 11px;
+  }
+
+  .action-btn .btn-icon {
+    width: 14px;
+    height: 14px;
+  }
+}
+
+@media (max-width: 480px) {
+  .upload-btn,
+  .add-student-btn,
+  .save-btn,
+  .close-btn {
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+
+  .action-btn {
+    padding: 5px 8px;
+    font-size: 10px;
+  }
+
+  .action-btn .btn-icon {
+    width: 12px;
+    height: 12px;
+  }
+}

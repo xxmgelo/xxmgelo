@@ -1,0 +1,81 @@
+/* Action Buttons inside table */
+.action-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+}
+
+.action-btn {
+  border: none;
+  padding: 8px 12px;
+  cursor: pointer;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  transition: filter 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.btn-icon {
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
+}
+
+/* All action buttons use consistent primary color scheme */
+.pay-btn,
+.remind-btn,
+.edit-btn,
+.delete-btn {
+  color: white;
+}
+
+.pay-btn:hover,
+.remind-btn:hover,
+.edit-btn:hover,
+.delete-btn:hover {
+  filter: brightness(0.97);
+}
+
+.pay-btn:active,
+.remind-btn:active,
+.edit-btn:active,
+.delete-btn:active {
+  filter: brightness(0.92);
+}
+
+/* Specific button colors */
+.pay-btn {
+  background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+}
+
+.remind-btn {
+  background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+}
+
+.edit-btn {
+  background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+}
+
+.edit-btn .btn-icon {
+  filter: brightness(0) invert(1);
+}
+
+.delete-btn {
+  background: linear-gradient(135deg, var(--accent-danger), var(--accent-danger-strong));
+}
+
+.delete-btn .btn-icon {
+  filter: brightness(0) invert(1);
+}
+
+.delete-btn:hover {
+  filter: brightness(0.97);
+}
+
+.delete-btn:active {
+  filter: brightness(0.92);
+}

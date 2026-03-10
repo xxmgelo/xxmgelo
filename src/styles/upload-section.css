@@ -1,0 +1,114 @@
+/* Upload Section */
+.upload-section {
+  background: var(--bg-secondary);
+  padding: 24px;
+  border-radius: 12px;
+  margin-bottom: 24px;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border-color);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+}
+
+.upload-left {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.upload-right {
+  display: flex;
+  align-items: center;
+}
+
+/* Upload Button - Primary Blue */
+.upload-btn {
+  background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+  color: white;
+  padding: 12px 24px;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 15px;
+  border-radius: 10px;
+  transition: filter 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.upload-btn:hover {
+  filter: brightness(0.97);
+}
+
+.upload-btn:active {
+  filter: brightness(0.92);
+}
+
+.upload-btn .btn-icon {
+  width: 20px;
+  height: 20px;
+}
+
+/* Add Student Button - Primary Blue */
+.add-student-btn {
+  background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+  color: white;
+  padding: 12px 24px;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 15px;
+  border-radius: 10px;
+  transition: filter 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.add-student-btn:hover {
+  filter: brightness(0.97);
+}
+
+.add-student-btn:active {
+  filter: brightness(0.92);
+}
+
+.add-student-btn .btn-icon {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+  filter: brightness(0) invert(1);
+}
+
+.note {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .upload-section {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .upload-left {
+    align-items: center;
+  }
+
+  .upload-right {
+    justify-content: center;
+  }
+
+  .upload-btn,
+  .add-student-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}

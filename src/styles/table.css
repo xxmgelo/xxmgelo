@@ -1,0 +1,75 @@
+/* Table Styling */
+.table-container {
+  overflow-x: auto;
+  border-radius: 8px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--bg-secondary);
+}
+
+th, td {
+  padding: 14px 16px;
+  text-align: center;
+  border-bottom: 1px solid var(--border-color);
+  border-right: 1px solid var(--border-color);
+}
+
+th:last-child,
+td:last-child {
+  border-right: none;
+}
+
+th {
+  background: var(--table-header-bg);
+  color: var(--table-header-text);
+  font-weight: 600;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  position: sticky;
+  top: 0;
+}
+
+th:first-child {
+  border-top-left-radius: 8px;
+}
+
+th:last-child {
+  border-top-right-radius: 8px;
+}
+
+tr:last-child td:first-child {
+  border-bottom-left-radius: 8px;
+}
+
+tr:last-child td:last-child {
+  border-bottom-right-radius: 8px;
+}
+
+td {
+  color: var(--text-primary);
+  font-size: 14px;
+}
+
+tr:nth-child(even) {
+  background-color: var(--table-row-even);
+}
+
+.dark-mode tr:nth-child(even) {
+  background-color: var(--table-row-even);
+}
+
+tr:hover {
+  background-color: var(--table-row-hover);
+}
+
+/* Checklist Box */
+.checklist-box {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  accent-color: var(--accent-primary);
+}
