@@ -85,7 +85,7 @@ function App() {
           />
         </>
       )}
-
+{/* simeons */}
       <PaymentModal 
         showPaymentModal={showPaymentModal}
         selectedStudent={selectedStudent}
