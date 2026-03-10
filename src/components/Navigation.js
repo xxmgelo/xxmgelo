@@ -2,6 +2,7 @@ import React from "react";
 import homeIcon from "../assets/home.png";
 import studentFeeIcon from "../assets/studentfee.png";
 import manageStudentIcon from "../assets/managestudent.png";
+import studentsIcon from "../assets/students.png";
 
 function Navigation({ activeTab, setActiveTab }) {
   return (
@@ -25,7 +26,7 @@ function Navigation({ activeTab, setActiveTab }) {
               className={`nav-item ${activeTab === 'studentFee' ? 'active' : ''}`}
               onClick={() => setActiveTab('studentFee')}
             >
-              <img src={studentFeeIcon} alt="Student Fee" className="nav-icon" />
+              <img src={studentFeeIcon} alt="BSIS Student Fee" className="nav-icon" />
               <span className="nav-label">Student Fee</span>
             </button>
           </li>
@@ -36,6 +37,15 @@ function Navigation({ activeTab, setActiveTab }) {
             >
               <img src={manageStudentIcon} alt="Manage Student" className="nav-icon" />
               <span className="nav-label">Manage Student</span>
+            </button>
+          </li>
+          <li>
+            <button 
+              className={`nav-item ${activeTab === 'students' ? 'active' : ''}`}
+              onClick={() => setActiveTab('students')}
+            >
+              <img src={studentsIcon} alt="Students" className="nav-icon" />
+              <span className="nav-label">Students</span>
             </button>
           </li>
         </ul>

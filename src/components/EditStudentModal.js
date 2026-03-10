@@ -1,45 +1,38 @@
 import React from "react";
 
-function AddStudentModal({ showAddStudentModal, newStudent, onClose, onSubmit, onInputChange }) {
-  if (!showAddStudentModal) return null;
+function EditStudentModal({ showEditModal, editStudent, onClose, onSubmit, onInputChange }) {
+  if (!showEditModal || !editStudent) return null;
 
   return (
     <div className="modal">
       <div className="modal-content add-student-modal">
-        <h2>Add New Student</h2>
+        <h2>Edit Student</h2>
         <form onSubmit={onSubmit}>
           <div className="form-group">
-            <label> USN # *</label>
-            <input 
+            <label>USN #</label>
+            <input
               type="text"
-              inputMode="numeric"
-              pattern="[0-9]*"
-              name="StudentID" 
-              value={newStudent.StudentID} 
-              onChange={(e) => {
-                const digitsOnly = e.target.value.replace(/\D/g, "");
-                onInputChange({ target: { name: "StudentID", value: digitsOnly } });
-              }}
-              placeholder="Enter USN #"
-              required 
+              name="StudentID"
+              value={editStudent.StudentID}
+              disabled
             />
           </div>
           <div className="form-group">
             <label>Student Name *</label>
-            <input 
-              type="text" 
-              name="Name" 
-              value={newStudent.Name} 
+            <input
+              type="text"
+              name="Name"
+              value={editStudent.Name}
               onChange={onInputChange}
               placeholder="Enter Student Name"
-              required 
+              required
             />
           </div>
           <div className="form-group">
             <label>Program/Course</label>
             <select
               name="Program"
-              value={newStudent.Program}
+              value={editStudent.Program}
               onChange={onInputChange}
             >
               <option value="">Select Program/Course</option>
@@ -56,7 +49,7 @@ function AddStudentModal({ showAddStudentModal, newStudent, onClose, onSubmit, o
               <label>Year Level</label>
               <select
                 name="YearLevel"
-                value={newStudent.YearLevel}
+                value={editStudent.YearLevel}
                 onChange={onInputChange}
               >
                 <option value="">Select Year Level</option>
@@ -69,16 +62,16 @@ function AddStudentModal({ showAddStudentModal, newStudent, onClose, onSubmit, o
           </div>
           <div className="form-group">
             <label>Gmail</label>
-            <input 
-              type="email" 
-              name="Gmail" 
-              value={newStudent.Gmail} 
+            <input
+              type="email"
+              name="Gmail"
+              value={editStudent.Gmail}
               onChange={onInputChange}
               placeholder="student@acl.edu.ph"
             />
           </div>
           <div className="modal-buttons">
-            <button type="submit" className="save-btn">Add Student</button>
+            <button type="submit" className="save-btn">Save Changes</button>
             <button type="button" className="close-btn" onClick={onClose}>Cancel</button>
           </div>
         </form>
@@ -87,4 +80,4 @@ function AddStudentModal({ showAddStudentModal, newStudent, onClose, onSubmit, o
   );
 }
 
-export default AddStudentModal;
+export default EditStudentModal;

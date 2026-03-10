@@ -1,16 +1,12 @@
-import * as XLSX from "xlsx";
+﻿import * as XLSX from "xlsx";
+import { createStudent, upsertStudents } from "./api";
 
 const INITIAL_STUDENT = {
   StudentID: "",
   Name: "",
   Program: "",
   YearLevel: "",
-  Section: "",
-  Gmail: "",
-  Prelim: 0,
-  Midterm: 0,
-  PreFinal: 0,
-  Finals: 0
+  Gmail: ""
 };
 
 export const handleFileUpload = (event, setStudents) => {
@@ -18,7 +14,7 @@ export const handleFileUpload = (event, setStudents) => {
   if (!file) return;
 
   const reader = new FileReader();
-  reader.onload = (e) => {
+  reader.onload = async (e) => {
     const data = new Uint8Array(e.target.result);
     const workbook = XLSX.read(data, { type: "array" });
 
@@ -31,26 +27,41 @@ export const handleFileUpload = (event, setStudents) => {
       Name: row["Name"] || "",
       Program: row["Program/Course"] || row["Program"] || row["Course"] || "",
       YearLevel: row["Year Level"] || row["Year"] || "",
-      Section: row["Section"] || "",
-      Gmail: row["Gmail"] || row["Email"] || "",
-      Prelim: row["Prelim"] || 0,
-      Midterm: row["Midterm"] || 0,
-      PreFinal: row["Pre-Final"] || row["PreFinal"] || 0,
-      Finals: row["Finals"] || 0,
+      Gmail: row["Gmail"] || row["Email"] || ""
     }));
 
-    setStudents(normalizedData);
+    try {
+      const saved = await upsertStudents(normalizedData);
+      if (Array.isArray(saved)) {
+        setStudents(saved);
+      } else {
+        setStudents(normalizedData);
+      }
+    } catch (error) {
+      console.error(error);
+      alert("Upload saved locally only. API not reachable.");
+      setStudents(normalizedData);
+    }
   };
   reader.readAsArrayBuffer(file);
 };
 
-export const handleAddStudent = (e, newStudent, students, setStudents, setShowAddStudentModal, setNewStudent) => {
+export const handleAddStudent = async (e, newStudent, students, setStudents, setShowAddStudentModal, setNewStudent) => {
   e.preventDefault();
   if (!newStudent.StudentID || !newStudent.Name) {
     alert("Please fill in required fields");
     return;
   }
-  setStudents([...students, newStudent]);
+
+  try {
+    const created = await createStudent(newStudent);
+    setStudents([...students, created]);
+  } catch (error) {
+    console.error(error);
+    alert("Saved locally only. API not reachable.");
+    setStudents([...students, newStudent]);
+  }
+
   setShowAddStudentModal(false);
   setNewStudent(INITIAL_STUDENT);
 };
@@ -61,4 +72,3 @@ export const handleInputChange = (e, newStudent, setNewStudent) => {
 };
 
 export { INITIAL_STUDENT };
- 

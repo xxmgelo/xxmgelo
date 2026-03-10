@@ -3,6 +3,8 @@ import React from "react";
 function PaymentModal({ showPaymentModal, selectedStudent, onClose, setSelectedStudent }) {
   if (!showPaymentModal || !selectedStudent) return null;
 
+  const periodValue = selectedStudent.period || "";
+
   return (
     <div className="modal">
       <div className="modal-content">
@@ -13,9 +15,13 @@ function PaymentModal({ showPaymentModal, selectedStudent, onClose, setSelectedS
           <label>Period:</label>
           <select 
             className="period-select"
-            value={selectedStudent.period}
-            onChange={(e) => setSelectedStudent({...selectedStudent, period: e.target.value})}
+            value={periodValue}
+            onChange={(e) => setSelectedStudent({ ...selectedStudent, period: e.target.value })}
           >
+            <option value="">
+              Select Period
+            </option>
+            <option value="Downpayment">Downpayment</option>
             <option value="Prelim">Prelim</option>
             <option value="Midterm">Midterm</option>
             <option value="PreFinal">Pre-Final</option>
@@ -24,7 +30,7 @@ function PaymentModal({ showPaymentModal, selectedStudent, onClose, setSelectedS
         </div>
         <div className="form-group">
           <label>Amount:</label>
-          <input type="text" defaultValue={selectedStudent[selectedStudent.period] || 0} />
+          <input type="text" defaultValue={periodValue ? (selectedStudent[periodValue] || 0) : ""} />
         </div>
         <div className="form-group">
           <label>Payment Amount:</label>

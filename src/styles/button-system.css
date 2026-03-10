@@ -36,7 +36,7 @@ button {
 .btn-primary,
 .upload-btn,
 .add-student-btn,
-.save-btn,
+.close-btn,
 .edit-btn {
   background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
   color: white;
@@ -46,7 +46,7 @@ button {
 .btn-primary:hover,
 .upload-btn:hover,
 .add-student-btn:hover,
-.save-btn:hover,
+.close-btn:hover,
 .edit-btn:hover {
   filter: brightness(0.97);
 }
@@ -54,7 +54,7 @@ button {
 .btn-primary:active,
 .upload-btn:active,
 .add-student-btn:active,
-.save-btn:active,
+.close-btn:active,
 .edit-btn:active {
   filter: brightness(0.92);
 }
@@ -65,7 +65,7 @@ button {
    ======================================== */
 .btn-danger,
 .delete-btn,
-.close-btn {
+.save-btn {
   background: linear-gradient(135deg, var(--accent-danger), var(--accent-danger-strong));
   color: white;
   font-weight: 600;
@@ -73,13 +73,13 @@ button {
 
 .btn-danger:hover,
 .delete-btn:hover,
-.close-btn:hover {
+.save-btn:hover {
   filter: brightness(0.97);
 }
 
 .btn-danger:active,
 .delete-btn:active,
-.close-btn:active {
+.save-btn:active {
   filter: brightness(0.92);
 }
 
