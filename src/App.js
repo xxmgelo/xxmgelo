@@ -5,6 +5,7 @@ import Navigation from "./components/Navigation";
 import HomeDashboard from "./components/HomeDashboard";
 import UploadSection from "./components/UploadSection";
 import StudentFeeTable from "./components/StudentFeeTable";
+import StudentFeeAdminTable from "./components/StudentFeeAdminTable";
 import ManageStudentTable from "./components/ManageStudentTable";
 import StudentsTable from "./components/StudentsTable";
 import PaymentModal from "./components/PaymentModal";
@@ -72,6 +73,16 @@ function App() {
     if (!student) return;
     setEditStudent({ ...student });
     setShowEditModal(true);
+  };
+
+  const handleFeeFieldChange = (rowKey, field, value) => {
+    setStudents((prev) =>
+      prev.map((student, index) => {
+        const key = student.StudentID || `row-${index}`;
+        if (key !== rowKey) return student;
+        return { ...student, [field]: value };
+      })
+    );
   };
 
   const handleEditInputChange = (e) => {
@@ -233,6 +244,26 @@ function App() {
             onRemoveSelected={requestRemoveSelected}
             onDeleteStudent={requestDeleteStudent}
             onEditStudent={handleEditStudent}
+          />
+        </>
+      )}
+
+      {activeTab === 'manageFee' && (
+        <>
+          <UploadSection 
+            onFileUpload={(e) => handleFileUpload(e, setStudents)}
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+            isManageTab={true}
+            programFilter={programFilter}
+            onProgramFilterChange={setProgramFilter}
+            hideActionButton={true}
+            noteText="Manage Total Fee and payment fields for each student"
+          />
+          <StudentFeeAdminTable 
+            students={students}
+            filteredStudents={filteredStudents}
+            onFieldChange={handleFeeFieldChange}
           />
         </>
       )}
