@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import "./index.css";
 import Header from "./components/Header";
 import Navigation from "./components/Navigation";
@@ -12,8 +12,14 @@ import PaymentModal from "./components/PaymentModal";
 import AddStudentModal from "./components/AddStudentModal";
 import EditStudentModal from "./components/EditStudentModal";
 import ConfirmModal from "./components/ConfirmModal";
+import LoginPage from "./components/LoginPage";
+import mainAdminAvatar from "./assets/admin.png";
+import assistantAdminAvatar from "./assets/administrator.png";
 import { handleFileUpload, handleAddStudent, handleInputChange, INITIAL_STUDENT } from "./utils/handlers";
-import { getStudents, deleteStudent, updateStudent } from "./utils/api";
+import { getStudents, deleteStudent, updateStudent, adminLogin } from "./utils/api";
+
+const AUTH_STORAGE_KEY = "aclc_admin_session";
+const ASSISTANT_ADMIN_USERNAME = "assistantadmin";
 
 function App() {
   const [students, setStudents] = useState([]);
@@ -28,12 +34,36 @@ function App() {
   const [editStudent, setEditStudent] = useState(null);
   const [confirmState, setConfirmState] = useState({ show: false, type: null, payload: null });
   const [programFilter, setProgramFilter] = useState("");
+  const [authUser, setAuthUser] = useState(null);
+  const [authLoading, setAuthLoading] = useState(false);
+  const [authError, setAuthError] = useState("");
 
   const toggleTheme = () => {
     setDarkMode(!darkMode);
   };
 
   useEffect(() => {
+    const stored = localStorage.getItem(AUTH_STORAGE_KEY);
+    if (!stored) {
+      return;
+    }
+
+    try {
+      const parsed = JSON.parse(stored);
+      if (parsed && parsed.name) {
+        setAuthUser(parsed);
+      }
+    } catch (error) {
+      console.warn("Failed to parse stored session.", error);
+      localStorage.removeItem(AUTH_STORAGE_KEY);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!authUser) {
+      return;
+    }
+
     const loadStudents = async () => {
       try {
         const data = await getStudents();
@@ -46,7 +76,51 @@ function App() {
     };
 
     loadStudents();
-  }, []);
+  }, [authUser]);
+
+  const handleLogin = async ({ identifier, password }) => {
+    setAuthError("");
+    setAuthLoading(true);
+
+    const normalizedIdentifier = identifier.trim();
+    const normalizedPassword = password.trim();
+
+    try {
+      const result = await adminLogin(normalizedIdentifier, normalizedPassword);
+      const admin = result && result.admin ? result.admin : null;
+
+      if (!admin) {
+        throw new Error("Invalid credentials. Please try again.");
+      }
+
+      const session = {
+        name: admin.full_name || admin.username || normalizedIdentifier,
+        role: admin.role || "admin",
+        avatar: admin.username === ASSISTANT_ADMIN_USERNAME ? "assistant" : "main",
+        username: admin.username,
+      };
+      localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(session));
+      setAuthUser(session);
+      setActiveTab("home");
+    } catch (error) {
+      const message =
+        error && error.message
+          ? error.message
+          : "Login failed. Please try again.";
+      setAuthError(message);
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem(AUTH_STORAGE_KEY);
+    setAuthUser(null);
+    setStudents([]);
+    setSearchQuery("");
+    setProgramFilter("");
+    setActiveTab("home");
+  };
 
   const normalizedQuery = searchQuery.toLowerCase();
   const normalizedProgramFilter = programFilter.toLowerCase();
@@ -199,11 +273,30 @@ function App() {
     closeConfirmModal();
   };
 
+  if (!authUser) {
+    return (
+      <div className={`dashboard login-view ${darkMode ? 'dark-mode' : 'light-mode'}`}>
+        <Header darkMode={darkMode} toggleTheme={toggleTheme} />
+        <LoginPage onLogin={handleLogin} loading={authLoading} error={authError} />
+      </div>
+    );
+  }
+
   return (
     <div className={`dashboard ${darkMode ? 'dark-mode' : 'light-mode'}`}>
       <Header darkMode={darkMode} toggleTheme={toggleTheme} />
       <div className="dashboard-container">
-        <Navigation activeTab={activeTab} setActiveTab={setActiveTab} />
+        <Navigation
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          onLogout={handleLogout}
+          userName={authUser?.name}
+          userAvatar={
+            authUser?.avatar === "assistant"
+              ? assistantAdminAvatar
+              : mainAdminAvatar
+          }
+        />
         <main className="main-content">
       {activeTab === 'home' && (
         <HomeDashboard setActiveTab={setActiveTab} students={students} />
@@ -289,6 +382,7 @@ function App() {
         </>
       )}
 
+
       <PaymentModal 
         showPaymentModal={showPaymentModal}
         selectedStudent={selectedStudent}
@@ -311,6 +405,7 @@ function App() {
         onSubmit={handleUpdateStudent}
         onInputChange={handleEditInputChange}
       />
+
 
       <ConfirmModal
         show={confirmState.show}

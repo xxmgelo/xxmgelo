@@ -12,6 +12,12 @@
   flex-shrink: 0;
 }
 
+.login-view .header {
+  background: transparent;
+  box-shadow: none;
+  border-bottom: none;
+}
+
 .header-content {
   display: flex;
   align-items: center;

@@ -121,3 +121,18 @@ th .checklist-box {
   border-color: var(--accent-primary);
   box-shadow: 0 0 0 2px rgba(var(--accent-primary-rgb), 0.2);
 }
+
+.admin-table-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid var(--border-color);
+  background: var(--bg-primary);
+}
+
+.section-error {
+  margin: 8px 0 14px;
+  color: var(--accent-danger);
+  font-weight: 600;
+}

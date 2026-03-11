@@ -1,4 +1,4 @@
-﻿const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost/aclcapi/api";
+const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost/aclcapi/api";
 
 async function request(path, options = {}) {
   const response = await fetch(`${API_BASE}${path}`, {
@@ -52,5 +52,23 @@ export async function upsertStudents(students) {
   return request("/students_bulk.php", {
     method: "POST",
     body: JSON.stringify(students),
+  });
+}
+
+export async function adminLogin(identifier, password) {
+  return request("/admin_login.php", {
+    method: "POST",
+    body: JSON.stringify({ identifier, password }),
+  });
+}
+
+export async function getAdmins() {
+  return request("/admins.php");
+}
+
+export async function createAdmin(admin) {
+  return request("/admins.php", {
+    method: "POST",
+    body: JSON.stringify(admin),
   });
 }

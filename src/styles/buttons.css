@@ -81,3 +81,12 @@
 .delete-btn:active {
   filter: brightness(0.92);
 }
+
+.add-btn {
+  background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+  color: white;
+}
+
+.add-btn .btn-icon {
+  filter: brightness(0) invert(1);
+}

@@ -139,6 +139,10 @@
   );
 }
 
+.manage-fee-card {
+  background: linear-gradient(140deg, #3f485f, #6f7b93);
+}
+
 .students-card {
   background: linear-gradient(140deg, #154d6b, #2f97b7);
 }

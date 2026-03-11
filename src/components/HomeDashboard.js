@@ -1,5 +1,6 @@
 import React, { useMemo } from "react";
 import studentFeeIcon from "../assets/studentfeedb.png";
+import manageFeeIcon from "../assets/managefeedb.png";
 import manageStudentIcon from "../assets/managestudentdb.png";
 import studentsIcon from "../assets/studentsdb.png";
 
@@ -47,6 +48,12 @@ function HomeDashboard({ setActiveTab, students }) {
           <img src={manageStudentIcon} alt="Manage Student" className="home-card-icon" />
           <span className="home-card-label">Manage Student</span>
         </button>
+
+        <button className="home-card manage-fee-card" onClick={() => setActiveTab("manageFee")}>
+          <img src={manageFeeIcon} alt="Manage Fee" className="home-card-icon" />
+          <span className="home-card-label">Manage Fee</span>
+        </button>
+
       </div>
     </section>
   );
