@@ -86,6 +86,8 @@
 @media (min-width: 769px) {
   .nav-menu {
     flex: 1;
+    overflow-y: auto;
+    padding-bottom: 12px;
   }
 }
 
@@ -172,6 +174,8 @@
 .nav-footer {
   padding: 16px 24px 0;
   border-top: 1px solid var(--border-color);
+  margin-top: auto;
+  background: var(--bg-secondary);
 }
 
 .nav-item.nav-logout {

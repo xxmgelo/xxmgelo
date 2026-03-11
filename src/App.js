@@ -276,7 +276,6 @@ function App() {
   if (!authUser) {
     return (
       <div className={`dashboard login-view ${darkMode ? 'dark-mode' : 'light-mode'}`}>
-        <Header darkMode={darkMode} toggleTheme={toggleTheme} />
         <LoginPage onLogin={handleLogin} loading={authLoading} error={authError} />
       </div>
     );
