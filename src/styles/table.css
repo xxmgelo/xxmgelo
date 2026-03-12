@@ -133,6 +133,6 @@ th .checklist-box {
 
 .section-error {
   margin: 8px 0 14px;
-  color: var(--accent-danger);
+  color: var(--text-primary);
   font-weight: 600;
 }

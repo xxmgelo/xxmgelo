@@ -1,13 +1,14 @@
 /* Header */
 .header {
-  background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
-  color: var(--table-header-text);
-  padding: 20px 30px;
+  background: linear-gradient(135deg, #175676, #4ba3c3);
+  color: #ffffff;
+  padding: 18px 30px;
   border-radius: 0;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 12px 30px rgba(23, 86, 118, 0.25);
+  border-bottom: 1px solid rgba(204, 230, 244, 0.25);
   margin-bottom: 0;
   flex-shrink: 0;
 }
@@ -36,20 +37,20 @@
 
 .header h1 {
   margin: 0;
-  font-size: 28px;
-  font-weight: 600;
-  letter-spacing: -0.5px;
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.4px;
 }
 
 .theme-toggle {
-  background: rgba(255, 255, 255, 0.2);
-  color: white;
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: rgba(204, 230, 244, 0.18);
+  color: #ffffff;
+  border: 1px solid rgba(204, 230, 244, 0.35);
   padding: 10px 16px;
-  border-radius: 8px;
+  border-radius: 10px;
   cursor: pointer;
   font-size: 14px;
-  font-weight: 500;
+  font-weight: 600;
   transition: all 0.3s ease;
   backdrop-filter: blur(10px);
   display: flex;
@@ -58,7 +59,7 @@
 }
 
 .theme-toggle:hover {
-  background: rgba(255, 255, 255, 0.3);
+  background: rgba(204, 230, 244, 0.28);
   filter: brightness(0.98);
 }
 

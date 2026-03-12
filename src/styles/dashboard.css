@@ -2,7 +2,7 @@
 .student-dashboard {
   background: var(--bg-secondary);
   padding: 24px;
-  border-radius: 12px;
+  border-radius: 16px;
   box-shadow: var(--shadow);
   border: 1px solid var(--border-color);
   animation: fadeInUp 0.3s ease;
@@ -36,13 +36,13 @@
   margin: 0;
   color: var(--text-primary);
   font-size: 22px;
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .home-dashboard {
   background: var(--bg-secondary);
-  padding: 28px;
-  border-radius: 12px;
+  padding: 30px;
+  border-radius: 18px;
   box-shadow: var(--shadow);
   border: 1px solid var(--border-color);
   animation: fadeInUp 0.3s ease;
@@ -50,16 +50,16 @@
 
 .home-header {
   margin-bottom: 22px;
-  border-bottom: 1px dashed var(--border-color);
+  border-bottom: 1px solid rgba(141, 153, 174, 0.3);
   padding-bottom: 14px;
 }
 
 .home-header h2 {
   margin: 0;
   color: var(--text-primary);
-  font-size: 32px;
+  font-size: 30px;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.6px;
 }
 
 .home-header p {
@@ -76,34 +76,34 @@
 
 .home-card {
   border: none;
-  border-radius: 10px;
+  border-radius: 16px;
   min-height: 160px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 14px;
-  color: #FFFFFF;
+  color: var(--text-primary);
   cursor: pointer;
   transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
-  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.14);
+  box-shadow: 0 14px 28px rgba(43, 45, 66, 0.18);
 }
 
 .home-card:hover {
   transform: translateY(-3px);
   filter: brightness(1.03);
-  box-shadow: 0 12px 22px rgba(0, 0, 0, 0.18);
+  box-shadow: 0 18px 32px rgba(43, 45, 66, 0.22);
 }
 
 .home-card-icon {
   width: 48px;
   height: 48px;
   object-fit: contain;
-  filter: brightness(0) invert(1);
+  filter: none;
 }
 
 .home-card-label {
-  font-size: 22px;
+  font-size: 20px;
   font-weight: 700;
   text-transform: uppercase;
 }
@@ -118,33 +118,37 @@
 }
 
 .home-card-counts span {
-  background: rgba(255, 255, 255, 0.18);
+  background: rgba(23, 86, 118, 0.12);
   padding: 4px 8px;
   border-radius: 999px;
 }
 
+.dark-mode .home-card {
+  color: #ffffff;
+}
+
+.dark-mode .home-card-icon {
+  filter: brightness(0) invert(1);
+}
+
+.dark-mode .home-card-counts span {
+  background: rgba(204, 230, 244, 0.18);
+}
+
 .student-fee-card {
-  background: linear-gradient(
-    140deg,
-    var(--accent-secondary),
-    rgba(var(--accent-secondary-rgb), 0.84)
-  );
+  background: linear-gradient(140deg, #cce6f4, #4ba3c3);
 }
 
 .manage-student-card {
-  background: linear-gradient(
-    140deg,
-    var(--accent-primary),
-    rgba(var(--accent-primary-rgb), 0.82)
-  );
+  background: linear-gradient(140deg, #d62839, #ba324f);
 }
 
 .manage-fee-card {
-  background: linear-gradient(140deg, #3f485f, #6f7b93);
+  background: linear-gradient(140deg, #cce6f4, #175676);
 }
 
 .students-card {
-  background: linear-gradient(140deg, #154d6b, #2f97b7);
+  background: linear-gradient(140deg, #4ba3c3, #175676);
 }
 
 @media (max-width: 768px) {

@@ -115,12 +115,12 @@
 
 .nav-item:hover {
   background: var(--sidebar-hover-bg);
-  color: var(--accent-primary);
+  color: var(--text-primary);
 }
 
 .nav-item.active {
   background: linear-gradient(90deg, var(--sidebar-active-bg), transparent);
-  color: var(--accent-primary);
+  color: var(--text-primary);
   font-weight: 600;
 }
 
@@ -179,12 +179,12 @@
 }
 
 .nav-item.nav-logout {
-  color: var(--accent-danger);
+  color: var(--text-primary);
 }
 
 .nav-item.nav-logout:hover {
   background: rgba(var(--accent-danger-rgb), 0.12);
-  color: var(--accent-danger);
+  color: var(--text-primary);
 }
 
 .main-content {
