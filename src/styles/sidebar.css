@@ -10,7 +10,7 @@
   background: var(--bg-secondary);
   background-image: none;
   border-right: 1px solid var(--border-color);
-  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.05);
+  box-shadow: 2px 0 12px rgba(var(--accent-primary-rgb), 0.08);
   position: sticky;
   top: 0;
   height: calc(100vh - 100px);
@@ -19,11 +19,11 @@
 }
 
 .dark-mode .sidebar {
-  background-image: linear-gradient(rgba(38, 37, 71, 0.7), rgba(38, 37, 71, 0.7)), url('../assets/aclclogo.png');
+  background-image: linear-gradient(rgba(43, 45, 66, 0.82), rgba(43, 45, 66, 0.82)), url('../assets/aclclogo.png');
   background-repeat: no-repeat;
   background-position: right bottom;
   background-size: 160% auto;
-  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.3);
+  box-shadow: 2px 0 14px rgba(10, 12, 22, 0.42);
 }
 
 .sidebar-content {
@@ -335,9 +335,9 @@
     border-top: none;
   }
 
-  .nav-footer .nav-item {
-    justify-content: center;
-  }
+.nav-footer .nav-item {
+  justify-content: center;
+}
 }
 
 @media (max-width: 480px) {

@@ -1,81 +1,84 @@
 @font-face {
-  font-family: 'Raleway';
-  src: url('../assets/fonts/Raleway-VariableFont_wght.ttf') format('truetype');
+  font-family: 'Noto Sans';
+  src: url('../assets/fonts/NotoSans-VariableFont_wdth,wght.ttf') format('truetype');
   font-weight: 100 900;
   font-style: normal;
   font-display: swap;
 }
 
-@font-face {
-  font-family: 'Raleway';
-  src: url('../assets/fonts/Raleway-Italic-VariableFont_wght.ttf') format('truetype');
-  font-weight: 100 900;
-  font-style: italic;
-  font-display: swap;
-}
-
 /* CSS Variables for Theme */
 :root {
-  --font-family-base: 'Raleway', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-family-display: 'Raleway', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-family-base: 'Noto Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-family-display: 'Noto Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 
-  /* Light Mode Colors */
-  --bg-primary: #cce6f4;
+  /* Core palette */
+  --palette-ink: #2B2D42;
+  --palette-slate: #8D99AE;
+  --palette-mist: #EDF2F4;
+  --palette-red: #EF233C;
+  --palette-red-deep: #D90429;
+
+  /* Light mode role colors */
+  --bg-primary: var(--palette-mist);
   --bg-secondary: #ffffff;
-  --text-primary: #1f1f1f;
-  --text-secondary: #2b2b2b;
-  --accent-primary: #4ba3c3;
-  --accent-secondary: #175676;
-  --accent-success: #4ba3c3;
-  --accent-warning: #4ba3c3;
-  --accent-danger: #d62839;
-  --accent-danger-strong: #ba324f;
-  --border-color: rgba(75, 163, 195, 0.35);
-  --shadow: 0 18px 50px rgba(23, 86, 118, 0.18);
-  --table-header-bg: #175676;
-  --table-header-text: #ffffff;
-  --table-row-hover: rgba(204, 230, 244, 0.6);
-  --table-row-even: rgba(204, 230, 244, 0.4);
-  --sidebar-hover-bg: rgba(75, 163, 195, 0.2);
-  --sidebar-active-bg: rgba(75, 163, 195, 0.36);
-  --modal-overlay: rgba(23, 86, 118, 0.45);
+  --bg-tertiary: #f7f9fc;
+  --text-primary: var(--palette-ink);
+  --text-secondary: #5a6478;
+  --text-inverse: var(--palette-mist);
+  --accent-primary: var(--palette-ink);
+  --accent-secondary: var(--palette-slate);
+  --accent-success: var(--palette-slate);
+  --accent-warning: var(--palette-slate);
+  --accent-danger: var(--palette-red);
+  --accent-danger-strong: var(--palette-red-deep);
+  --border-color: rgba(43, 45, 66, 0.2);
+  --shadow: 0 16px 36px rgba(43, 45, 66, 0.16);
+  --table-header-bg: var(--palette-ink);
+  --table-header-text: var(--palette-mist);
+  --table-row-hover: rgba(141, 153, 174, 0.2);
+  --table-row-even: rgba(237, 242, 244, 0.75);
+  --sidebar-hover-bg: rgba(141, 153, 174, 0.2);
+  --sidebar-active-bg: rgba(43, 45, 66, 0.16);
+  --modal-overlay: rgba(43, 45, 66, 0.56);
   --input-bg: #ffffff;
 
   /* RGB helpers for consistent translucent effects */
-  --accent-primary-rgb: 75, 163, 195;
-  --accent-secondary-rgb: 23, 86, 118;
-  --accent-success-rgb: 75, 163, 195;
-  --accent-mint-rgb: 204, 230, 244;
-  --accent-danger-rgb: 214, 40, 57;
+  --accent-primary-rgb: 43, 45, 66;
+  --accent-secondary-rgb: 141, 153, 174;
+  --accent-success-rgb: 141, 153, 174;
+  --accent-mint-rgb: 237, 242, 244;
+  --accent-danger-rgb: 239, 35, 60;
 }
 
 .dark-mode {
-  --bg-primary: #175676;
-  --bg-secondary: #1f6a8b;
-  --text-primary: #ffffff;
-  --text-secondary: #ffffff;
-  --accent-primary: #4ba3c3;
-  --accent-secondary: #175676;
-  --accent-success: #4ba3c3;
-  --accent-warning: #4ba3c3;
-  --accent-danger: #d62839;
-  --accent-danger-strong: #ba324f;
-  --border-color: rgba(75, 163, 195, 0.45);
-  --shadow: 0 20px 55px rgba(10, 30, 42, 0.45);
-  --table-header-bg: #175676;
-  --table-header-text: #ffffff;
-  --table-row-hover: rgba(75, 163, 195, 0.24);
-  --table-row-even: rgba(10, 40, 56, 0.5);
-  --sidebar-hover-bg: rgba(75, 163, 195, 0.28);
-  --sidebar-active-bg: rgba(75, 163, 195, 0.45);
-  --modal-overlay: rgba(10, 30, 42, 0.8);
-  --input-bg: #175676;
+  --bg-primary: #202336;
+  --bg-secondary: #2b2d42;
+  --bg-tertiary: #353b56;
+  --text-primary: var(--palette-mist);
+  --text-secondary: #b8c2d2;
+  --text-inverse: var(--palette-ink);
+  --accent-primary: var(--palette-slate);
+  --accent-secondary: var(--palette-mist);
+  --accent-success: var(--palette-slate);
+  --accent-warning: var(--palette-slate);
+  --accent-danger: var(--palette-red);
+  --accent-danger-strong: var(--palette-red-deep);
+  --border-color: rgba(141, 153, 174, 0.36);
+  --shadow: 0 22px 50px rgba(10, 12, 22, 0.55);
+  --table-header-bg: var(--palette-slate);
+  --table-header-text: var(--palette-ink);
+  --table-row-hover: rgba(141, 153, 174, 0.25);
+  --table-row-even: rgba(255, 255, 255, 0.04);
+  --sidebar-hover-bg: rgba(141, 153, 174, 0.24);
+  --sidebar-active-bg: rgba(237, 242, 244, 0.2);
+  --modal-overlay: rgba(15, 17, 28, 0.78);
+  --input-bg: #353b56;
 
-  --accent-primary-rgb: 75, 163, 195;
-  --accent-secondary-rgb: 23, 86, 118;
-  --accent-success-rgb: 75, 163, 195;
-  --accent-mint-rgb: 204, 230, 244;
-  --accent-danger-rgb: 214, 40, 57;
+  --accent-primary-rgb: 141, 153, 174;
+  --accent-secondary-rgb: 237, 242, 244;
+  --accent-success-rgb: 141, 153, 174;
+  --accent-mint-rgb: 237, 242, 244;
+  --accent-danger-rgb: 239, 35, 60;
 }
 
 /* General Layout */

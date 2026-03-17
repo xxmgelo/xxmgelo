@@ -4,6 +4,7 @@ import studentFeeIcon from "../assets/studentfee.png";
 import manageFeeIcon from "../assets/managefee.png";
 import manageStudentIcon from "../assets/managestudent.png";
 import studentsIcon from "../assets/students.png";
+import adminSettingsIcon from "../assets/adminsettings.png";
 import defaultAvatar from "../assets/admin.png";
 import logoutIcon from "../assets/logout.png";
 
@@ -68,6 +69,15 @@ function Navigation({ activeTab, setActiveTab, onLogout, userName, userAvatar })
             >
               <img src={manageFeeIcon} alt="Manage Fee" className="nav-icon" />
               <span className="nav-label">Manage Fee</span>
+            </button>
+          </li>
+          <li>
+            <button 
+              className={`nav-item ${activeTab === 'adminSettings' ? 'active' : ''}`}
+              onClick={() => setActiveTab('adminSettings')}
+            >
+              <img src={adminSettingsIcon} alt="Admin Settings" className="nav-icon" />
+              <span className="nav-label">Admin Settings</span>
             </button>
           </li>
         </ul>

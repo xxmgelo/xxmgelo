@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import "./index.css";
 import Header from "./components/Header";
 import Navigation from "./components/Navigation";
@@ -13,13 +13,28 @@ import AddStudentModal from "./components/AddStudentModal";
 import EditStudentModal from "./components/EditStudentModal";
 import ConfirmModal from "./components/ConfirmModal";
 import LoginPage from "./components/LoginPage";
+import AdminSettingsPage from "./components/AdminSettingsPage";
 import mainAdminAvatar from "./assets/admin.png";
 import assistantAdminAvatar from "./assets/administrator.png";
 import { handleFileUpload, handleAddStudent, handleInputChange, INITIAL_STUDENT } from "./utils/handlers";
-import { getStudents, deleteStudent, updateStudent, adminLogin } from "./utils/api";
+import {
+  getStudents,
+  deleteStudent,
+  updateStudent,
+  adminLogin,
+  updateAdminProfile,
+  updateAdminPassword,
+} from "./utils/api";
 
 const AUTH_STORAGE_KEY = "aclc_admin_session";
 const ASSISTANT_ADMIN_USERNAME = "assistantadmin";
+const THEME_STORAGE_KEY = "aclc_theme_preferences";
+const PALETTE_COLORS = new Set(["#2B2D42", "#8D99AE", "#EDF2F4", "#EF233C", "#D90429"]);
+
+const DEFAULT_THEME = {
+  start: "#8D99AE",
+  end: "#2B2D42",
+};
 
 function App() {
   const [students, setStudents] = useState([]);
@@ -37,10 +52,58 @@ function App() {
   const [authUser, setAuthUser] = useState(null);
   const [authLoading, setAuthLoading] = useState(false);
   const [authError, setAuthError] = useState("");
+  const [themePrefs, setThemePrefs] = useState(DEFAULT_THEME);
 
   const toggleTheme = () => {
     setDarkMode(!darkMode);
   };
+
+  const hexToRgb = useCallback((hex) => {
+    const normalized = hex.replace("#", "");
+    if (normalized.length !== 6) {
+      return null;
+    }
+    const r = parseInt(normalized.slice(0, 2), 16);
+    const g = parseInt(normalized.slice(2, 4), 16);
+    const b = parseInt(normalized.slice(4, 6), 16);
+    return Number.isNaN(r) ? null : `${r}, ${g}, ${b}`;
+  }, []);
+
+  const applyThemeColors = useCallback((prefs) => {
+    if (!prefs || !prefs.start || !prefs.end) {
+      return;
+    }
+
+    const root = document.documentElement;
+    root.style.setProperty("--accent-primary", prefs.start);
+    root.style.setProperty("--accent-secondary", prefs.end);
+
+    const primaryRgb = hexToRgb(prefs.start);
+    const secondaryRgb = hexToRgb(prefs.end);
+    if (primaryRgb) {
+      root.style.setProperty("--accent-primary-rgb", primaryRgb);
+      root.style.setProperty("--accent-success", prefs.start);
+      root.style.setProperty("--accent-success-rgb", primaryRgb);
+    }
+    if (secondaryRgb) {
+      root.style.setProperty("--accent-secondary-rgb", secondaryRgb);
+    }
+  }, [hexToRgb]);
+
+  const normalizeThemePrefs = useCallback((prefs) => {
+    if (!prefs || !prefs.start || !prefs.end) {
+      return DEFAULT_THEME;
+    }
+
+    const start = String(prefs.start).toUpperCase();
+    const end = String(prefs.end).toUpperCase();
+
+    if (!PALETTE_COLORS.has(start) || !PALETTE_COLORS.has(end)) {
+      return DEFAULT_THEME;
+    }
+
+    return { start, end };
+  }, []);
 
   useEffect(() => {
     const stored = localStorage.getItem(AUTH_STORAGE_KEY);
@@ -58,6 +121,29 @@ function App() {
       localStorage.removeItem(AUTH_STORAGE_KEY);
     }
   }, []);
+
+  useEffect(() => {
+    const storedTheme = localStorage.getItem(THEME_STORAGE_KEY);
+    if (!storedTheme) {
+      applyThemeColors(DEFAULT_THEME);
+      return;
+    }
+
+    try {
+      const parsed = JSON.parse(storedTheme);
+      const normalized = normalizeThemePrefs(parsed);
+      setThemePrefs(normalized);
+      applyThemeColors(normalized);
+      localStorage.setItem(THEME_STORAGE_KEY, JSON.stringify(normalized));
+    } catch (error) {
+      console.warn("Failed to parse stored theme preferences.", error);
+      applyThemeColors(DEFAULT_THEME);
+    }
+  }, [applyThemeColors, normalizeThemePrefs]);
+
+  useEffect(() => {
+    applyThemeColors(themePrefs);
+  }, [themePrefs, applyThemeColors]);
 
   useEffect(() => {
     if (!authUser) {
@@ -94,10 +180,14 @@ function App() {
       }
 
       const session = {
+        id: admin.id || null,
         name: admin.full_name || admin.username || normalizedIdentifier,
+        fullName: admin.full_name || "",
         role: admin.role || "admin",
         avatar: admin.username === ASSISTANT_ADMIN_USERNAME ? "assistant" : "main",
+        avatarUrl: admin.avatar || "",
         username: admin.username,
+        email: admin.email || "",
       };
       localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(session));
       setAuthUser(session);
@@ -264,6 +354,54 @@ function App() {
     setConfirmState({ show: false, type: null, payload: null });
   };
 
+  const handleUpdateAdminProfile = async (payload) => {
+    if (!authUser) {
+      throw new Error("No active admin session.");
+    }
+
+    const response = await updateAdminProfile({
+      id: authUser.id,
+      full_name: payload.full_name,
+      username: payload.username,
+      avatar: payload.avatar,
+    });
+
+    const updatedAdmin = response && response.admin ? response.admin : null;
+    const nextSession = {
+      ...authUser,
+      name: updatedAdmin?.full_name || payload.full_name || authUser.name,
+      fullName: updatedAdmin?.full_name || payload.full_name || authUser.fullName,
+      username: updatedAdmin?.username || payload.username || authUser.username,
+      avatarUrl: updatedAdmin?.avatar || payload.avatar || authUser.avatarUrl,
+    };
+
+    localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(nextSession));
+    setAuthUser(nextSession);
+    return nextSession;
+  };
+
+  const handleUpdateAdminPassword = async (payload) => {
+    if (!authUser) {
+      throw new Error("No active admin session.");
+    }
+
+    await updateAdminPassword({
+      id: authUser.id,
+      username: authUser.username,
+      current_password: payload.current_password,
+      new_password: payload.new_password,
+    });
+  };
+
+  const handleSavePreferences = async (prefs) => {
+    const nextPrefs = normalizeThemePrefs({
+      start: prefs.start,
+      end: prefs.end,
+    });
+    setThemePrefs(nextPrefs);
+    localStorage.setItem(THEME_STORAGE_KEY, JSON.stringify(nextPrefs));
+  };
+
   const confirmAction = async () => {
     if (confirmState.type === "removeSelected") {
       await executeRemoveSelected(confirmState.payload);
@@ -291,9 +429,11 @@ function App() {
           onLogout={handleLogout}
           userName={authUser?.name}
           userAvatar={
-            authUser?.avatar === "assistant"
-              ? assistantAdminAvatar
-              : mainAdminAvatar
+            authUser?.avatarUrl
+              ? authUser.avatarUrl
+              : authUser?.avatar === "assistant"
+                ? assistantAdminAvatar
+                : mainAdminAvatar
           }
         />
         <main className="main-content">
@@ -379,6 +519,18 @@ function App() {
             filteredStudents={filteredStudents}
           />
         </>
+      )}
+
+      {activeTab === 'adminSettings' && (
+        <AdminSettingsPage
+          admin={authUser}
+          darkMode={darkMode}
+          onToggleTheme={toggleTheme}
+          themeColors={themePrefs}
+          onSavePreferences={handleSavePreferences}
+          onUpdateProfile={handleUpdateAdminProfile}
+          onUpdatePassword={handleUpdateAdminPassword}
+        />
       )}
 
 

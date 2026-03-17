@@ -72,3 +72,23 @@ export async function createAdmin(admin) {
     body: JSON.stringify(admin),
   });
 }
+
+export async function updateAdminProfile(profile) {
+  return request("/admins.php", {
+    method: "PUT",
+    body: JSON.stringify({
+      action: "update_profile",
+      ...profile,
+    }),
+  });
+}
+
+export async function updateAdminPassword(payload) {
+  return request("/admins.php", {
+    method: "PUT",
+    body: JSON.stringify({
+      action: "update_password",
+      ...payload,
+    }),
+  });
+}

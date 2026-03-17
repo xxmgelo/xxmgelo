@@ -2,6 +2,16 @@
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
+## Postman Collection (Students API)
+
+Import the students-only collection and local environment:
+
+1. Import `postman/aclcapi_students.postman_collection.json`.
+2. Import `postman/aclcapi_local.postman_environment.json`.
+3. Select the `ACLCAPI Local` environment in Postman.
+
+The requests use `{{baseUrl}}` which defaults to `http://localhost/aclcapi/api`.
+
 ## Available Scripts
 
 In the project directory, you can run:

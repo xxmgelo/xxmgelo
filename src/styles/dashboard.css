@@ -50,7 +50,7 @@
 
 .home-header {
   margin-bottom: 22px;
-  border-bottom: 1px solid rgba(141, 153, 174, 0.3);
+  border-bottom: 1px solid rgba(var(--accent-secondary-rgb), 0.34);
   padding-bottom: 14px;
 }
 
@@ -86,13 +86,13 @@
   color: var(--text-primary);
   cursor: pointer;
   transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
-  box-shadow: 0 14px 28px rgba(43, 45, 66, 0.18);
+  box-shadow: 0 14px 28px rgba(var(--accent-primary-rgb), 0.22);
 }
 
 .home-card:hover {
   transform: translateY(-3px);
   filter: brightness(1.03);
-  box-shadow: 0 18px 32px rgba(43, 45, 66, 0.22);
+  box-shadow: 0 18px 32px rgba(var(--accent-primary-rgb), 0.28);
 }
 
 .home-card-icon {
@@ -118,7 +118,7 @@
 }
 
 .home-card-counts span {
-  background: rgba(23, 86, 118, 0.12);
+  background: rgba(var(--accent-primary-rgb), 0.12);
   padding: 4px 8px;
   border-radius: 999px;
 }
@@ -132,23 +132,33 @@
 }
 
 .dark-mode .home-card-counts span {
-  background: rgba(204, 230, 244, 0.18);
+  background: rgba(var(--accent-mint-rgb), 0.2);
 }
 
 .student-fee-card {
-  background: linear-gradient(140deg, #cce6f4, #4ba3c3);
+  background: linear-gradient(140deg, var(--palette-mist), var(--palette-slate));
+  color: var(--palette-ink);
 }
 
 .manage-student-card {
-  background: linear-gradient(140deg, #d62839, #ba324f);
+  background: linear-gradient(140deg, var(--palette-red), var(--palette-red-deep));
+  color: var(--palette-mist);
 }
 
 .manage-fee-card {
-  background: linear-gradient(140deg, #cce6f4, #175676);
+  background: linear-gradient(140deg, var(--palette-slate), var(--palette-ink));
+  color: var(--palette-mist);
 }
 
 .students-card {
-  background: linear-gradient(140deg, #4ba3c3, #175676);
+  background: linear-gradient(140deg, var(--palette-ink), var(--palette-slate));
+  color: var(--palette-mist);
+}
+
+.manage-student-card .home-card-icon,
+.manage-fee-card .home-card-icon,
+.students-card .home-card-icon {
+  filter: brightness(0) invert(1);
 }
 
 @media (max-width: 768px) {

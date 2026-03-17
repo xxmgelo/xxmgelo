@@ -1,0 +1,134 @@
+﻿{
+  "info": {
+    "name": "ACLCAPI Students",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Get All Students",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/students.php",
+          "host": ["{{baseUrl}}"],
+          "path": ["students.php"]
+        }
+      }
+    },
+    {
+      "name": "Get Student By student_id",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/students.php?student_id=22000080800",
+          "host": ["{{baseUrl}}"],
+          "path": ["students.php"],
+          "query": [
+            {
+              "key": "student_id",
+              "value": "22000080800"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Get Student By id",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/students.php?id=12",
+          "host": ["{{baseUrl}}"],
+          "path": ["students.php"],
+          "query": [
+            {
+              "key": "id",
+              "value": "12"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Create Student",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"StudentID\": \"22000080800\",\n  \"Name\": \"Juan Dela Cruz\",\n  \"Program\": \"BSIS\",\n  \"YearLevel\": \"2\",\n  \"Gmail\": \"juan.delacruz@gmail.com\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/students.php",
+          "host": ["{{baseUrl}}"],
+          "path": ["students.php"]
+        }
+      }
+    },
+    {
+      "name": "Update Student",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"StudentID\": \"22000080800\",\n  \"Name\": \"Juan Dela Cruz Jr.\",\n  \"Program\": \"BSIS\",\n  \"YearLevel\": \"3\",\n  \"Gmail\": \"juan.delacruz@gmail.com\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/students.php",
+          "host": ["{{baseUrl}}"],
+          "path": ["students.php"]
+        }
+      }
+    },
+    {
+      "name": "Delete Student By student_id",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/students.php?student_id=22000080800",
+          "host": ["{{baseUrl}}"],
+          "path": ["students.php"],
+          "query": [
+            {
+              "key": "student_id",
+              "value": "22000080800"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Delete Student By id",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/students.php?id=12",
+          "host": ["{{baseUrl}}"],
+          "path": ["students.php"],
+          "query": [
+            {
+              "key": "id",
+              "value": "12"
+            }
+          ]
+        }
+      }
+    }
+  ]
+}
