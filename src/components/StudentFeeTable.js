@@ -1,21 +1,52 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import payIcon from "../assets/pay.png";
 import remindIcon from "../assets/reminder.png";
+
+const currencyFormatter = new Intl.NumberFormat("en-PH", {
+  style: "currency",
+  currency: "PHP",
+  maximumFractionDigits: 0,
+});
+
+const parseAmount = (value) => {
+  if (value === null || value === undefined || value === "") return 0;
+  const cleaned = String(value).replace(/[^0-9.-]/g, "");
+  const parsed = Number(cleaned);
+  return Number.isFinite(parsed) ? parsed : 0;
+};
 
 function StudentFeeTable({ students, filteredStudents, onPaid }) {
   const [selectedRows, setSelectedRows] = useState(new Set());
 
-  const parseAmount = (value) => {
-    if (value === null || value === undefined || value === "") return 0;
-    const cleaned = String(value).replace(/[^0-9.-]/g, "");
-    const parsed = Number(cleaned);
-    return Number.isFinite(parsed) ? parsed : 0;
-  };
+  const summary = useMemo(() => {
+    return filteredStudents.reduce(
+      (totals, student) => {
+        const downpayment = parseAmount(student.Downpayment);
+        const prelim = parseAmount(student.Prelim);
+        const midterm = parseAmount(student.Midterm);
+        const preFinal = parseAmount(student.PreFinal);
+        const finals = parseAmount(student.Finals);
+        const collected = downpayment + prelim + midterm + preFinal + finals;
+        const totalFee =
+          student.TotalFee !== undefined && student.TotalFee !== null && student.TotalFee !== ""
+            ? parseAmount(student.TotalFee)
+            : collected;
+        const totalBalance =
+          student.TotalBalance !== undefined && student.TotalBalance !== null && student.TotalBalance !== ""
+            ? parseAmount(student.TotalBalance)
+            : Math.max(totalFee - collected, 0);
 
-  const formatAmount = (value) => {
-    if (value === null || value === undefined || value === "") return "0";
-    return String(value);
-  };
+        totals.collected += collected;
+        totals.outstanding += totalBalance;
+        if (totalBalance > 0) {
+          totals.pending += 1;
+        }
+
+        return totals;
+      },
+      { collected: 0, outstanding: 0, pending: 0 }
+    );
+  }, [filteredStudents]);
 
   const toggleRow = (rowKey) => {
     setSelectedRows((prev) => {
@@ -32,7 +63,23 @@ function StudentFeeTable({ students, filteredStudents, onPaid }) {
   return (
     <main className="student-dashboard">
       <div className="section-header">
-        <h2>BSIS Student Fee Records</h2>
+        <div>
+          <span className="section-kicker">Collections</span>
+          <h2>Student Fee Records</h2>
+          <p className="section-subtitle">
+            Review balances and launch payment actions for {filteredStudents.length} visible students.
+          </p>
+        </div>
+        <div className="section-stat-group">
+          <div className="section-summary-pill">
+            <span>Collected</span>
+            <strong>{currencyFormatter.format(summary.collected)}</strong>
+          </div>
+          <div className="section-summary-pill">
+            <span>Outstanding</span>
+            <strong>{currencyFormatter.format(summary.outstanding)}</strong>
+          </div>
+        </div>
       </div>
       <div className="table-container">
         <table>
@@ -68,15 +115,16 @@ function StudentFeeTable({ students, filteredStudents, onPaid }) {
                 const finals = parseAmount(student.Finals);
                 const computedTotalFee = downpayment + prelim + midterm + preFinal + finals;
                 const totalFee =
-                  student.TotalFee !== undefined && student.TotalFee !== null
+                  student.TotalFee !== undefined && student.TotalFee !== null && student.TotalFee !== ""
                     ? parseAmount(student.TotalFee)
                     : computedTotalFee;
                 const totalBalance =
-                  student.TotalBalance !== undefined && student.TotalBalance !== null
+                  student.TotalBalance !== undefined && student.TotalBalance !== null && student.TotalBalance !== ""
                     ? parseAmount(student.TotalBalance)
-                    : totalFee - computedTotalFee;
+                    : Math.max(totalFee - computedTotalFee, 0);
+
                 return (
-                  <tr key={index} className={isSelected ? "row-selected" : ""}>
+                  <tr key={rowKey} className={isSelected ? "row-selected" : ""}>
                     <td>{originalIndex + 1}</td>
                     <td>
                       <input
@@ -91,20 +139,24 @@ function StudentFeeTable({ students, filteredStudents, onPaid }) {
                     <td>{student.Program || "N/A"}</td>
                     <td>{student.YearLevel || "N/A"}</td>
                     <td>{student.Gmail || "N/A"}</td>
-                    <td>₱{formatAmount(totalFee)}</td>
-                    <td>₱{formatAmount(student.Downpayment || "0")}</td>
-                    <td>₱{formatAmount(student.Prelim || "0")}</td>
-                    <td>₱{formatAmount(student.Midterm || "0")}</td>
-                    <td>₱{formatAmount(student.PreFinal || "0")}</td>
-                    <td>₱{formatAmount(student.Finals || "0")}</td>
-                    <td>₱{formatAmount(totalBalance)}</td>
+                    <td>{currencyFormatter.format(totalFee)}</td>
+                    <td>{currencyFormatter.format(downpayment)}</td>
+                    <td>{currencyFormatter.format(prelim)}</td>
+                    <td>{currencyFormatter.format(midterm)}</td>
+                    <td>{currencyFormatter.format(preFinal)}</td>
+                    <td>{currencyFormatter.format(finals)}</td>
+                    <td>
+                      <span className={`balance-pill ${totalBalance > 0 ? "due" : "paid"}`}>
+                        {currencyFormatter.format(totalBalance)}
+                      </span>
+                    </td>
                     <td>
                       <div className="action-buttons">
-                        <button className="action-btn pay-btn" onClick={() => onPaid(student)}>
+                        <button className="action-btn pay-btn" onClick={() => onPaid(student)} type="button">
                           <img src={payIcon} alt="Pay" className="btn-icon" />
                           Pay
                         </button>
-                        <button className="action-btn remind-btn">
+                        <button className="action-btn remind-btn" type="button">
                           <img src={remindIcon} alt="Remind" className="btn-icon" />
                           Remind
                         </button>
@@ -115,7 +167,9 @@ function StudentFeeTable({ students, filteredStudents, onPaid }) {
               })
             ) : (
               <tr>
-                <td colSpan="15">No data uploaded — please upload an Excel file.</td>
+                <td colSpan="15" className="table-empty-cell">
+                  No data uploaded yet. Add an Excel file to start managing collections.
+                </td>
               </tr>
             )}
           </tbody>

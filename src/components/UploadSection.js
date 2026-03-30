@@ -8,6 +8,7 @@ function UploadSection({
   searchQuery,
   setSearchQuery,
   isManageTab,
+  sectionTitle,
   onAddStudent,
   programFilter,
   onProgramFilterChange,
@@ -54,31 +55,39 @@ function UploadSection({
   return (
     <section className="upload-section">
       <div className="upload-left">
-        {!hideActionButton && (
-          !isManageTab ? (
-            <label className="upload-btn">
-              <img src={uploadIcon} alt="Upload" className="btn-icon" />
-              Upload File
-              <input
-                type="file"
-                accept=".xlsx, .xls"
-                onChange={onFileUpload}
-                className="file-input"
-                hidden
-              />
-            </label>
-          ) : (
-            <button className="add-student-btn" onClick={onAddStudent}>
-              <img src={addIcon} alt="Add" className="btn-icon" />
-              Add Student
-            </button>
-          )
-        )}
-        {filtersOnLeft && programFilterControls}
-        {resolvedNoteText !== null && <p className="note">{resolvedNoteText}</p>}
+        <div className="upload-copy">
+          <span className="section-kicker">Workspace Tools</span>
+          <h3>{sectionTitle || "Actions"}</h3>
+          {resolvedNoteText !== null && <p className="note">{resolvedNoteText}</p>}
+        </div>
+        {filtersOnLeft && <div className="upload-inline-tools">{programFilterControls}</div>}
       </div>
       <div className="upload-right">
-        {!filtersOnLeft && programFilterControls}
+        <div className="upload-controls">
+          {!hideActionButton && (
+            <div className="upload-action-cluster">
+              {!isManageTab ? (
+                <label className="upload-btn">
+                  <img src={uploadIcon} alt="Upload" className="btn-icon" />
+                  Upload File
+                  <input
+                    type="file"
+                    accept=".xlsx, .xls"
+                    onChange={onFileUpload}
+                    className="file-input"
+                    hidden
+                  />
+                </label>
+              ) : (
+                <button className="add-student-btn" onClick={onAddStudent} type="button">
+                  <img src={addIcon} alt="Add" className="btn-icon" />
+                  Add Student
+                </button>
+              )}
+            </div>
+          )}
+          {!filtersOnLeft && programFilterControls}
+        </div>
         <div className="search-box">
           <img src={searchIcon} alt="Search" className="search-icon-img" />
           <input

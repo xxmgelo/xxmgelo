@@ -65,15 +65,25 @@ function ManageStudentTable({ students, filteredStudents, onRemoveSelected, onDe
   return (
     <main className="student-dashboard">
       <div className="section-header">
-        <h2>Manage Students</h2>
-        {selectedRows.size > 0 && (
-          <div className="section-actions">
-            <button className="action-btn delete-btn" onClick={handleRemoveSelected}>
+        <div>
+          <span className="section-kicker">Record Management</span>
+          <h2>Manage Students</h2>
+          <p className="section-subtitle">
+            Maintain {filteredStudents.length} visible student profiles and keep the roster accurate.
+          </p>
+        </div>
+        <div className="section-actions">
+          <div className="section-summary-pill">
+            <span>Selected</span>
+            <strong>{selectedRows.size}</strong>
+          </div>
+          {selectedRows.size > 0 && (
+            <button className="action-btn delete-btn" onClick={handleRemoveSelected} type="button">
               <img src={deleteIcon} alt="Remove" className="btn-icon" />
               Remove from list
             </button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
       <div className="table-container">
         <table>
@@ -137,7 +147,9 @@ function ManageStudentTable({ students, filteredStudents, onRemoveSelected, onDe
               })
             ) : (
               <tr>
-                <td colSpan="8">No student records found. Add a student to get started.</td>
+                <td colSpan="8" className="table-empty-cell">
+                  No student records found. Add a student to get started.
+                </td>
               </tr>
             )}
           </tbody>

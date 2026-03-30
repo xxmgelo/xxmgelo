@@ -1,92 +1,71 @@
-/* Action Buttons inside table */
 .action-buttons {
   display: flex;
   justify-content: center;
   gap: 8px;
-  flex-wrap: nowrap;
-  white-space: nowrap;
+  flex-wrap: wrap;
 }
 
 .action-btn {
-  border: none;
-  padding: 8px 12px;
-  cursor: pointer;
-  border-radius: 6px;
-  font-size: 12px;
-  font-weight: 600;
-  transition: filter 0.2s ease;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 4px;
+  gap: 6px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  box-shadow: var(--shadow);
 }
 
 .btn-icon {
-  width: 16px;
-  height: 16px;
+  width: 14px;
+  height: 14px;
   object-fit: contain;
+  filter: var(--icon-filter-neutral);
+  transition: filter var(--transition-fast), transform var(--transition-fast);
 }
 
-/* All action buttons use consistent primary color scheme */
-.pay-btn,
-.remind-btn,
-.edit-btn,
-.delete-btn {
-  color: white;
-}
-
-.pay-btn:hover,
-.remind-btn:hover,
-.edit-btn:hover,
-.delete-btn:hover {
-  filter: brightness(0.97);
-}
-
-.pay-btn:active,
-.remind-btn:active,
-.edit-btn:active,
-.delete-btn:active {
-  filter: brightness(0.92);
-}
-
-/* Specific button colors */
 .pay-btn {
-  background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+  background: linear-gradient(135deg, var(--accent-success), #22c55e);
+  color: var(--text-inverse);
 }
 
 .remind-btn {
-  background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+  background: linear-gradient(135deg, #f59e0b, #fbbf24);
+  color: #422006;
 }
 
 .edit-btn {
-  background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
-}
-
-.edit-btn .btn-icon {
-  filter: brightness(0) invert(1);
+  background: linear-gradient(135deg, var(--accent-primary), #3479ff);
+  color: var(--text-inverse);
 }
 
 .delete-btn {
-  background: linear-gradient(135deg, var(--accent-danger), var(--accent-danger-strong));
+  background: linear-gradient(135deg, var(--accent-danger), #ef4444);
+  color: var(--text-inverse);
 }
 
-.delete-btn .btn-icon {
-  filter: brightness(0) invert(1);
+.action-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
 }
 
-.delete-btn:hover {
-  filter: brightness(0.97);
+.action-btn:hover .btn-icon {
+  transform: scale(1.05);
 }
 
-.delete-btn:active {
-  filter: brightness(0.92);
+.delete-btn .btn-icon,
+.edit-btn .btn-icon,
+.pay-btn .btn-icon {
+  filter: var(--icon-filter-inverse);
 }
 
-.add-btn {
-  background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
-  color: white;
+.remind-btn .btn-icon {
+  filter: var(--icon-filter-warning);
 }
 
-.add-btn .btn-icon {
-  filter: brightness(0) invert(1);
+.action-btn:focus {
+  outline: 3px solid rgba(var(--accent-primary-rgb), 0.18);
+  outline-offset: 2px;
 }

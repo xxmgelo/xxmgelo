@@ -4,7 +4,17 @@ function StudentsTable({ students, filteredStudents }) {
   return (
     <main className="student-dashboard">
       <div className="section-header">
-        <h2>Students</h2>
+        <div>
+          <span className="section-kicker">Directory</span>
+          <h2>Students</h2>
+          <p className="section-subtitle">
+            Showing {filteredStudents.length} of {students.length} student records.
+          </p>
+        </div>
+        <div className="section-summary-pill">
+          <span>Active records</span>
+          <strong>{filteredStudents.length}</strong>
+        </div>
       </div>
       <div className="table-container">
         <table>
@@ -35,7 +45,9 @@ function StudentsTable({ students, filteredStudents }) {
               })
             ) : (
               <tr>
-                <td colSpan="6">No student records found. Upload or add students to get started.</td>
+                <td colSpan="6" className="table-empty-cell">
+                  No student records found. Upload or add students to get started.
+                </td>
               </tr>
             )}
           </tbody>

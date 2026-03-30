@@ -1,81 +1,169 @@
-/* Responsive Design */
-@media (max-width: 768px) {
+@media (max-width: 1200px) {
+  .dashboard-container {
+    grid-template-columns: 260px minmax(0, 1fr);
+    padding: 20px;
+  }
+
+  .home-hero {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 960px) {
   .header {
     flex-direction: column;
-    gap: 16px;
-    text-align: center;
+    align-items: stretch;
   }
 
-  .header-content {
-    flex-direction: column;
+  .header-actions {
+    justify-content: flex-start;
   }
 
-  .header-logo {
-    width: 46px;
-    height: 46px;
+  .dashboard-container {
+    grid-template-columns: 1fr;
   }
 
-  .header h1 {
-    font-size: 20px;
+  .sidebar {
+    position: static;
   }
 
-  .nav-tabs {
-    flex-direction: column;
+  .sidebar-content {
+    min-height: auto;
   }
 
-  .nav-tab {
-    width: 100%;
-    text-align: center;
+  .nav-menu {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .upload-section {
+  .upload-section,
+  .upload-left,
+  .upload-right,
+  .section-header,
+  .home-section-heading,
+  .admin-settings-row {
     flex-direction: column;
     align-items: stretch;
   }
 
   .upload-left {
-    align-items: center;
+    justify-content: flex-start;
   }
 
-  .upload-right {
-    justify-content: center;
-  }
-
-  .search-input {
+  .upload-right,
+  .upload-controls,
+  .upload-inline-tools {
     width: 100%;
+    justify-content: flex-start;
   }
 
-  .student-dashboard {
+  .program-filter {
+    flex-wrap: wrap;
+  }
+
+  .home-card-grid,
+  .home-metric-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-settings-panel {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-settings-nav {
+    border-right: none;
+    border-bottom: 1px solid var(--border-color);
+  }
+}
+
+@media (max-width: 768px) {
+  .login-page {
     padding: 16px;
   }
 
-  .section-header {
-    flex-direction: column;
-    gap: 12px;
+  .login-layout {
+    min-height: auto;
+    grid-template-columns: 1fr;
   }
 
-  th, td {
-    padding: 10px 8px;
+  .login-card,
+  .login-side,
+  .home-dashboard,
+  .student-dashboard,
+  .admin-settings-content {
+    padding: 22px;
+  }
+
+  .login-profiles,
+  .nav-menu {
+    grid-template-columns: 1fr;
+  }
+
+  .search-box,
+  .search-input {
+    min-width: 100%;
+    max-width: 100%;
+  }
+
+  .table-container {
+    border-radius: 18px;
+  }
+
+  th,
+  td {
+    padding: 12px;
     font-size: 12px;
   }
 
-  .action-buttons {
+  .action-buttons,
+  .modal-buttons {
     flex-direction: column;
-    gap: 4px;
   }
 
-  .action-btn {
-    padding: 6px 10px;
-    font-size: 10px;
+  .close-btn,
+  .save-btn,
+  .action-btn,
+  .upload-btn,
+  .add-student-btn {
+    width: 100%;
+  }
+}
+
+@media (max-width: 540px) {
+  .header,
+  .dashboard-container {
+    padding: 14px;
   }
 
-  .form-row {
-    flex-direction: column;
-    gap: 0;
+  .header-brand-mark {
+    width: 50px;
+    height: 50px;
+  }
+
+  .header h1,
+  .section-header h2,
+  .upload-copy h3,
+  .home-section-heading h3,
+  .admin-settings-header h2 {
+    font-size: 22px;
+  }
+
+  .student-dashboard,
+  .home-dashboard,
+  .upload-section {
+    border-radius: 22px;
+  }
+
+  .home-hero,
+  .admin-settings-avatar {
+    padding: 18px;
+  }
+
+  .modal {
+    padding: 12px;
   }
 
   .modal-content {
     padding: 20px;
-    margin: 0;
   }
 }

@@ -7,11 +7,66 @@ import studentsIcon from "../assets/students.png";
 import adminSettingsIcon from "../assets/adminsettings.png";
 import defaultAvatar from "../assets/admin.png";
 import logoutIcon from "../assets/logout.png";
+import aclcLogo from "../assets/aclclogo.png";
 
 function Navigation({ activeTab, setActiveTab, onLogout, userName, userAvatar }) {
+  const navItems = [
+    {
+      key: "home",
+      label: "Dashboard",
+      description: "Overview and priorities",
+      icon: dashboardIcon,
+      alt: "Dashboard",
+    },
+    {
+      key: "students",
+      label: "Students",
+      description: "Roster and directory",
+      icon: studentsIcon,
+      alt: "Students",
+    },
+    {
+      key: "studentFee",
+      label: "Student Fee",
+      description: "Collections and payments",
+      icon: studentFeeIcon,
+      alt: "BSIS Student Fee",
+    },
+    {
+      key: "manageStudent",
+      label: "Manage Student",
+      description: "Record maintenance",
+      icon: manageStudentIcon,
+      alt: "Manage Student",
+    },
+    {
+      key: "manageFee",
+      label: "Manage Fee",
+      description: "Tuition breakdowns",
+      icon: manageFeeIcon,
+      alt: "Manage Fee",
+    },
+    {
+      key: "adminSettings",
+      label: "Admin Settings",
+      description: "Profile and preferences",
+      icon: adminSettingsIcon,
+      alt: "Admin Settings",
+    },
+  ];
+
   return (
     <nav className="sidebar">
       <div className="sidebar-content">
+        <div className="sidebar-brand">
+          <div className="sidebar-brand-mark">
+            <img src={aclcLogo} alt="ACLC" className="sidebar-brand-logo" />
+          </div>
+          <div className="sidebar-brand-copy">
+            <span className="sidebar-brand-label">ACLC Manila</span>
+            <strong className="sidebar-brand-title">Fee Management</strong>
+          </div>
+        </div>
         <div className="sidebar-header">
           <div className="sidebar-user">
             <img
@@ -26,62 +81,24 @@ function Navigation({ activeTab, setActiveTab, onLogout, userName, userAvatar })
           </div>
         </div>
         <ul className="nav-menu">
-          <li>
-            <button 
-              className={`nav-item ${activeTab === 'home' ? 'active' : ''}`}
-              onClick={() => setActiveTab('home')}
-            >
-              <img src={dashboardIcon} alt="Dashboard" className="nav-icon" />
-              <span className="nav-label">Dashboard</span>
-            </button>
-          </li>
-          <li>
-            <button 
-              className={`nav-item ${activeTab === 'students' ? 'active' : ''}`}
-              onClick={() => setActiveTab('students')}
-            >
-              <img src={studentsIcon} alt="Students" className="nav-icon" />
-              <span className="nav-label">Students</span>
-            </button>
-          </li>
-          <li>
-            <button 
-              className={`nav-item ${activeTab === 'studentFee' ? 'active' : ''}`}
-              onClick={() => setActiveTab('studentFee')}
-            >
-              <img src={studentFeeIcon} alt="BSIS Student Fee" className="nav-icon" />
-              <span className="nav-label">Student Fee</span>
-            </button>
-          </li>
-          <li>
-            <button 
-              className={`nav-item ${activeTab === 'manageStudent' ? 'active' : ''}`}
-              onClick={() => setActiveTab('manageStudent')}
-            >
-              <img src={manageStudentIcon} alt="Manage Student" className="nav-icon" />
-              <span className="nav-label">Manage Student</span>
-            </button>
-          </li>
-          <li>
-            <button 
-              className={`nav-item ${activeTab === 'manageFee' ? 'active' : ''}`}
-              onClick={() => setActiveTab('manageFee')}
-            >
-              <img src={manageFeeIcon} alt="Manage Fee" className="nav-icon" />
-              <span className="nav-label">Manage Fee</span>
-            </button>
-          </li>
-          <li>
-            <button 
-              className={`nav-item ${activeTab === 'adminSettings' ? 'active' : ''}`}
-              onClick={() => setActiveTab('adminSettings')}
-            >
-              <img src={adminSettingsIcon} alt="Admin Settings" className="nav-icon" />
-              <span className="nav-label">Admin Settings</span>
-            </button>
-          </li>
+          {navItems.map((item) => (
+            <li key={item.key}>
+              <button
+                className={`nav-item ${activeTab === item.key ? "active" : ""}`}
+                onClick={() => setActiveTab(item.key)}
+                type="button"
+              >
+                <img src={item.icon} alt={item.alt} className="nav-icon" />
+                <span className="nav-copy">
+                  <span className="nav-label">{item.label}</span>
+                  <span className="nav-description">{item.description}</span>
+                </span>
+              </button>
+            </li>
+          ))}
         </ul>
         <div className="nav-footer">
+          <p className="nav-footer-text">Securely sign out when you're done managing records.</p>
           <button
             type="button"
             className="nav-item nav-logout"

@@ -1,4 +1,4 @@
-﻿import * as XLSX from "xlsx";
+import * as XLSX from "xlsx";
 import { createStudent, upsertStudents } from "./api";
 
 const INITIAL_STUDENT = {
@@ -6,7 +6,7 @@ const INITIAL_STUDENT = {
   Name: "",
   Program: "",
   YearLevel: "",
-  Gmail: ""
+  Gmail: "",
 };
 
 export const handleFileUpload = (event, setStudents) => {
@@ -23,11 +23,11 @@ export const handleFileUpload = (event, setStudents) => {
     const jsonData = XLSX.utils.sheet_to_json(worksheet);
 
     const normalizedData = jsonData.map((row) => ({
-      StudentID: row["Student ID"] || row["ID"] || "",
-      Name: row["Name"] || "",
-      Program: row["Program/Course"] || row["Program"] || row["Course"] || "",
-      YearLevel: row["Year Level"] || row["Year"] || "",
-      Gmail: row["Gmail"] || row["Email"] || ""
+      StudentID: row["Student ID"] || row.ID || "",
+      Name: row.Name || "",
+      Program: row["Program/Course"] || row.Program || row.Course || "",
+      YearLevel: row["Year Level"] || row.Year || "",
+      Gmail: row.Gmail || row.Email || "",
     }));
 
     try {
@@ -46,7 +46,14 @@ export const handleFileUpload = (event, setStudents) => {
   reader.readAsArrayBuffer(file);
 };
 
-export const handleAddStudent = async (e, newStudent, students, setStudents, setShowAddStudentModal, setNewStudent) => {
+export const handleAddStudent = async (
+  e,
+  newStudent,
+  students,
+  setStudents,
+  setShowAddStudentModal,
+  setNewStudent
+) => {
   e.preventDefault();
   if (!newStudent.StudentID || !newStudent.Name) {
     alert("Please fill in required fields");

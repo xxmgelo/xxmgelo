@@ -1,143 +1,149 @@
-/* Upload Section */
 .upload-section {
-  background: var(--bg-secondary);
-  padding: 24px;
-  border-radius: 12px;
-  margin-bottom: 24px;
-  box-shadow: var(--shadow);
-  border: 1px solid var(--border-color);
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  gap: 20px;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 22px 24px;
+  border-radius: var(--radius-xl);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow);
+}
+
+.upload-left,
+.upload-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
 }
 
 .upload-left {
-  display: flex;
+  flex: 1;
   flex-direction: column;
   align-items: flex-start;
-  gap: 8px;
+  justify-content: center;
+  min-width: 0;
 }
 
-.upload-right {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 12px;
+.upload-copy {
+  min-width: 0;
+  width: 100%;
 }
 
-/* Upload Button - Primary Blue */
-.upload-btn {
-  background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
-  color: white;
-  padding: 12px 24px;
-  border: none;
-  cursor: pointer;
-  font-weight: 600;
-  font-size: 15px;
-  border-radius: 10px;
-  transition: filter 0.2s ease;
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.upload-btn:hover {
-  filter: brightness(0.97);
-}
-
-.upload-btn:active {
-  filter: brightness(0.92);
-}
-
-.upload-btn .btn-icon {
-  width: 20px;
-  height: 20px;
-}
-
-/* Add Student Button - Primary Blue */
-.add-student-btn {
-  background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
-  color: white;
-  padding: 12px 24px;
-  border: none;
-  cursor: pointer;
-  font-weight: 600;
-  font-size: 15px;
-  border-radius: 10px;
-  transition: filter 0.2s ease;
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.add-student-btn:hover {
-  filter: brightness(0.97);
-}
-
-.add-student-btn:active {
-  filter: brightness(0.92);
-}
-
-.add-student-btn .btn-icon {
-  width: 20px;
-  height: 20px;
-  object-fit: contain;
-  filter: brightness(0) invert(1);
+.upload-copy h3 {
+  font-size: 24px;
+  color: var(--text-primary);
+  line-height: 1.15;
 }
 
 .note {
-  margin: 0;
-  font-size: 13px;
+  margin-top: 8px;
+  max-width: 620px;
   color: var(--text-secondary);
-  font-weight: 500;
+  font-size: 14px;
+}
+
+.upload-action-cluster {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.upload-inline-tools {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.upload-right {
+  flex-shrink: 0;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
+.upload-controls {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.upload-btn,
+.add-student-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 46px;
+  padding: 12px 18px;
+  border-radius: 16px;
+  font-size: 14px;
+  font-weight: 700;
+  white-space: nowrap;
+  box-shadow: var(--shadow);
+}
+
+.upload-btn {
+  background: linear-gradient(135deg, var(--accent-primary), #3479ff);
+  color: var(--text-inverse);
+}
+
+.add-student-btn {
+  background: linear-gradient(135deg, var(--accent-secondary), #11998e);
+  color: var(--text-inverse);
+}
+
+.upload-btn:hover,
+.add-student-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.upload-btn .btn-icon,
+.add-student-btn .btn-icon {
+  width: 18px;
+  height: 18px;
+  filter: var(--icon-filter-inverse);
+  transition: transform var(--transition-fast);
+}
+
+.upload-btn:hover .btn-icon,
+.add-student-btn:hover .btn-icon {
+  transform: scale(1.05);
 }
 
 .program-filter {
   display: flex;
   align-items: center;
   gap: 10px;
+  flex-wrap: nowrap;
 }
 
 .filter-btn {
-  background: transparent;
-  color: var(--text-primary);
-  padding: 8px 16px;
-  border: 1px solid var(--border-color);
+  min-height: 40px;
+  min-width: 54px;
+  padding: 9px 14px;
   border-radius: 999px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+  border: 1px solid var(--border-color);
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1;
+  text-align: center;
+  white-space: nowrap;
 }
 
 .filter-btn:hover {
-  border-color: var(--accent-primary);
+  border-color: rgba(var(--accent-primary-rgb), 0.3);
+  color: var(--text-primary);
+  background: rgba(var(--accent-primary-rgb), 0.05);
 }
 
 .filter-btn.active {
-  background: var(--accent-primary);
-  color: white;
-  border-color: var(--accent-primary);
-}
-
-/* Responsive Design */
-@media (max-width: 768px) {
-  .upload-section {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .upload-left {
-    align-items: center;
-  }
-
-  .upload-right {
-    align-items: stretch;
-  }
-
-  .upload-btn,
-  .add-student-btn {
-    width: 100%;
-    justify-content: center;
-  }
+  background: linear-gradient(135deg, rgba(var(--accent-primary-rgb), 0.16), rgba(var(--accent-secondary-rgb), 0.14));
+  border-color: rgba(var(--accent-primary-rgb), 0.16);
+  color: var(--text-primary);
 }

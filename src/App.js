@@ -29,11 +29,38 @@ import {
 const AUTH_STORAGE_KEY = "aclc_admin_session";
 const ASSISTANT_ADMIN_USERNAME = "assistantadmin";
 const THEME_STORAGE_KEY = "aclc_theme_preferences";
-const PALETTE_COLORS = new Set(["#2B2D42", "#8D99AE", "#EDF2F4", "#EF233C", "#D90429"]);
+const HEX_COLOR_PATTERN = /^#[0-9A-F]{6}$/;
 
 const DEFAULT_THEME = {
-  start: "#8D99AE",
-  end: "#2B2D42",
+  start: "#155EEF",
+  end: "#0F766E",
+};
+
+const VIEW_META = {
+  home: {
+    title: "Operations Dashboard",
+    description: "Monitor collections, student records, and the next high-impact action from one workspace.",
+  },
+  studentFee: {
+    title: "Collection Desk",
+    description: "Review balances, search students quickly, and move payment processing forward with less friction.",
+  },
+  manageStudent: {
+    title: "Student Records",
+    description: "Add, update, and clean student information in a structured, low-error workflow.",
+  },
+  manageFee: {
+    title: "Fee Configuration",
+    description: "Adjust tuition breakdowns and keep every fee record accurate before collection time.",
+  },
+  students: {
+    title: "Student Directory",
+    description: "Scan the full roster, filter by program, and verify student details in seconds.",
+  },
+  adminSettings: {
+    title: "Admin Settings",
+    description: "Manage your profile, security, and interface preferences in one place.",
+  },
 };
 
 function App() {
@@ -55,7 +82,7 @@ function App() {
   const [themePrefs, setThemePrefs] = useState(DEFAULT_THEME);
 
   const toggleTheme = () => {
-    setDarkMode(!darkMode);
+    setDarkMode((prev) => !prev);
   };
 
   const hexToRgb = useCallback((hex) => {
@@ -98,7 +125,7 @@ function App() {
     const start = String(prefs.start).toUpperCase();
     const end = String(prefs.end).toUpperCase();
 
-    if (!PALETTE_COLORS.has(start) || !PALETTE_COLORS.has(end)) {
+    if (!HEX_COLOR_PATTERN.test(start) || !HEX_COLOR_PATTERN.test(end)) {
       return DEFAULT_THEME;
     }
 
@@ -214,6 +241,7 @@ function App() {
 
   const normalizedQuery = searchQuery.toLowerCase();
   const normalizedProgramFilter = programFilter.toLowerCase();
+  const activeView = VIEW_META[activeTab] || VIEW_META.home;
 
   const filteredStudents = students.filter((student) => {
     const matchesSearch =
@@ -421,7 +449,14 @@ function App() {
 
   return (
     <div className={`dashboard ${darkMode ? 'dark-mode' : 'light-mode'}`}>
-      <Header darkMode={darkMode} toggleTheme={toggleTheme} />
+      <Header
+        darkMode={darkMode}
+        toggleTheme={toggleTheme}
+        viewTitle={activeView.title}
+        viewDescription={activeView.description}
+        userName={authUser?.name}
+        studentCount={students.length}
+      />
       <div className="dashboard-container">
         <Navigation
           activeTab={activeTab}
@@ -448,8 +483,10 @@ function App() {
             searchQuery={searchQuery}
             setSearchQuery={setSearchQuery}
             isManageTab={false}
+            sectionTitle="Payment Queue"
             programFilter={programFilter}
             onProgramFilterChange={setProgramFilter}
+            noteText="Upload records, search by student, and process collections with fewer clicks."
           />
           <StudentFeeTable 
             students={students}
@@ -466,9 +503,11 @@ function App() {
             searchQuery={searchQuery}
             setSearchQuery={setSearchQuery}
             isManageTab={true}
+            sectionTitle="Student Record Actions"
             onAddStudent={() => setShowAddStudentModal(true)}
             programFilter={programFilter}
             onProgramFilterChange={setProgramFilter}
+            noteText="Keep the roster current by adding, editing, or removing records from one workspace."
           />
           <ManageStudentTable 
             students={students}
@@ -487,10 +526,11 @@ function App() {
             searchQuery={searchQuery}
             setSearchQuery={setSearchQuery}
             isManageTab={true}
+            sectionTitle="Fee Structure Controls"
             programFilter={programFilter}
             onProgramFilterChange={setProgramFilter}
             hideActionButton={true}
-            noteText="Manage Total Fee and payment fields for each student"
+            noteText="Review payment fields and tune the fee structure before posting or collecting balances."
           />
           <StudentFeeAdminTable 
             students={students}
@@ -507,10 +547,11 @@ function App() {
             searchQuery={searchQuery}
             setSearchQuery={setSearchQuery}
             isManageTab={true}
+            sectionTitle="Student Directory"
             programFilter={programFilter}
             onProgramFilterChange={setProgramFilter}
             hideActionButton={true}
-            noteText={null}
+            noteText="Browse the full student list, confirm enrollment data, and narrow results by program."
             showAllFilter={true}
             filtersOnLeft={true}
           />

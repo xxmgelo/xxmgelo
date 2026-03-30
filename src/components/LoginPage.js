@@ -32,6 +32,18 @@ function LoginPage({ onLogin, loading, error }) {
     <div className={`login-page${showModal ? " login-open" : ""}`}>
       <div className="login-layout">
         <div className="login-card">
+          <div className="login-card-intro">
+            <span className="login-eyebrow">Secure access</span>
+            <h1>ACLC Fee Management System</h1>
+            <p className="login-subtitle">
+              Choose an administrator account to continue managing student records, balances, and payment activity.
+            </p>
+            <div className="login-highlights">
+              <span>Fast balance lookup</span>
+              <span>Cleaner payment workflow</span>
+              <span>Centralized student data</span>
+            </div>
+          </div>
           <div className="login-profiles">
             <button
               type="button"
@@ -59,15 +71,27 @@ function LoginPage({ onLogin, loading, error }) {
         <div className="login-side">
           <div className="login-visual">
             <div className="login-visual-inner">
-              <img src={loginGif} alt="ACLC Animation" />
-              <p className="login-visual-text">ACLC COLLEGE OF MANILA</p>
-              <p className="login-visual-address">
-                2355 Legarda corner Manrique St., Sampaloc Manila.
-              </p>
+              <div className="login-visual-brand">
+                <img src={loginGif} alt="ACLC Animation" />
+                <p className="login-visual-text">ACLC COLLEGE OF MANILA</p>
+                <p className="login-visual-address">
+                  2355 Legarda corner Manrique St., Sampaloc Manila.
+                </p>
+              </div>
+              <div className="login-visual-stats">
+                <div className="login-visual-stat">
+                  <strong>1</strong>
+                  <span>System for records and collections</span>
+                </div>
+                <div className="login-visual-stat">
+                  <strong>2</strong>
+                  <span>Admin roles with guided access</span>
+                </div>
+              </div>
             </div>
           </div>
 
-          {showModal && (
+          <div className={`login-inline-shell${showModal ? " is-open" : ""}`}>
             <div className="login-inline">
               <div className="login-inline-header">
                 <div>
@@ -109,7 +133,7 @@ function LoginPage({ onLogin, loading, error }) {
                 </button>
               </form>
             </div>
-          )}
+          </div>
         </div>
       </div>
     </div>

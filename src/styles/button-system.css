@@ -1,5 +1,5 @@
 /* ========================================
-   BUTTON DESIGN SYSTEM
+   BUTTON DESIGN SYSTEM - Modern
    ======================================== */
 
 /* Base Button Styles */
@@ -7,26 +7,26 @@ button {
   font-family: inherit;
   cursor: pointer;
   border: none;
-  transition: background-color 0.2s ease, color 0.2s ease, filter 0.2s ease;
+  transition: all 0.2s ease;
 }
 
 /* Button Size Variants */
 .btn-sm {
-  padding: 8px 16px;
+  padding: 8px 12px;
   font-size: 12px;
-  border-radius: 6px;
+  border-radius: 4px;
 }
 
 .btn-md {
-  padding: 12px 24px;
+  padding: 10px 16px;
   font-size: 14px;
-  border-radius: 8px;
+  border-radius: 6px;
 }
 
 .btn-lg {
-  padding: 14px 28px;
+  padding: 12px 20px;
   font-size: 15px;
-  border-radius: 10px;
+  border-radius: 8px;
 }
 
 /* ========================================
@@ -36,51 +36,94 @@ button {
 .btn-primary,
 .upload-btn,
 .add-student-btn,
-.close-btn,
+.save-btn,
 .edit-btn {
-  background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
-  color: white;
-  font-weight: 600;
+  background: linear-gradient(135deg, var(--accent-primary), #3479ff);
+  color: var(--text-inverse);
+  font-weight: 700;
 }
 
 .btn-primary:hover,
 .upload-btn:hover,
 .add-student-btn:hover,
-.close-btn:hover,
+.save-btn:hover,
 .edit-btn:hover {
-  filter: brightness(0.97);
+  background: linear-gradient(135deg, var(--color-primary-hover), #2764dd);
+  box-shadow: var(--shadow-md);
 }
 
 .btn-primary:active,
 .upload-btn:active,
 .add-student-btn:active,
-.close-btn:active,
+.save-btn:active,
 .edit-btn:active {
-  filter: brightness(0.92);
+  background: linear-gradient(135deg, var(--color-primary-active), #1d52bb);
+  box-shadow: 0 0 0 3px rgba(var(--accent-primary-rgb), 0.2);
+}
+
+.btn-primary:focus,
+.upload-btn:focus,
+.add-student-btn:focus,
+.save-btn:focus,
+.edit-btn:focus {
+  outline: 2px solid var(--accent-primary);
+  outline-offset: 2px;
 }
 
 /* ========================================
    DANGER BUTTON (Red)
-   Used for: Delete, Close, Cancel
+   Used for: Delete and destructive actions
    ======================================== */
 .btn-danger,
-.delete-btn,
-.save-btn {
-  background: linear-gradient(135deg, var(--accent-danger), var(--accent-danger-strong));
-  color: white;
-  font-weight: 600;
+.delete-btn {
+  background: linear-gradient(135deg, var(--accent-danger), #ef4444);
+  color: var(--text-inverse);
+  font-weight: 700;
 }
 
 .btn-danger:hover,
-.delete-btn:hover,
-.save-btn:hover {
-  filter: brightness(0.97);
+.delete-btn:hover {
+  background: linear-gradient(135deg, var(--accent-danger-strong), #dc2626);
+  box-shadow: var(--shadow-md);
 }
 
 .btn-danger:active,
-.delete-btn:active,
-.save-btn:active {
-  filter: brightness(0.92);
+.delete-btn:active {
+  background: linear-gradient(135deg, #991b1b, #b91c1c);
+  box-shadow: 0 0 0 3px rgba(var(--accent-danger-rgb), 0.2);
+}
+
+.btn-danger:focus,
+.delete-btn:focus {
+  outline: 2px solid var(--accent-danger);
+  outline-offset: 2px;
+}
+
+/* ========================================
+   SOFT DANGER BUTTON
+   Used for: Close, Cancel, Exit
+   ======================================== */
+.close-btn {
+  background: rgba(var(--accent-danger-rgb), 0.08);
+  color: var(--accent-danger);
+  border: 1px solid rgba(var(--accent-danger-rgb), 0.18);
+  font-weight: 700;
+}
+
+.close-btn:hover {
+  background: rgba(var(--accent-danger-rgb), 0.12);
+  border-color: rgba(var(--accent-danger-rgb), 0.28);
+  box-shadow: var(--shadow-md);
+}
+
+.close-btn:active {
+  background: rgba(var(--accent-danger-rgb), 0.16);
+  box-shadow: 0 0 0 3px rgba(var(--accent-danger-rgb), 0.12);
+}
+
+.close-btn:focus {
+  outline: 2px solid var(--accent-danger);
+  outline-offset: 2px;
 }
 
 /* ========================================
@@ -89,40 +132,81 @@ button {
    ======================================== */
 .btn-success,
 .pay-btn {
-  background: linear-gradient(135deg, var(--accent-success), var(--accent-primary));
-  color: white;
-  font-weight: 600;
+  background: linear-gradient(135deg, var(--accent-success), #22c55e);
+  color: var(--text-inverse);
+  font-weight: 700;
 }
 
 .btn-success:hover,
 .pay-btn:hover {
-  filter: brightness(0.97);
+  background: linear-gradient(135deg, #15803d, #16a34a);
+  box-shadow: var(--shadow-md);
 }
 
 .btn-success:active,
 .pay-btn:active {
-  filter: brightness(0.92);
+  background: linear-gradient(135deg, #166534, #15803d);
+  box-shadow: 0 0 0 3px rgba(var(--accent-success-rgb), 0.2);
+}
+
+.btn-success:focus,
+.pay-btn:focus {
+  outline: 2px solid var(--accent-success);
+  outline-offset: 2px;
 }
 
 /* ========================================
-   WARNING BUTTON (Orange)
+   WARNING BUTTON (Amber)
    Used for: Remind, Alert, Caution
    ======================================== */
 .btn-warning,
 .remind-btn {
-  background: linear-gradient(135deg, var(--accent-warning), var(--accent-secondary));
-  color: white;
-  font-weight: 600;
+  background: linear-gradient(135deg, #f59e0b, #fbbf24);
+  color: #161616;
+  font-weight: 700;
 }
 
 .btn-warning:hover,
 .remind-btn:hover {
-  filter: brightness(0.97);
+  background: linear-gradient(135deg, #d97706, #f59e0b);
+  box-shadow: var(--shadow-md);
 }
 
 .btn-warning:active,
 .remind-btn:active {
-  filter: brightness(0.92);
+  background: linear-gradient(135deg, #b45309, #d97706);
+  box-shadow: 0 0 0 3px rgba(var(--accent-warning-rgb), 0.2);
+}
+
+.btn-warning:focus,
+.remind-btn:focus {
+  outline: 2px solid var(--accent-warning);
+  outline-offset: 2px;
+}
+
+/* ========================================
+   SECONDARY BUTTON (Outline)
+   Used for: Alternative actions
+   ======================================== */
+.btn-secondary {
+  background: transparent;
+  border: 1px solid var(--accent-primary);
+  color: var(--accent-primary);
+  font-weight: 700;
+}
+
+.btn-secondary:hover {
+  background: var(--hover-surface-primary);
+  border-color: var(--color-primary-hover);
+}
+
+.btn-secondary:active {
+  background: rgba(var(--accent-primary-rgb), 0.12);
+}
+
+.btn-secondary:focus {
+  outline: 2px solid var(--accent-primary);
+  outline-offset: 2px;
 }
 
 /* ========================================
@@ -136,19 +220,20 @@ button {
 
 .action-btn {
   padding: 8px 12px;
-  border-radius: 6px;
+  border-radius: 4px;
   font-size: 12px;
   font-weight: 600;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 4px;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
+  border: none;
 }
 
 .action-btn .btn-icon {
-  width: 16px;
-  height: 16px;
+  width: 14px;
+  height: 14px;
   object-fit: contain;
 }
 
@@ -156,15 +241,15 @@ button {
    BUTTON ICON STYLING
    ======================================== */
 .btn-icon {
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
   object-fit: contain;
 }
 
 .upload-btn .btn-icon,
 .add-student-btn .btn-icon {
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
 }
 
 .add-student-btn .btn-icon {
@@ -178,20 +263,24 @@ button:disabled,
 .btn-primary:disabled,
 .btn-danger:disabled,
 .btn-success:disabled,
-.btn-warning:disabled {
-  opacity: 0.6;
+.btn-warning:disabled,
+.btn-secondary:disabled {
+  background: var(--color-gray-300);
+  color: var(--color-gray-500);
   cursor: not-allowed;
   transform: none !important;
+  box-shadow: none;
 }
 
 button:disabled:hover,
 .btn-primary:disabled:hover,
 .btn-danger:disabled:hover,
 .btn-success:disabled:hover,
-.btn-warning:disabled:hover {
+.btn-warning:disabled:hover,
+.btn-secondary:disabled:hover {
   transform: none;
   box-shadow: none;
-  filter: none;
+  background: var(--color-gray-300);
 }
 
 /* ========================================
@@ -202,7 +291,7 @@ button:disabled:hover,
   .add-student-btn,
   .save-btn,
   .close-btn {
-    padding: 10px 16px;
+    padding: 10px 14px;
     font-size: 13px;
   }
 
@@ -212,8 +301,8 @@ button:disabled:hover,
   }
 
   .action-btn .btn-icon {
-    width: 14px;
-    height: 14px;
+    width: 12px;
+    height: 12px;
   }
 }
 
@@ -232,7 +321,7 @@ button:disabled:hover,
   }
 
   .action-btn .btn-icon {
-    width: 12px;
-    height: 12px;
+    width: 10px;
+    height: 10px;
   }
 }

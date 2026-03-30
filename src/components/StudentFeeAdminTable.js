@@ -1,24 +1,52 @@
-import React from "react";
+import React, { useMemo } from "react";
+
+const currencyFormatter = new Intl.NumberFormat("en-PH", {
+  style: "currency",
+  currency: "PHP",
+  maximumFractionDigits: 0,
+});
+
+const parseAmount = (value) => {
+  if (value === null || value === undefined || value === "") return 0;
+  const cleaned = String(value).replace(/[^0-9.-]/g, "");
+  const parsed = Number(cleaned);
+  return Number.isFinite(parsed) ? parsed : 0;
+};
 
 function StudentFeeAdminTable({ students, filteredStudents, onFieldChange }) {
-  const parseAmount = (value) => {
-    if (value === null || value === undefined || value === "") return 0;
-    const cleaned = String(value).replace(/[^0-9.-]/g, "");
-    const parsed = Number(cleaned);
-    return Number.isFinite(parsed) ? parsed : 0;
-  };
-
   const formatAmount = (value) => {
     if (value === null || value === undefined || value === "") return "";
     return String(value);
   };
+
+  const summary = useMemo(() => {
+    return filteredStudents.reduce(
+      (totals, student) => {
+        const downpayment = parseAmount(student.Downpayment);
+        const prelim = parseAmount(student.Prelim);
+        const midterm = parseAmount(student.Midterm);
+        const preFinal = parseAmount(student.PreFinal);
+        const finals = parseAmount(student.Finals);
+        const assigned = downpayment + prelim + midterm + preFinal + finals;
+        const totalFee =
+          student.TotalFee !== undefined && student.TotalFee !== null && student.TotalFee !== ""
+            ? parseAmount(student.TotalFee)
+            : assigned;
+
+        totals.totalFee += totalFee;
+        totals.assigned += assigned;
+        return totals;
+      },
+      { totalFee: 0, assigned: 0 }
+    );
+  }, [filteredStudents]);
 
   const renderFeeInput = (student, rowKey, field, placeholder) => (
     <input
       type="text"
       className="fee-input"
       value={formatAmount(student[field])}
-      onChange={(e) => onFieldChange(rowKey, field, e.target.value)}
+      onChange={(event) => onFieldChange(rowKey, field, event.target.value)}
       placeholder={placeholder || "0"}
       inputMode="decimal"
     />
@@ -27,7 +55,23 @@ function StudentFeeAdminTable({ students, filteredStudents, onFieldChange }) {
   return (
     <main className="student-dashboard">
       <div className="section-header">
-        <h2>Manage Fee</h2>
+        <div>
+          <span className="section-kicker">Fee Controls</span>
+          <h2>Manage Fee</h2>
+          <p className="section-subtitle">
+            Update payment fields and verify totals for {filteredStudents.length} visible student accounts.
+          </p>
+        </div>
+        <div className="section-stat-group">
+          <div className="section-summary-pill">
+            <span>Total tuition</span>
+            <strong>{currencyFormatter.format(summary.totalFee)}</strong>
+          </div>
+          <div className="section-summary-pill">
+            <span>Assigned payments</span>
+            <strong>{currencyFormatter.format(summary.assigned)}</strong>
+          </div>
+        </div>
       </div>
       <div className="table-container">
         <table>
@@ -66,7 +110,7 @@ function StudentFeeAdminTable({ students, filteredStudents, onFieldChange }) {
                 const totalBalance =
                   student.TotalBalance !== undefined && student.TotalBalance !== null && student.TotalBalance !== ""
                     ? parseAmount(student.TotalBalance)
-                    : totalFee - computedTotalFee;
+                    : Math.max(totalFee - computedTotalFee, 0);
 
                 return (
                   <tr key={rowKey}>
@@ -88,7 +132,9 @@ function StudentFeeAdminTable({ students, filteredStudents, onFieldChange }) {
               })
             ) : (
               <tr>
-                <td colSpan="13">No data uploaded — please upload an Excel file.</td>
+                <td colSpan="13" className="table-empty-cell">
+                  No data uploaded yet. Add a spreadsheet to configure student fee records.
+                </td>
               </tr>
             )}
           </tbody>
