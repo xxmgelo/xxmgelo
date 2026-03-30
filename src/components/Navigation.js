@@ -4,69 +4,87 @@ import studentFeeIcon from "../assets/studentfee.png";
 import manageFeeIcon from "../assets/managefee.png";
 import manageStudentIcon from "../assets/managestudent.png";
 import studentsIcon from "../assets/students.png";
+import analyticsIcon from "../assets/analytics.png";
 import adminSettingsIcon from "../assets/adminsettings.png";
 import defaultAvatar from "../assets/admin.png";
 import logoutIcon from "../assets/logout.png";
-import aclcLogo from "../assets/aclclogo.png";
 
 function Navigation({ activeTab, setActiveTab, onLogout, userName, userAvatar }) {
-  const navItems = [
+  const navGroups = [
     {
-      key: "home",
-      label: "Dashboard",
-      description: "Overview and priorities",
-      icon: dashboardIcon,
-      alt: "Dashboard",
+      label: "Workspace",
+      items: [
+        {
+          key: "home",
+          label: "Dashboard",
+          description: "Overview and priorities",
+          icon: dashboardIcon,
+          alt: "Dashboard",
+        },
+        {
+          key: "students",
+          label: "Students",
+          description: "Roster and directory",
+          icon: studentsIcon,
+          alt: "Students",
+        },
+        {
+          key: "studentFee",
+          label: "Student Fee",
+          description: "Collections and payments",
+          icon: studentFeeIcon,
+          alt: "BSIS Student Fee",
+        },
+      ],
     },
     {
-      key: "students",
-      label: "Students",
-      description: "Roster and directory",
-      icon: studentsIcon,
-      alt: "Students",
+      label: "Management",
+      items: [
+        {
+          key: "manageStudent",
+          label: "Manage Student",
+          description: "Record maintenance",
+          icon: manageStudentIcon,
+          alt: "Manage Student",
+        },
+        {
+          key: "manageFee",
+          label: "Manage Fee",
+          description: "Tuition breakdowns",
+          icon: manageFeeIcon,
+          alt: "Manage Fee",
+        },
+      ],
     },
     {
-      key: "studentFee",
-      label: "Student Fee",
-      description: "Collections and payments",
-      icon: studentFeeIcon,
-      alt: "BSIS Student Fee",
+      label: "Insights",
+      items: [
+        {
+          key: "analytics",
+          label: "Analytics & Reports",
+          description: "Insights and reporting",
+          icon: analyticsIcon,
+          alt: "Analytics & Reports",
+        },
+      ],
     },
     {
-      key: "manageStudent",
-      label: "Manage Student",
-      description: "Record maintenance",
-      icon: manageStudentIcon,
-      alt: "Manage Student",
-    },
-    {
-      key: "manageFee",
-      label: "Manage Fee",
-      description: "Tuition breakdowns",
-      icon: manageFeeIcon,
-      alt: "Manage Fee",
-    },
-    {
-      key: "adminSettings",
-      label: "Admin Settings",
-      description: "Profile and preferences",
-      icon: adminSettingsIcon,
-      alt: "Admin Settings",
+      label: "Preferences",
+      items: [
+        {
+          key: "adminSettings",
+          label: "Admin Settings",
+          description: "Profile and preferences",
+          icon: adminSettingsIcon,
+          alt: "Admin Settings",
+        },
+      ],
     },
   ];
 
   return (
     <nav className="sidebar">
       <div className="sidebar-content">
-        <div className="sidebar-brand">
-          <div className="sidebar-brand-mark">
-            <img src={aclcLogo} alt="ACLC" className="sidebar-brand-logo" />
-          </div>
-          <div className="sidebar-brand-copy">
-            <span className="sidebar-brand-label">ACLC Manila</span>
-            <strong className="sidebar-brand-title">Fee Management</strong>
-          </div>
-        </div>
         <div className="sidebar-header">
           <div className="sidebar-user">
             <img
@@ -80,25 +98,31 @@ function Navigation({ activeTab, setActiveTab, onLogout, userName, userAvatar })
             </div>
           </div>
         </div>
-        <ul className="nav-menu">
-          {navItems.map((item) => (
-            <li key={item.key}>
-              <button
-                className={`nav-item ${activeTab === item.key ? "active" : ""}`}
-                onClick={() => setActiveTab(item.key)}
-                type="button"
-              >
-                <img src={item.icon} alt={item.alt} className="nav-icon" />
-                <span className="nav-copy">
-                  <span className="nav-label">{item.label}</span>
-                  <span className="nav-description">{item.description}</span>
-                </span>
-              </button>
-            </li>
+        <div className="nav-groups">
+          {navGroups.map((group) => (
+            <div key={group.label} className="nav-group">
+              <span className="nav-group-label">{group.label}</span>
+              <ul className="nav-menu">
+                {group.items.map((item) => (
+                  <li key={item.key}>
+                    <button
+                      className={`nav-item ${activeTab === item.key ? "active" : ""}`}
+                      onClick={() => setActiveTab(item.key)}
+                      type="button"
+                    >
+                      <img src={item.icon} alt={item.alt} className="nav-icon" />
+                      <span className="nav-copy">
+                        <span className="nav-label">{item.label}</span>
+                        <span className="nav-description">{item.description}</span>
+                      </span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
           ))}
-        </ul>
+        </div>
         <div className="nav-footer">
-          <p className="nav-footer-text">Securely sign out when you're done managing records.</p>
           <button
             type="button"
             className="nav-item nav-logout"

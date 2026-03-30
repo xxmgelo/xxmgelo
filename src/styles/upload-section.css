@@ -2,19 +2,20 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 24px;
-  padding: 22px 24px;
-  border-radius: var(--radius-xl);
+  gap: 14px;
+  padding: 14px 16px;
+  border-radius: 22px;
   background: var(--bg-elevated);
   border: 1px solid var(--border-color);
   box-shadow: var(--shadow);
+  flex-shrink: 0;
 }
 
 .upload-left,
 .upload-right {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 12px;
 }
 
 .upload-left {
@@ -31,29 +32,29 @@
 }
 
 .upload-copy h3 {
-  font-size: 24px;
+  font-size: 18px;
   color: var(--text-primary);
   line-height: 1.15;
 }
 
 .note {
-  margin-top: 8px;
-  max-width: 620px;
+  margin-top: 4px;
+  max-width: 560px;
   color: var(--text-secondary);
-  font-size: 14px;
+  font-size: 12px;
 }
 
 .upload-action-cluster {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   flex-shrink: 0;
 }
 
 .upload-inline-tools {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
 }
 
 .upload-right {
@@ -66,7 +67,7 @@
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 12px;
+  gap: 10px;
   flex-wrap: wrap;
 }
 
@@ -75,24 +76,25 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
-  min-height: 46px;
-  padding: 12px 18px;
-  border-radius: 16px;
-  font-size: 14px;
+  gap: 8px;
+  min-height: 38px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  font-size: 12px;
   font-weight: 700;
   white-space: nowrap;
   box-shadow: var(--shadow);
 }
 
 .upload-btn {
-  background: linear-gradient(135deg, var(--accent-primary), #3479ff);
+  background: var(--accent-primary);
   color: var(--text-inverse);
 }
 
 .add-student-btn {
-  background: linear-gradient(135deg, var(--accent-secondary), #11998e);
-  color: var(--text-inverse);
+  background: rgba(var(--accent-primary-rgb), 0.12);
+  color: var(--accent-primary);
+  border: 1px solid rgba(var(--accent-primary-rgb), 0.18);
 }
 
 .upload-btn:hover,
@@ -105,8 +107,15 @@
 .add-student-btn .btn-icon {
   width: 18px;
   height: 18px;
-  filter: var(--icon-filter-inverse);
   transition: transform var(--transition-fast);
+}
+
+.upload-btn .btn-icon {
+  filter: var(--icon-filter-inverse);
+}
+
+.add-student-btn .btn-icon {
+  filter: var(--icon-filter-accent);
 }
 
 .upload-btn:hover .btn-icon,
@@ -122,14 +131,14 @@
 }
 
 .filter-btn {
-  min-height: 40px;
+  min-height: 34px;
   min-width: 54px;
-  padding: 9px 14px;
+  padding: 7px 12px;
   border-radius: 999px;
   border: 1px solid var(--border-color);
   background: var(--bg-secondary);
   color: var(--text-secondary);
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
   line-height: 1;
   text-align: center;
@@ -143,7 +152,7 @@
 }
 
 .filter-btn.active {
-  background: linear-gradient(135deg, rgba(var(--accent-primary-rgb), 0.16), rgba(var(--accent-secondary-rgb), 0.14));
+  background: rgba(var(--accent-primary-rgb), 0.14);
   border-color: rgba(var(--accent-primary-rgb), 0.16);
   color: var(--text-primary);
 }

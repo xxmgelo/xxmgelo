@@ -6,7 +6,6 @@
   justify-content: center;
   padding: 24px;
   background: var(--modal-overlay);
-  backdrop-filter: blur(8px);
   z-index: 2000;
 }
 
@@ -19,6 +18,14 @@
   background: var(--bg-elevated);
   border: 1px solid var(--border-color);
   box-shadow: var(--shadow-lg);
+}
+
+.payment-modal {
+  width: min(94vw, 760px);
+}
+
+.reminder-modal {
+  width: min(94vw, 720px);
 }
 
 .add-student-modal {
@@ -119,7 +126,7 @@
   gap: 8px;
   padding: 10px 14px;
   border-radius: 14px;
-  background: linear-gradient(135deg, var(--accent-primary), #3479ff);
+  background: var(--accent-primary);
   color: var(--text-inverse);
   font-size: 13px;
   font-weight: 700;
@@ -137,4 +144,176 @@
   height: 14px;
   object-fit: contain;
   filter: brightness(0) invert(1);
+}
+
+.modal-title-row,
+.payment-student-summary,
+.payment-metric-grid,
+.payment-form-grid,
+.payment-preview-header,
+.payment-result-strip,
+.payment-breakdown-row {
+  display: grid;
+  gap: 12px;
+}
+
+.modal-title-row {
+  grid-template-columns: 1fr auto;
+  align-items: start;
+}
+
+.payment-student-summary {
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  margin-top: 20px;
+  padding: 16px;
+  border-radius: 18px;
+  background: rgba(var(--accent-primary-rgb), 0.08);
+  border: 1px solid rgba(var(--accent-primary-rgb), 0.08);
+}
+
+.payment-student-summary span,
+.payment-metric-card span {
+  display: block;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.payment-student-summary strong,
+.payment-metric-card strong {
+  display: block;
+  margin-top: 8px;
+  color: var(--text-primary);
+  font-size: 16px;
+}
+
+.payment-metric-grid {
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  margin-top: 16px;
+}
+
+.payment-metric-card {
+  padding: 16px;
+  border-radius: 18px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-secondary);
+}
+
+.dark-mode .payment-metric-card {
+  background: var(--bg-tertiary);
+}
+
+.payment-form-grid {
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  margin-top: 20px;
+}
+
+.payment-preview-card {
+  margin-top: 22px;
+  padding: 20px;
+  border-radius: 22px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-secondary);
+}
+
+.dark-mode .payment-preview-card {
+  background: var(--bg-tertiary);
+}
+
+.reminder-form-group {
+  grid-column: 1 / -1;
+}
+
+.reminder-textarea {
+  min-height: 240px;
+  resize: vertical;
+}
+
+.payment-preview-header {
+  grid-template-columns: 1fr auto;
+  align-items: end;
+}
+
+.payment-preview-header h3 {
+  margin-top: 6px;
+  color: var(--text-primary);
+  font-size: 20px;
+}
+
+.payment-preview-totals {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 12px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.payment-warning {
+  margin-top: 14px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: rgba(var(--accent-warning-rgb), 0.12);
+  color: var(--autumn-ember);
+  border: 1px solid rgba(var(--accent-warning-rgb), 0.18);
+}
+
+.payment-breakdown-list {
+  margin-top: 16px;
+  border-radius: 18px;
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+}
+
+.payment-breakdown-row {
+  grid-template-columns: 1.3fr 1fr 1fr 1fr;
+  align-items: center;
+  padding: 14px 16px;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  font-size: 14px;
+}
+
+.dark-mode .payment-breakdown-row {
+  background: var(--bg-secondary);
+}
+
+.payment-breakdown-row:nth-child(even) {
+  background: var(--table-row-even);
+}
+
+.payment-breakdown-row span:nth-child(n + 2) {
+  text-align: right;
+}
+
+.payment-result-strip {
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+@media (max-width: 640px) {
+  .modal-title-row,
+  .payment-preview-header {
+    grid-template-columns: 1fr;
+  }
+
+  .payment-preview-totals {
+    justify-content: flex-start;
+  }
+
+  .payment-breakdown-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .payment-breakdown-row span:nth-child(n + 2) {
+    text-align: left;
+  }
 }

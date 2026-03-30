@@ -2,15 +2,15 @@
   position: relative;
   display: flex;
   align-items: center;
-  min-width: 320px;
-  max-width: 380px;
+  min-width: 240px;
+  max-width: 280px;
 }
 
 .search-icon-img {
   position: absolute;
-  left: 14px;
-  width: 18px;
-  height: 18px;
+  left: 12px;
+  width: 14px;
+  height: 14px;
   object-fit: contain;
   pointer-events: none;
   filter: var(--icon-filter-muted);
@@ -19,14 +19,14 @@
 
 .search-input {
   width: 100%;
-  min-width: 320px;
-  min-height: 46px;
-  padding: 13px 16px 13px 42px;
+  min-width: 240px;
+  min-height: 38px;
+  padding: 10px 14px 10px 34px;
   border: 1px solid var(--input-border);
-  border-radius: 16px;
+  border-radius: 12px;
   background: var(--input-bg);
   color: var(--text-primary);
-  font-size: 14px;
+  font-size: 12px;
   box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.02);
   transition: border-color var(--transition-fast), box-shadow var(--transition-fast), transform var(--transition-fast);
 }

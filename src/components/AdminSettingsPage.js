@@ -6,6 +6,7 @@ function AdminSettingsPage({
   darkMode,
   onToggleTheme,
   themeColors,
+  defaultTheme,
   onSavePreferences,
   onUpdateProfile,
   onUpdatePassword,
@@ -18,8 +19,7 @@ function AdminSettingsPage({
   const [profileStatus, setProfileStatus] = useState({ loading: false, error: "", success: "" });
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
-  const [accentStart, setAccentStart] = useState("#8D99AE");
-  const [accentEnd, setAccentEnd] = useState("#2B2D42");
+  const [accentColor, setAccentColor] = useState("#007877");
   const [preferenceStatus, setPreferenceStatus] = useState({ loading: false, error: "", success: "" });
 
   const [currentPassword, setCurrentPassword] = useState("");
@@ -39,10 +39,7 @@ function AdminSettingsPage({
 
   useEffect(() => {
     if (themeColors?.start) {
-      setAccentStart(themeColors.start);
-    }
-    if (themeColors?.end) {
-      setAccentEnd(themeColors.end);
+      setAccentColor(themeColors.start);
     }
   }, [themeColors]);
 
@@ -117,10 +114,29 @@ function AdminSettingsPage({
   const handlePreferencesSave = async () => {
     setPreferenceStatus({ loading: true, error: "", success: "" });
     try {
-      await onSavePreferences({ start: accentStart, end: accentEnd, notificationsEnabled });
+      await onSavePreferences({ start: accentColor, end: accentColor, notificationsEnabled });
       setPreferenceStatus({ loading: false, error: "", success: "Preferences updated." });
     } catch (error) {
       const message = error && error.message ? error.message : "Unable to save preferences.";
+      setPreferenceStatus({ loading: false, error: message, success: "" });
+    }
+  };
+
+  const handleResetDefaults = async () => {
+    const fallbackColor = defaultTheme?.start || "#007877";
+
+    setAccentColor(fallbackColor);
+    setPreferenceStatus({ loading: true, error: "", success: "" });
+
+    try {
+      await onSavePreferences({
+        start: fallbackColor,
+        end: fallbackColor,
+        notificationsEnabled,
+      });
+      setPreferenceStatus({ loading: false, error: "", success: "Default accent restored." });
+    } catch (error) {
+      const message = error && error.message ? error.message : "Unable to restore defaults.";
       setPreferenceStatus({ loading: false, error: message, success: "" });
     }
   };
@@ -337,31 +353,23 @@ function AdminSettingsPage({
 
               <div className="admin-settings-row">
                 <div>
-                  <p className="admin-settings-row-title">Gradient Colors</p>
+                  <p className="admin-settings-row-title">Accent Color</p>
                   <p className="admin-settings-row-subtitle">
-                    Customize the dashboard accent gradient.
+                    Apply one clean brand color to buttons, highlights, and panels.
                   </p>
                 </div>
                 <div className="admin-settings-gradient-picker">
                   <label className="admin-settings-color">
-                    <span>Start</span>
+                    <span>Accent</span>
                     <input
                       type="color"
-                      value={accentStart}
-                      onChange={(event) => setAccentStart(event.target.value)}
-                    />
-                  </label>
-                  <label className="admin-settings-color">
-                    <span>End</span>
-                    <input
-                      type="color"
-                      value={accentEnd}
-                      onChange={(event) => setAccentEnd(event.target.value)}
+                      value={accentColor}
+                      onChange={(event) => setAccentColor(event.target.value)}
                     />
                   </label>
                   <div
                     className="admin-settings-gradient-preview"
-                    style={{ background: `linear-gradient(135deg, ${accentStart}, ${accentEnd})` }}
+                    style={{ background: accentColor }}
                   />
                 </div>
               </div>
@@ -395,6 +403,14 @@ function AdminSettingsPage({
               )}
 
               <div className="admin-settings-preferences-actions">
+                <button
+                  type="button"
+                  className="admin-settings-default-btn"
+                  onClick={handleResetDefaults}
+                  disabled={preferenceStatus.loading}
+                >
+                  Set as Default
+                </button>
                 <button
                   type="button"
                   className="save-btn"

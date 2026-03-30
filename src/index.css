@@ -13,3 +13,76 @@
 @import './styles/login.css';
 @import './styles/admin-settings.css';
 @import './styles/responsive.css';
+
+/* ========================================
+   DISABLE ZOOM - Full Screen Mode
+   ======================================== */
+* {
+  touch-action: manipulation;
+}
+
+html {
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  user-select: none;
+  overflow: hidden;
+}
+
+body {
+  overflow: hidden;
+  width: 100vw;
+  height: 100vh;
+  margin: 0;
+  padding: 0;
+}
+
+#root {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Prevent pinch zoom on touch devices */
+body * {
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  user-select: none;
+}
+
+/* Allow text selection for important content only */
+button, input, textarea, select {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+/* Disable keyboard zoom shortcuts */
+@supports (touch-action: manipulation) {
+  html {
+    touch-action: manipulation;
+  }
+}
+
+/* Prevent browser default zoom behavior */
+body {
+  overscroll-behavior: none;
+}
+
+/* Global scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(152, 162, 179, 0.3);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(152, 162, 179, 0.5);
+}

@@ -3,12 +3,14 @@ import "./index.css";
 import Header from "./components/Header";
 import Navigation from "./components/Navigation";
 import HomeDashboard from "./components/HomeDashboard";
+import AnalyticsReports from "./components/AnalyticsReports";
 import UploadSection from "./components/UploadSection";
 import StudentFeeTable from "./components/StudentFeeTable";
 import StudentFeeAdminTable from "./components/StudentFeeAdminTable";
 import ManageStudentTable from "./components/ManageStudentTable";
 import StudentsTable from "./components/StudentsTable";
 import PaymentModal from "./components/PaymentModal";
+import ReminderModal from "./components/ReminderModal";
 import AddStudentModal from "./components/AddStudentModal";
 import EditStudentModal from "./components/EditStudentModal";
 import ConfirmModal from "./components/ConfirmModal";
@@ -17,6 +19,7 @@ import AdminSettingsPage from "./components/AdminSettingsPage";
 import mainAdminAvatar from "./assets/admin.png";
 import assistantAdminAvatar from "./assets/administrator.png";
 import { handleFileUpload, handleAddStudent, handleInputChange, INITIAL_STUDENT } from "./utils/handlers";
+import { applyFeeFieldChange, normalizeStudentFinancials } from "./utils/fees";
 import {
   getStudents,
   deleteStudent,
@@ -24,16 +27,18 @@ import {
   adminLogin,
   updateAdminProfile,
   updateAdminPassword,
+  sendPaymentReminder,
 } from "./utils/api";
 
 const AUTH_STORAGE_KEY = "aclc_admin_session";
 const ASSISTANT_ADMIN_USERNAME = "assistantadmin";
 const THEME_STORAGE_KEY = "aclc_theme_preferences";
+const DARK_MODE_STORAGE_KEY = "aclc_dark_mode";
 const HEX_COLOR_PATTERN = /^#[0-9A-F]{6}$/;
 
 const DEFAULT_THEME = {
-  start: "#155EEF",
-  end: "#0F766E",
+  start: "#007877",
+  end: "#007877",
 };
 
 const VIEW_META = {
@@ -57,6 +62,10 @@ const VIEW_META = {
     title: "Student Directory",
     description: "Scan the full roster, filter by program, and verify student details in seconds.",
   },
+  analytics: {
+    title: "Analytics & Reports",
+    description: "Track collections, payment status, enrollment mix, and balance trends with professional summaries.",
+  },
   adminSettings: {
     title: "Admin Settings",
     description: "Manage your profile, security, and interface preferences in one place.",
@@ -66,9 +75,12 @@ const VIEW_META = {
 function App() {
   const [students, setStudents] = useState([]);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [showReminderModal, setShowReminderModal] = useState(false);
   const [showAddStudentModal, setShowAddStudentModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState(null);
+  const [selectedReminderStudent, setSelectedReminderStudent] = useState(null);
+  const [sendingReminder, setSendingReminder] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState("home");
@@ -82,7 +94,11 @@ function App() {
   const [themePrefs, setThemePrefs] = useState(DEFAULT_THEME);
 
   const toggleTheme = () => {
-    setDarkMode((prev) => !prev);
+    setDarkMode((prev) => {
+      const newMode = !prev;
+      localStorage.setItem(DARK_MODE_STORAGE_KEY, JSON.stringify(newMode));
+      return newMode;
+    });
   };
 
   const hexToRgb = useCallback((hex) => {
@@ -103,33 +119,31 @@ function App() {
 
     const root = document.documentElement;
     root.style.setProperty("--accent-primary", prefs.start);
-    root.style.setProperty("--accent-secondary", prefs.end);
+    root.style.setProperty("--accent-secondary", prefs.start);
+    root.style.setProperty("--accent-tertiary", prefs.start);
 
     const primaryRgb = hexToRgb(prefs.start);
-    const secondaryRgb = hexToRgb(prefs.end);
     if (primaryRgb) {
       root.style.setProperty("--accent-primary-rgb", primaryRgb);
+      root.style.setProperty("--accent-secondary-rgb", primaryRgb);
       root.style.setProperty("--accent-success", prefs.start);
       root.style.setProperty("--accent-success-rgb", primaryRgb);
-    }
-    if (secondaryRgb) {
-      root.style.setProperty("--accent-secondary-rgb", secondaryRgb);
     }
   }, [hexToRgb]);
 
   const normalizeThemePrefs = useCallback((prefs) => {
-    if (!prefs || !prefs.start || !prefs.end) {
+    if (!prefs || !prefs.start) {
       return DEFAULT_THEME;
     }
 
     const start = String(prefs.start).toUpperCase();
-    const end = String(prefs.end).toUpperCase();
+    const end = prefs.end ? String(prefs.end).toUpperCase() : start;
 
     if (!HEX_COLOR_PATTERN.test(start) || !HEX_COLOR_PATTERN.test(end)) {
       return DEFAULT_THEME;
     }
 
-    return { start, end };
+    return { start, end: start };
   }, []);
 
   useEffect(() => {
@@ -147,6 +161,60 @@ function App() {
       console.warn("Failed to parse stored session.", error);
       localStorage.removeItem(AUTH_STORAGE_KEY);
     }
+  }, []);
+
+  useEffect(() => {
+    const storedDarkMode = localStorage.getItem(DARK_MODE_STORAGE_KEY);
+    if (storedDarkMode !== null) {
+      try {
+        const isDarkMode = JSON.parse(storedDarkMode);
+        setDarkMode(isDarkMode);
+      } catch (error) {
+        console.warn("Failed to parse stored dark mode preference.", error);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    const root = document.documentElement;
+    if (darkMode) {
+      root.classList.add("dark-mode");
+    } else {
+      root.classList.remove("dark-mode");
+    }
+  }, [darkMode]);
+
+  useEffect(() => {
+    const preventZoom = (e) => {
+      // Prevent Ctrl/Cmd + Plus (=)
+      if ((e.ctrlKey || e.metaKey) && (e.key === '+' || e.key === '=')) {
+        e.preventDefault();
+      }
+      // Prevent Ctrl/Cmd + Minus (-)
+      if ((e.ctrlKey || e.metaKey) && e.key === '-') {
+        e.preventDefault();
+      }
+      // Prevent Ctrl/Cmd + 0
+      if ((e.ctrlKey || e.metaKey) && e.key === '0') {
+        e.preventDefault();
+      }
+    };
+
+    window.addEventListener('keydown', preventZoom);
+    
+    // Prevent mouse wheel zoom (Ctrl + Scroll)
+    const preventMouseWheelZoom = (e) => {
+      if (e.ctrlKey || e.metaKey) {
+        e.preventDefault();
+      }
+    };
+
+    window.addEventListener('wheel', preventMouseWheelZoom, { passive: false });
+
+    return () => {
+      window.removeEventListener('keydown', preventZoom);
+      window.removeEventListener('wheel', preventMouseWheelZoom);
+    };
   }, []);
 
   useEffect(() => {
@@ -181,7 +249,7 @@ function App() {
       try {
         const data = await getStudents();
         if (Array.isArray(data)) {
-          setStudents(data);
+          setStudents(data.map((student) => normalizeStudentFinancials(student)));
         }
       } catch (error) {
         console.error(error);
@@ -257,7 +325,7 @@ function App() {
   });
 
   const handlePaid = (student) => {
-    setSelectedStudent({ ...student, period: "" });
+    setSelectedStudent(normalizeStudentFinancials(student));
     setShowPaymentModal(true);
   };
 
@@ -267,14 +335,42 @@ function App() {
     setShowEditModal(true);
   };
 
+  const handleRemind = (student) => {
+    setSelectedReminderStudent(normalizeStudentFinancials(student));
+    setShowReminderModal(true);
+  };
+
   const handleFeeFieldChange = (rowKey, field, value) => {
     setStudents((prev) =>
       prev.map((student, index) => {
         const key = student.StudentID || `row-${index}`;
         if (key !== rowKey) return student;
-        return { ...student, [field]: value };
+        return applyFeeFieldChange(student, field, value);
       })
     );
+  };
+
+  const handleFeeFieldCommit = async (rowKey) => {
+    const studentToSave = students.find((student, index) => {
+      const key = student.StudentID || `row-${index}`;
+      return key === rowKey;
+    });
+
+    if (!studentToSave || !studentToSave.StudentID) {
+      return;
+    }
+
+    try {
+      const updated = normalizeStudentFinancials(await updateStudent(studentToSave));
+      setStudents((prev) =>
+        prev.map((item) =>
+          item.StudentID === updated.StudentID ? updated : item
+        )
+      );
+    } catch (error) {
+      console.error(error);
+      alert(error?.message || "Fee update failed. Please try again.");
+    }
   };
 
   const handleEditInputChange = (e) => {
@@ -289,7 +385,7 @@ function App() {
     }
 
     try {
-      const updated = await updateStudent(editStudent);
+      const updated = normalizeStudentFinancials(await updateStudent(editStudent));
       setStudents((prev) =>
         prev.map((item) =>
           item.StudentID === updated.StudentID ? updated : item
@@ -368,6 +464,50 @@ function App() {
     setSelectedStudent(null);
   };
 
+  const closeReminderModal = () => {
+    if (sendingReminder) {
+      return;
+    }
+
+    setShowReminderModal(false);
+    setSelectedReminderStudent(null);
+  };
+
+  const handleSavePayment = async (updatedStudent) => {
+    if (!updatedStudent || !updatedStudent.StudentID) {
+      return;
+    }
+
+    try {
+      const savedStudent = normalizeStudentFinancials(await updateStudent(updatedStudent));
+      setStudents((prev) =>
+        prev.map((student) =>
+          student.StudentID === savedStudent.StudentID ? savedStudent : student
+        )
+      );
+      closePaymentModal();
+    } catch (error) {
+      console.error(error);
+      alert("Payment could not be saved. Please try again.");
+    }
+  };
+
+  const handleSendReminder = async (payload) => {
+    setSendingReminder(true);
+
+    try {
+      await sendPaymentReminder(payload);
+      alert(`Reminder email sent to ${payload.Gmail}.`);
+      setShowReminderModal(false);
+      setSelectedReminderStudent(null);
+    } catch (error) {
+      console.error(error);
+      alert(error.message || "Reminder email could not be sent.");
+    } finally {
+      setSendingReminder(false);
+    }
+  };
+
   const closeAddStudentModal = () => {
     setShowAddStudentModal(false);
     setNewStudent(INITIAL_STUDENT);
@@ -424,7 +564,7 @@ function App() {
   const handleSavePreferences = async (prefs) => {
     const nextPrefs = normalizeThemePrefs({
       start: prefs.start,
-      end: prefs.end,
+      end: prefs.start,
     });
     setThemePrefs(nextPrefs);
     localStorage.setItem(THEME_STORAGE_KEY, JSON.stringify(nextPrefs));
@@ -492,6 +632,7 @@ function App() {
             students={students}
             filteredStudents={filteredStudents}
             onPaid={handlePaid}
+            onRemind={handleRemind}
           />
         </>
       )}
@@ -536,6 +677,7 @@ function App() {
             students={students}
             filteredStudents={filteredStudents}
             onFieldChange={handleFeeFieldChange}
+            onFieldCommit={handleFeeFieldCommit}
           />
         </>
       )}
@@ -562,12 +704,17 @@ function App() {
         </>
       )}
 
+      {activeTab === 'analytics' && (
+        <AnalyticsReports students={students} />
+      )}
+
       {activeTab === 'adminSettings' && (
         <AdminSettingsPage
           admin={authUser}
           darkMode={darkMode}
           onToggleTheme={toggleTheme}
           themeColors={themePrefs}
+          defaultTheme={DEFAULT_THEME}
           onSavePreferences={handleSavePreferences}
           onUpdateProfile={handleUpdateAdminProfile}
           onUpdatePassword={handleUpdateAdminPassword}
@@ -579,7 +726,15 @@ function App() {
         showPaymentModal={showPaymentModal}
         selectedStudent={selectedStudent}
         onClose={closePaymentModal}
-        setSelectedStudent={setSelectedStudent}
+        onSavePayment={handleSavePayment}
+      />
+
+      <ReminderModal
+        show={showReminderModal}
+        student={selectedReminderStudent}
+        onClose={closeReminderModal}
+        onConfirm={handleSendReminder}
+        sending={sendingReminder}
       />
 
       <AddStudentModal 

@@ -1,6 +1,9 @@
 import React, { useMemo, useState } from "react";
 import payIcon from "../assets/pay.png";
 import remindIcon from "../assets/reminder.png";
+import { getCollectedAmount, normalizeStudentFinancials, PAYMENT_MODES } from "../utils/fees";
+import TablePagination from "./TablePagination";
+import useTablePagination from "../hooks/useTablePagination";
 
 const currencyFormatter = new Intl.NumberFormat("en-PH", {
   style: "currency",
@@ -8,37 +11,25 @@ const currencyFormatter = new Intl.NumberFormat("en-PH", {
   maximumFractionDigits: 0,
 });
 
-const parseAmount = (value) => {
-  if (value === null || value === undefined || value === "") return 0;
-  const cleaned = String(value).replace(/[^0-9.-]/g, "");
-  const parsed = Number(cleaned);
-  return Number.isFinite(parsed) ? parsed : 0;
-};
-
-function StudentFeeTable({ students, filteredStudents, onPaid }) {
+function StudentFeeTable({ students, filteredStudents, onPaid, onRemind }) {
   const [selectedRows, setSelectedRows] = useState(new Set());
+  const {
+    currentPage,
+    setCurrentPage,
+    totalPages,
+    paginatedItems,
+    totalItems,
+    rangeStart,
+    rangeEnd,
+  } = useTablePagination(filteredStudents);
 
   const summary = useMemo(() => {
     return filteredStudents.reduce(
       (totals, student) => {
-        const downpayment = parseAmount(student.Downpayment);
-        const prelim = parseAmount(student.Prelim);
-        const midterm = parseAmount(student.Midterm);
-        const preFinal = parseAmount(student.PreFinal);
-        const finals = parseAmount(student.Finals);
-        const collected = downpayment + prelim + midterm + preFinal + finals;
-        const totalFee =
-          student.TotalFee !== undefined && student.TotalFee !== null && student.TotalFee !== ""
-            ? parseAmount(student.TotalFee)
-            : collected;
-        const totalBalance =
-          student.TotalBalance !== undefined && student.TotalBalance !== null && student.TotalBalance !== ""
-            ? parseAmount(student.TotalBalance)
-            : Math.max(totalFee - collected, 0);
-
-        totals.collected += collected;
-        totals.outstanding += totalBalance;
-        if (totalBalance > 0) {
+        const normalized = normalizeStudentFinancials(student);
+        totals.collected += getCollectedAmount(normalized);
+        totals.outstanding += normalized.TotalBalance;
+        if (normalized.TotalBalance > 0) {
           totals.pending += 1;
         }
 
@@ -92,40 +83,30 @@ function StudentFeeTable({ students, filteredStudents, onPaid }) {
               <th>Program/Course</th>
               <th>Year Level</th>
               <th>Gmail</th>
+              <th>Payment Mode</th>
               <th>Total Fee</th>
               <th>Downpayment</th>
               <th>Prelim</th>
               <th>Midterm</th>
               <th>Pre-Final</th>
               <th>Finals</th>
+              <th>Full Payment</th>
               <th>Total Balance</th>
               <th>Action</th>
             </tr>
           </thead>
           <tbody>
             {filteredStudents.length > 0 ? (
-              filteredStudents.map((student, index) => {
+              paginatedItems.map((student, index) => {
                 const originalIndex = students.indexOf(student);
                 const rowKey = student.StudentID || `row-${originalIndex}`;
                 const isSelected = selectedRows.has(rowKey);
-                const downpayment = parseAmount(student.Downpayment);
-                const prelim = parseAmount(student.Prelim);
-                const midterm = parseAmount(student.Midterm);
-                const preFinal = parseAmount(student.PreFinal);
-                const finals = parseAmount(student.Finals);
-                const computedTotalFee = downpayment + prelim + midterm + preFinal + finals;
-                const totalFee =
-                  student.TotalFee !== undefined && student.TotalFee !== null && student.TotalFee !== ""
-                    ? parseAmount(student.TotalFee)
-                    : computedTotalFee;
-                const totalBalance =
-                  student.TotalBalance !== undefined && student.TotalBalance !== null && student.TotalBalance !== ""
-                    ? parseAmount(student.TotalBalance)
-                    : Math.max(totalFee - computedTotalFee, 0);
+                const normalized = normalizeStudentFinancials(student);
+                const isPaid = normalized.TotalBalance <= 0;
 
                 return (
                   <tr key={rowKey} className={isSelected ? "row-selected" : ""}>
-                    <td>{originalIndex + 1}</td>
+                    <td>{rangeStart + index}</td>
                     <td>
                       <input
                         type="checkbox"
@@ -134,29 +115,45 @@ function StudentFeeTable({ students, filteredStudents, onPaid }) {
                         onChange={() => toggleRow(rowKey)}
                       />
                     </td>
-                    <td>{student.StudentID || "N/A"}</td>
-                    <td>{student.Name || "N/A"}</td>
-                    <td>{student.Program || "N/A"}</td>
-                    <td>{student.YearLevel || "N/A"}</td>
-                    <td>{student.Gmail || "N/A"}</td>
-                    <td>{currencyFormatter.format(totalFee)}</td>
-                    <td>{currencyFormatter.format(downpayment)}</td>
-                    <td>{currencyFormatter.format(prelim)}</td>
-                    <td>{currencyFormatter.format(midterm)}</td>
-                    <td>{currencyFormatter.format(preFinal)}</td>
-                    <td>{currencyFormatter.format(finals)}</td>
+                    <td>{normalized.StudentID || "N/A"}</td>
+                    <td>{normalized.Name || "N/A"}</td>
+                    <td>{normalized.Program || "N/A"}</td>
+                    <td>{normalized.YearLevel || "N/A"}</td>
+                    <td>{normalized.Gmail || "N/A"}</td>
                     <td>
-                      <span className={`balance-pill ${totalBalance > 0 ? "due" : "paid"}`}>
-                        {currencyFormatter.format(totalBalance)}
+                      <span className="payment-mode-pill">
+                        {normalized.PaymentMode === PAYMENT_MODES.FULL ? "Full" : "Installment"}
+                      </span>
+                    </td>
+                    <td>{currencyFormatter.format(normalized.TotalFee)}</td>
+                    <td>{currencyFormatter.format(normalized.Downpayment)}</td>
+                    <td>{currencyFormatter.format(normalized.Prelim)}</td>
+                    <td>{currencyFormatter.format(normalized.Midterm)}</td>
+                    <td>{currencyFormatter.format(normalized.PreFinal)}</td>
+                    <td>{currencyFormatter.format(normalized.Finals)}</td>
+                    <td>{currencyFormatter.format(normalized.FullPaymentAmount)}</td>
+                    <td>
+                      <span className={`balance-pill ${normalized.TotalBalance > 0 ? "due" : "paid"}`}>
+                        {currencyFormatter.format(normalized.TotalBalance)}
                       </span>
                     </td>
                     <td>
                       <div className="action-buttons">
-                        <button className="action-btn pay-btn" onClick={() => onPaid(student)} type="button">
+                        <button
+                          className="action-btn pay-btn"
+                          onClick={() => onPaid(normalized)}
+                          type="button"
+                          disabled={isPaid}
+                        >
                           <img src={payIcon} alt="Pay" className="btn-icon" />
-                          Pay
+                          {isPaid ? "Paid" : "Pay"}
                         </button>
-                        <button className="action-btn remind-btn" type="button">
+                        <button
+                          className="action-btn remind-btn"
+                          type="button"
+                          disabled={isPaid || !normalized.Gmail}
+                          onClick={() => onRemind(normalized)}
+                        >
                           <img src={remindIcon} alt="Remind" className="btn-icon" />
                           Remind
                         </button>
@@ -167,7 +164,7 @@ function StudentFeeTable({ students, filteredStudents, onPaid }) {
               })
             ) : (
               <tr>
-                <td colSpan="15" className="table-empty-cell">
+                <td colSpan="17" className="table-empty-cell">
                   No data uploaded yet. Add an Excel file to start managing collections.
                 </td>
               </tr>
@@ -175,6 +172,16 @@ function StudentFeeTable({ students, filteredStudents, onPaid }) {
           </tbody>
         </table>
       </div>
+      {filteredStudents.length > 0 ? (
+        <TablePagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={totalItems}
+          rangeStart={rangeStart}
+          rangeEnd={rangeEnd}
+          onPageChange={setCurrentPage}
+        />
+      ) : null}
     </main>
   );
 }

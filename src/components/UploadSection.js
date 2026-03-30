@@ -17,13 +17,6 @@ function UploadSection({
   showAllFilter,
   filtersOnLeft,
 }) {
-  const resolvedNoteText =
-    noteText !== undefined
-      ? noteText
-      : isManageTab
-        ? "Manage student records manually"
-        : "Upload student fee records for 2nd Semester AY 2025-2026";
-
   const programFilterControls = (
     <div className="program-filter">
       {showAllFilter && (
@@ -58,7 +51,6 @@ function UploadSection({
         <div className="upload-copy">
           <span className="section-kicker">Workspace Tools</span>
           <h3>{sectionTitle || "Actions"}</h3>
-          {resolvedNoteText !== null && <p className="note">{resolvedNoteText}</p>}
         </div>
         {filtersOnLeft && <div className="upload-inline-tools">{programFilterControls}</div>}
       </div>

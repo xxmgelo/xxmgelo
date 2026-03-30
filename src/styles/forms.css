@@ -33,13 +33,14 @@
 }
 
 .save-btn {
-  background: linear-gradient(135deg, var(--accent-primary), #3479ff);
+  background: var(--accent-primary);
   color: var(--text-inverse);
+  border: 1px solid var(--accent-primary);
 }
 
 .close-btn {
-  background: rgba(var(--accent-danger-rgb), 0.08);
-  color: var(--accent-danger);
+  background: rgba(var(--accent-danger-rgb), 0.12);
+  color: var(--accent-danger-strong);
   border: 1px solid rgba(var(--accent-danger-rgb), 0.18);
 }
 
@@ -47,4 +48,12 @@
 .close-btn:hover {
   transform: translateY(-1px);
   box-shadow: var(--shadow-md);
+}
+
+.save-btn:disabled,
+.close-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+  transform: none;
+  box-shadow: none;
 }

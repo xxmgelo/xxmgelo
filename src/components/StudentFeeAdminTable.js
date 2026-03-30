@@ -1,4 +1,7 @@
 import React, { useMemo } from "react";
+import { normalizeStudentFinancials, PAYMENT_MODES, getCollectedAmount } from "../utils/fees";
+import TablePagination from "./TablePagination";
+import useTablePagination from "../hooks/useTablePagination";
 
 const currencyFormatter = new Intl.NumberFormat("en-PH", {
   style: "currency",
@@ -6,14 +9,17 @@ const currencyFormatter = new Intl.NumberFormat("en-PH", {
   maximumFractionDigits: 0,
 });
 
-const parseAmount = (value) => {
-  if (value === null || value === undefined || value === "") return 0;
-  const cleaned = String(value).replace(/[^0-9.-]/g, "");
-  const parsed = Number(cleaned);
-  return Number.isFinite(parsed) ? parsed : 0;
-};
+function StudentFeeAdminTable({ students, filteredStudents, onFieldChange, onFieldCommit }) {
+  const {
+    currentPage,
+    setCurrentPage,
+    totalPages,
+    paginatedItems,
+    totalItems,
+    rangeStart,
+    rangeEnd,
+  } = useTablePagination(filteredStudents);
 
-function StudentFeeAdminTable({ students, filteredStudents, onFieldChange }) {
   const formatAmount = (value) => {
     if (value === null || value === undefined || value === "") return "";
     return String(value);
@@ -22,34 +28,40 @@ function StudentFeeAdminTable({ students, filteredStudents, onFieldChange }) {
   const summary = useMemo(() => {
     return filteredStudents.reduce(
       (totals, student) => {
-        const downpayment = parseAmount(student.Downpayment);
-        const prelim = parseAmount(student.Prelim);
-        const midterm = parseAmount(student.Midterm);
-        const preFinal = parseAmount(student.PreFinal);
-        const finals = parseAmount(student.Finals);
-        const assigned = downpayment + prelim + midterm + preFinal + finals;
-        const totalFee =
-          student.TotalFee !== undefined && student.TotalFee !== null && student.TotalFee !== ""
-            ? parseAmount(student.TotalFee)
-            : assigned;
-
-        totals.totalFee += totalFee;
-        totals.assigned += assigned;
+        const normalized = normalizeStudentFinancials(student);
+        totals.totalFee += normalized.TotalFee;
+        totals.outstanding += normalized.TotalBalance;
+        totals.collected += getCollectedAmount(normalized);
         return totals;
       },
-      { totalFee: 0, assigned: 0 }
+      { totalFee: 0, outstanding: 0, collected: 0 }
     );
   }, [filteredStudents]);
 
-  const renderFeeInput = (student, rowKey, field, placeholder) => (
+  const renderFeeInput = (student, rowKey, field, options = {}) => (
     <input
       type="text"
-      className="fee-input"
-      value={formatAmount(student[field])}
+      className={`fee-input ${options.readOnly ? "fee-output" : ""}`}
+      value={formatAmount(options.value !== undefined ? options.value : student[field])}
       onChange={(event) => onFieldChange(rowKey, field, event.target.value)}
-      placeholder={placeholder || "0"}
+      onBlur={() => onFieldCommit(rowKey)}
+      placeholder={options.placeholder || "0"}
       inputMode="decimal"
+      readOnly={Boolean(options.readOnly)}
+      disabled={Boolean(options.disabled)}
     />
+  );
+
+  const renderModeSelect = (student, rowKey) => (
+    <select
+      className="fee-input fee-select"
+      value={student.PaymentMode}
+      onChange={(event) => onFieldChange(rowKey, "PaymentMode", event.target.value)}
+      onBlur={() => onFieldCommit(rowKey)}
+    >
+      <option value={PAYMENT_MODES.INSTALLMENT}>Installment</option>
+      <option value={PAYMENT_MODES.FULL}>Full</option>
+    </select>
   );
 
   return (
@@ -59,7 +71,7 @@ function StudentFeeAdminTable({ students, filteredStudents, onFieldChange }) {
           <span className="section-kicker">Fee Controls</span>
           <h2>Manage Fee</h2>
           <p className="section-subtitle">
-            Update payment fields and verify totals for {filteredStudents.length} visible student accounts.
+            Configure tuition schedules, switch payment modes, and review live balances for {filteredStudents.length} visible student accounts.
           </p>
         </div>
         <div className="section-stat-group">
@@ -68,8 +80,12 @@ function StudentFeeAdminTable({ students, filteredStudents, onFieldChange }) {
             <strong>{currencyFormatter.format(summary.totalFee)}</strong>
           </div>
           <div className="section-summary-pill">
-            <span>Assigned payments</span>
-            <strong>{currencyFormatter.format(summary.assigned)}</strong>
+            <span>Collected</span>
+            <strong>{currencyFormatter.format(summary.collected)}</strong>
+          </div>
+          <div className="section-summary-pill">
+            <span>Outstanding</span>
+            <strong>{currencyFormatter.format(summary.outstanding)}</strong>
           </div>
         </div>
       </div>
@@ -83,56 +99,49 @@ function StudentFeeAdminTable({ students, filteredStudents, onFieldChange }) {
               <th>Program/Course</th>
               <th>Year Level</th>
               <th>Gmail</th>
+              <th>Payment Mode</th>
               <th>Total Fee</th>
               <th>Downpayment</th>
               <th>Prelim</th>
               <th>Midterm</th>
               <th>Pre-Final</th>
               <th>Finals</th>
+              <th>Full Payment</th>
               <th>Total Balance</th>
             </tr>
           </thead>
           <tbody>
             {filteredStudents.length > 0 ? (
-              filteredStudents.map((student, index) => {
+              paginatedItems.map((student, index) => {
                 const originalIndex = students.indexOf(student);
                 const rowKey = student.StudentID || `row-${originalIndex}`;
-                const downpayment = parseAmount(student.Downpayment);
-                const prelim = parseAmount(student.Prelim);
-                const midterm = parseAmount(student.Midterm);
-                const preFinal = parseAmount(student.PreFinal);
-                const finals = parseAmount(student.Finals);
-                const computedTotalFee = downpayment + prelim + midterm + preFinal + finals;
-                const totalFee =
-                  student.TotalFee !== undefined && student.TotalFee !== null && student.TotalFee !== ""
-                    ? parseAmount(student.TotalFee)
-                    : computedTotalFee;
-                const totalBalance =
-                  student.TotalBalance !== undefined && student.TotalBalance !== null && student.TotalBalance !== ""
-                    ? parseAmount(student.TotalBalance)
-                    : Math.max(totalFee - computedTotalFee, 0);
+                const normalized = normalizeStudentFinancials(student);
+                const installmentDisabled = normalized.PaymentMode === PAYMENT_MODES.FULL;
+                const fullPaymentDisabled = normalized.PaymentMode !== PAYMENT_MODES.FULL;
 
                 return (
                   <tr key={rowKey}>
-                    <td>{originalIndex + 1}</td>
-                    <td>{student.StudentID || "N/A"}</td>
-                    <td>{student.Name || "N/A"}</td>
-                    <td>{student.Program || "N/A"}</td>
-                    <td>{student.YearLevel || "N/A"}</td>
-                    <td>{student.Gmail || "N/A"}</td>
-                    <td>{renderFeeInput(student, rowKey, "TotalFee", String(totalFee))}</td>
-                    <td>{renderFeeInput(student, rowKey, "Downpayment")}</td>
-                    <td>{renderFeeInput(student, rowKey, "Prelim")}</td>
-                    <td>{renderFeeInput(student, rowKey, "Midterm")}</td>
-                    <td>{renderFeeInput(student, rowKey, "PreFinal")}</td>
-                    <td>{renderFeeInput(student, rowKey, "Finals")}</td>
-                    <td>{renderFeeInput(student, rowKey, "TotalBalance", String(totalBalance))}</td>
+                    <td>{rangeStart + index}</td>
+                    <td>{normalized.StudentID || "N/A"}</td>
+                    <td>{normalized.Name || "N/A"}</td>
+                    <td>{normalized.Program || "N/A"}</td>
+                    <td>{normalized.YearLevel || "N/A"}</td>
+                    <td>{normalized.Gmail || "N/A"}</td>
+                    <td>{renderModeSelect(normalized, rowKey)}</td>
+                    <td>{renderFeeInput(normalized, rowKey, "TotalFee", { placeholder: String(normalized.TotalFee || 0) })}</td>
+                    <td>{renderFeeInput(normalized, rowKey, "Downpayment", { disabled: installmentDisabled })}</td>
+                    <td>{renderFeeInput(normalized, rowKey, "Prelim", { disabled: installmentDisabled })}</td>
+                    <td>{renderFeeInput(normalized, rowKey, "Midterm", { disabled: installmentDisabled })}</td>
+                    <td>{renderFeeInput(normalized, rowKey, "PreFinal", { disabled: installmentDisabled })}</td>
+                    <td>{renderFeeInput(normalized, rowKey, "Finals", { disabled: installmentDisabled })}</td>
+                    <td>{renderFeeInput(normalized, rowKey, "FullPaymentAmount", { disabled: fullPaymentDisabled })}</td>
+                    <td>{renderFeeInput(normalized, rowKey, "TotalBalance", { value: normalized.TotalBalance, readOnly: true })}</td>
                   </tr>
                 );
               })
             ) : (
               <tr>
-                <td colSpan="13" className="table-empty-cell">
+                <td colSpan="15" className="table-empty-cell">
                   No data uploaded yet. Add a spreadsheet to configure student fee records.
                 </td>
               </tr>
@@ -140,6 +149,16 @@ function StudentFeeAdminTable({ students, filteredStudents, onFieldChange }) {
           </tbody>
         </table>
       </div>
+      {filteredStudents.length > 0 ? (
+        <TablePagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={totalItems}
+          rangeStart={rangeStart}
+          rangeEnd={rangeEnd}
+          onPageChange={setCurrentPage}
+        />
+      ) : null}
     </main>
   );
 }

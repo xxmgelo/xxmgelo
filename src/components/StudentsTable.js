@@ -1,6 +1,18 @@
 import React from "react";
+import TablePagination from "./TablePagination";
+import useTablePagination from "../hooks/useTablePagination";
 
 function StudentsTable({ students, filteredStudents }) {
+  const {
+    currentPage,
+    setCurrentPage,
+    totalPages,
+    paginatedItems,
+    totalItems,
+    rangeStart,
+    rangeEnd,
+  } = useTablePagination(filteredStudents);
+
   return (
     <main className="student-dashboard">
       <div className="section-header">
@@ -30,11 +42,11 @@ function StudentsTable({ students, filteredStudents }) {
           </thead>
           <tbody>
             {filteredStudents.length > 0 ? (
-              filteredStudents.map((student, index) => {
+              paginatedItems.map((student, index) => {
                 const originalIndex = students.indexOf(student);
                 return (
-                  <tr key={index}>
-                    <td>{originalIndex + 1}</td>
+                  <tr key={student.StudentID || `${student.Name}-${originalIndex}`}>
+                    <td>{rangeStart + index}</td>
                     <td>{student.StudentID || "N/A"}</td>
                     <td>{student.Name || "N/A"}</td>
                     <td>{student.Program || "N/A"}</td>
@@ -53,6 +65,16 @@ function StudentsTable({ students, filteredStudents }) {
           </tbody>
         </table>
       </div>
+      {filteredStudents.length > 0 ? (
+        <TablePagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={totalItems}
+          rangeStart={rangeStart}
+          rangeEnd={rangeEnd}
+          onPageChange={setCurrentPage}
+        />
+      ) : null}
     </main>
   );
 }

@@ -17,7 +17,6 @@ function Header({ darkMode, toggleTheme, viewTitle, viewDescription, userName, s
             <span className="header-kicker-secondary">Admin Workspace</span>
           </div>
           <h1>{viewTitle}</h1>
-          <p>{viewDescription}</p>
         </div>
       </div>
       <div className="header-actions">

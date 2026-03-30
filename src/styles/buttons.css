@@ -1,8 +1,8 @@
 .action-buttons {
   display: flex;
   justify-content: center;
-  gap: 8px;
-  flex-wrap: wrap;
+  gap: 6px;
+  flex-wrap: nowrap;
 }
 
 .action-btn {
@@ -10,44 +10,54 @@
   align-items: center;
   justify-content: center;
   gap: 6px;
-  padding: 10px 12px;
-  border-radius: 12px;
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.01em;
+  min-height: 30px;
+  padding: 6px 9px;
+  border-radius: 10px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
   box-shadow: var(--shadow);
+  border: none;
+  white-space: nowrap;
+  transition: opacity 0.2s ease, filter 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .btn-icon {
-  width: 14px;
-  height: 14px;
+  width: 12px;
+  height: 12px;
   object-fit: contain;
   filter: var(--icon-filter-neutral);
   transition: filter var(--transition-fast), transform var(--transition-fast);
 }
 
 .pay-btn {
-  background: linear-gradient(135deg, var(--accent-success), #22c55e);
-  color: var(--text-inverse);
+  background: rgba(var(--accent-primary-rgb), 0.12);
+  color: var(--accent-primary);
+  border: none;
 }
 
 .remind-btn {
-  background: linear-gradient(135deg, #f59e0b, #fbbf24);
-  color: #422006;
+  background: rgba(var(--accent-warning-rgb), 0.14);
+  color: var(--autumn-ember);
+  border: none;
 }
 
 .edit-btn {
-  background: linear-gradient(135deg, var(--accent-primary), #3479ff);
+  background: var(--accent-primary);
   color: var(--text-inverse);
+  border: none;
 }
 
 .delete-btn {
-  background: linear-gradient(135deg, var(--accent-danger), #ef4444);
-  color: var(--text-inverse);
+  background: rgba(var(--accent-danger-rgb), 0.12);
+  color: var(--accent-danger-strong);
+  border: none;
 }
 
 .action-btn:hover {
-  transform: translateY(-1px);
+  opacity: 0.85;
+  filter: brightness(0.9);
+  transform: translateY(-2px);
   box-shadow: var(--shadow-md);
 }
 
@@ -55,17 +65,28 @@
   transform: scale(1.05);
 }
 
-.delete-btn .btn-icon,
+.remind-btn .btn-icon {
+  filter: var(--icon-filter-warning);
+}
+
 .edit-btn .btn-icon,
 .pay-btn .btn-icon {
   filter: var(--icon-filter-inverse);
 }
 
-.remind-btn .btn-icon {
-  filter: var(--icon-filter-warning);
+.delete-btn .btn-icon,
+.close-btn .btn-icon {
+  filter: var(--icon-filter-inverse);
 }
 
 .action-btn:focus {
-  outline: 3px solid rgba(var(--accent-primary-rgb), 0.18);
-  outline-offset: 2px;
+  box-shadow: var(--shadow-md);
+}
+
+.action-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+  transform: none;
+  box-shadow: none;
+  border-color: transparent;
 }

@@ -1,19 +1,31 @@
 import React, { useMemo, useState } from "react";
 import deleteIcon from "../assets/delete.png";
+import TablePagination from "./TablePagination";
+import useTablePagination from "../hooks/useTablePagination";
 
 function ManageStudentTable({ students, filteredStudents, onRemoveSelected, onDeleteStudent, onEditStudent }) {
   const [selectedRows, setSelectedRows] = useState(new Set());
+  const {
+    currentPage,
+    setCurrentPage,
+    totalPages,
+    paginatedItems,
+    totalItems,
+    rangeStart,
+    rangeEnd,
+  } = useTablePagination(filteredStudents);
 
   const visibleRowKeys = useMemo(
     () =>
-      filteredStudents.map((student) => {
+      paginatedItems.map((student) => {
         const originalIndex = students.indexOf(student);
         return student.StudentID || `row-${originalIndex}`;
       }),
-    [filteredStudents, students]
+    [paginatedItems, students]
   );
 
-  const allSelected = visibleRowKeys.length > 0 && selectedRows.size === visibleRowKeys.length;
+  const allSelected =
+    visibleRowKeys.length > 0 && visibleRowKeys.every((rowKey) => selectedRows.has(rowKey));
 
   const toggleRow = (rowKey) => {
     setSelectedRows((prev) => {
@@ -110,13 +122,13 @@ function ManageStudentTable({ students, filteredStudents, onRemoveSelected, onDe
           </thead>
           <tbody>
             {filteredStudents.length > 0 ? (
-              filteredStudents.map((student, index) => {
+              paginatedItems.map((student, index) => {
                 const originalIndex = students.indexOf(student);
                 const rowKey = student.StudentID || `row-${originalIndex}`;
                 const isSelected = selectedRows.has(rowKey);
                 return (
-                  <tr key={index} className={isSelected ? "row-selected" : ""}>
-                    <td>{originalIndex + 1}</td>
+                  <tr key={rowKey} className={isSelected ? "row-selected" : ""}>
+                    <td>{rangeStart + index}</td>
                     <td>
                       <input
                         type="checkbox"
@@ -155,6 +167,16 @@ function ManageStudentTable({ students, filteredStudents, onRemoveSelected, onDe
           </tbody>
         </table>
       </div>
+      {filteredStudents.length > 0 ? (
+        <TablePagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={totalItems}
+          rangeStart={rangeStart}
+          rangeEnd={rangeEnd}
+          onPageChange={setCurrentPage}
+        />
+      ) : null}
     </main>
   );
 }

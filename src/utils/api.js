@@ -92,3 +92,10 @@ export async function updateAdminPassword(payload) {
     }),
   });
 }
+
+export async function sendPaymentReminder(payload) {
+  return request("/reminders.php", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
