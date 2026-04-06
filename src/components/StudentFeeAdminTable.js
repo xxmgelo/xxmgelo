@@ -18,7 +18,7 @@ function StudentFeeAdminTable({ students, filteredStudents, onFieldChange, onFie
     totalItems,
     rangeStart,
     rangeEnd,
-  } = useTablePagination(filteredStudents);
+  } = useTablePagination(filteredStudents, 10);
 
   const formatAmount = (value) => {
     if (value === null || value === undefined || value === "") return "";
@@ -68,11 +68,7 @@ function StudentFeeAdminTable({ students, filteredStudents, onFieldChange, onFie
     <main className="student-dashboard">
       <div className="section-header">
         <div>
-          <span className="section-kicker">Fee Controls</span>
-          <h2>Manage Fee</h2>
-          <p className="section-subtitle">
-            Configure tuition schedules, switch payment modes, and review live balances for {filteredStudents.length} visible student accounts.
-          </p>
+          <h2>Manage Fees</h2>
         </div>
         <div className="section-stat-group">
           <div className="section-summary-pill">

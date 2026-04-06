@@ -1,437 +1,197 @@
-/* ========================================
-   Responsive Design - Optimize for Full Screen
-   All content fits on one screen without zoom
-   ======================================== */
-
-/* Default - All screen sizes (1920px+) */
-@media (min-width: 1920px) {
-  .dashboard-container {
-    grid-template-columns: minmax(220px, 240px) minmax(0, 1fr);
-    gap: 8px;
-    padding: 8px;
-  }
-
-  .home-dashboard {
-    padding: 8px;
-    gap: 6px;
-  }
-
-  .home-hero {
-    padding: 8px;
-    gap: 8px;
-  }
-
-  .home-card-grid {
-    gap: 6px;
-  }
-
-  .home-analytics-bars {
-    gap: 4px;
-  }
-}
-
-@media (min-width: 1600px) and (max-width: 1919px) {
-  .dashboard-container {
-    grid-template-columns: minmax(210px, 230px) minmax(0, 1fr);
-    gap: 8px;
-    padding: 8px;
-  }
-
-  .home-dashboard {
-    padding: 8px;
-    gap: 6px;
-  }
-
-  .home-hero {
-    padding: 8px;
-    gap: 8px;
-  }
-
-  .home-card-grid {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 6px;
-  }
-
-  .home-analytics-bars {
-    gap: 4px;
-  }
-}
-
-@media (min-width: 1360px) and (max-width: 1599px) {
-  .dashboard-container {
-    grid-template-columns: minmax(190px, 210px) minmax(0, 1fr);
-    gap: 6px;
-    padding: 6px;
-  }
-
-  .home-dashboard {
-    padding: 6px;
-    gap: 6px;
-  }
-
-  .home-hero {
-    padding: 6px;
-    gap: 6px;
-  }
-
-  .home-card-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 4px;
-  }
-
-  .home-metric-grid {
-    gap: 4px;
-  }
-
-  .home-analytics-bars {
-    gap: 3px;
-  }
-
-  .home-analytics-strip,
-  .analytics-chart-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (min-width: 1200px) and (max-width: 1359px) {
-  .dashboard-container {
-    grid-template-columns: minmax(180px, 200px) minmax(0, 1fr);
-    gap: 6px;
-    padding: 6px;
-  }
-
-  .home-dashboard {
-    padding: 6px;
-    gap: 4px;
-  }
-
-  .home-hero {
-    padding: 6px;
-    gap: 4px;
-  }
-
+@media (max-width: 1440px) {
   .header {
-    padding: 8px 10px;
-    height: 50px;
+    margin: 16px 18px 0;
+    padding: 15px 20px;
   }
 
-  .header h1 {
-    font-size: 14px;
-  }
-
-  .home-card-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 4px;
-  }
-
-  .home-metric-grid {
-    gap: 3px;
-  }
-
-  .home-analytics-bars {
-    gap: 3px;
-  }
-
-  .sidebar-content {
-    padding: 8px 6px;
-  }
-
-  table {
-    font-size: 11px;
-  }
-
-  .action-btn {
-    padding: 4px 6px;
-    font-size: 10px;
-  }
-}
-
-@media (max-width: 1199px) {
   .dashboard-container {
-    grid-template-columns: minmax(170px, 190px) minmax(0, 1fr);
-    gap: 6px;
-    padding: 6px;
+    padding: 14px 18px 18px;
+    gap: 14px;
   }
 
-  .home-dashboard {
-    padding: 6px;
-    gap: 4px;
-  }
-
-  .home-hero {
-    padding: 6px;
-    gap: 4px;
-  }
-
-  .header {
-    padding: 6px 10px;
-    height: 48px;
-  }
-
-  .header h1 {
-    font-size: 13px;
-  }
-
-  .header-stat,
-  .header-user-pill {
-    font-size: 10px;
-  }
-
-  .theme-toggle {
-    padding: 4px 8px;
-    font-size: 9px;
-  }
-
-  .home-card-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 4px;
-  }
-
-  .home-metric-grid,
-  .analytics-insight-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 3px;
-  }
-
-  .home-analytics-bars {
-    gap: 3px;
-  }
-
-  .home-hero,
-  .analytics-hero {
-    grid-template-columns: 1fr;
-  }
-
-  .sidebar-content {
-    padding: 6px 4px;
-    max-height: calc(100vh - 100px);
-  }
-
-  .nav-item {
-    padding: 5px 6px;
-  }
-
-  .nav-label {
-    font-size: 8px;
-  }
-
-  .nav-description {
-    font-size: 6px;
-  }
-
-  table {
-    font-size: 10px;
-  }
-
-  td, th {
-    padding: 4px 6px;
-  }
-
-  .action-btn {
-    padding: 3px 4px;
-    font-size: 9px;
-  }
-
-  .btn-sm {
-    padding: 4px 8px;
-    font-size: 10px;
-  }
-
-  .btn-md {
-    padding: 6px 10px;
-    font-size: 11px;
-  }
-}
-
-@media (max-width: 960px) {
-  .dashboard-container {
-    grid-template-columns: minmax(150px, 170px) minmax(0, 1fr);
-    gap: 4px;
-    padding: 4px;
-  }
-
-  .home-dashboard {
-    padding: 4px;
-    gap: 3px;
-  }
-
-  .home-hero {
-    padding: 4px;
-    gap: 3px;
-  }
-
-  .home-card-grid {
-    gap: 3px;
-  }
-
-  .home-metric-grid {
-    gap: 2px;
-  }
-
-  .home-analytics-bars {
-    gap: 2px;
-  }
-
-  .sidebar {
-    position: sticky;
-    top: 48px;
-    max-height: calc(100vh - 60px);
-  }
-}
-
-@media (max-width: 1360px) {
-  .home-card-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .home-analytics-strip,
-  .analytics-chart-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .analytics-chart-card-wide {
-    grid-column: auto;
+  .main-content {
+    gap: 14px;
   }
 }
 
 @media (max-width: 1200px) {
-  .home-hero,
-  .analytics-hero {
-    grid-template-columns: 1fr;
+  .header {
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 14px 16px;
   }
 
-  .analytics-hero {
-    flex-direction: column;
+  .header-actions {
+    width: 100%;
+    justify-content: flex-start;
   }
 
-  .sidebar {
-    position: static;
-    height: auto;
-  }
-
-  .sidebar-content {
-    min-height: auto;
-    max-height: none;
-    overflow: visible;
-  }
-
-  .nav-menu {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  .dashboard-container {
+    grid-template-columns: 200px minmax(0, 1fr);
+    height: calc(100vh - 88px);
+    padding: 12px 16px 16px;
   }
 
   .upload-section,
-  .upload-left,
-  .upload-right,
   .section-header,
-  .home-section-heading,
   .admin-settings-row {
     flex-direction: column;
     align-items: stretch;
   }
 
-  .upload-left {
-    justify-content: flex-start;
-  }
-
+  .upload-left,
   .upload-right,
   .upload-controls,
   .upload-inline-tools {
     width: 100%;
+  }
+
+  .upload-right,
+  .upload-controls {
     justify-content: flex-start;
+  }
+
+  .upload-section-student-actions {
+    grid-template-columns: 1fr;
+    row-gap: 8px;
+  }
+
+  .upload-section-student-actions .upload-right,
+  .upload-section-student-actions .upload-controls {
+    flex-wrap: wrap;
+  }
+
+  .upload-section-student-actions .search-box {
+    min-width: 100%;
+    max-width: 100%;
   }
 
   .program-filter {
     flex-wrap: wrap;
   }
 
-  .home-card-grid,
   .home-metric-grid,
   .analytics-insight-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .home-analytics-grid,
+  .home-bottom-grid,
+  .analytics-chart-grid,
+  .admin-settings-panel {
     grid-template-columns: 1fr;
+  }
+
+  .home-analytics-panel-wide,
+  .analytics-chart-card-period,
+  .analytics-chart-card-reports {
+    grid-column: auto;
+    grid-row: auto;
+  }
+
+  .home-card-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .analytics-donut-wrap {
     grid-template-columns: 1fr;
     justify-items: center;
   }
+}
 
-  .analytics-legend {
-    width: 100%;
+@media (max-width: 900px) {
+  .dashboard {
+    height: auto;
+    min-height: 100vh;
+    overflow: auto;
   }
 
-  .admin-settings-panel {
+  .dashboard-container,
+  .dashboard-container.sidebar-collapsed {
     grid-template-columns: 1fr;
+    height: auto;
   }
 
-  .admin-settings-nav {
-    border-right: none;
-    border-bottom: 1px solid var(--border-color);
+  .sidebar,
+  .main-content {
+    height: auto;
+  }
+
+  .sidebar-content {
+    max-height: none;
+  }
+
+  .sidebar.collapsed .sidebar-user-text,
+  .sidebar.collapsed .nav-label {
+    display: flex;
+  }
+
+  .sidebar.collapsed .nav-item {
+    justify-content: flex-start;
+  }
+
+  .sidebar.collapsed .nav-item.active::before {
+    left: 8px;
+    top: 10px;
+    bottom: 10px;
+    width: 3px;
+    height: auto;
+    transform: none;
+  }
+
+  .header-stat,
+  .header-user-pill,
+  .theme-toggle {
+    min-height: 50px;
   }
 }
 
 @media (max-width: 768px) {
-  .login-page {
-    padding: 16px;
+  .header,
+  .dashboard-container {
+    margin-left: 14px;
+    margin-right: 14px;
+    padding-left: 14px;
+    padding-right: 14px;
   }
 
-  .login-layout {
-    min-height: auto;
-    grid-template-columns: 1fr;
+  .header {
+    margin-top: 14px;
   }
 
-  .login-card,
-  .login-side,
-  .home-dashboard,
+  .header-content {
+    gap: 12px;
+  }
+
+  .header-brand-mark {
+    width: 48px;
+    height: 48px;
+  }
+
+  .header-logo {
+    width: 34px;
+    height: 34px;
+  }
+
+  .header h1 {
+    font-size: 1.35rem;
+  }
+
+  .upload-section,
   .student-dashboard,
+  .home-dashboard,
   .analytics-dashboard,
-  .admin-settings-content {
-    padding: 22px;
+  .admin-settings-content,
+  .login-card,
+  .login-side {
+    padding: 18px;
   }
 
-  .login-profiles,
-  .nav-menu {
+  .home-metric-grid,
+  .analytics-insight-grid,
+  .home-card-grid,
+  .login-profiles {
     grid-template-columns: 1fr;
-  }
-
-  .search-box,
-  .search-input {
-    min-width: 100%;
-    max-width: 100%;
-  }
-
-  .table-container {
-    border-radius: 18px;
-  }
-
-  th,
-  td {
-    padding: 12px;
-    font-size: 12px;
-  }
-
-  .home-hero,
-  .analytics-hero,
-  .home-analytics-panel,
-  .home-analytics-summary-box,
-  .analytics-chart-card {
-    padding: 20px;
-  }
-
-  .home-analytics-bars,
-  .period-bar-grid {
-    grid-template-columns: repeat(5, minmax(80px, 1fr));
-    min-width: 480px;
-  }
-
-  .home-analytics-panel,
-  .analytics-chart-card {
-    overflow-x: auto;
-  }
-
-  .action-buttons,
-  .modal-buttons {
-    flex-direction: column;
   }
 
   .table-footer {
@@ -443,70 +203,13 @@
     justify-content: flex-start;
   }
 
+  .search-box,
+  .search-input,
   .close-btn,
   .save-btn,
   .action-btn,
   .upload-btn,
   .add-student-btn {
     width: 100%;
-  }
-}
-
-@media (max-width: 540px) {
-  .header,
-  .dashboard-container {
-    padding: 14px;
-  }
-
-  .header-brand-mark {
-    width: 50px;
-    height: 50px;
-  }
-
-  .header h1,
-  .section-header h2,
-  .upload-copy h3,
-  .home-section-heading h3,
-  .admin-settings-header h2 {
-    font-size: 22px;
-  }
-
-  .student-dashboard,
-  .home-dashboard,
-  .analytics-dashboard,
-  .upload-section {
-    border-radius: 22px;
-  }
-
-  .home-hero,
-  .analytics-hero,
-  .admin-settings-avatar {
-    padding: 18px;
-  }
-
-  .home-card-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .analytics-donut {
-    width: 160px;
-    height: 160px;
-  }
-
-  .analytics-donut-inner {
-    width: 102px;
-    height: 102px;
-  }
-
-  .modal {
-    padding: 12px;
-  }
-
-  .pagination-btn-nav {
-    min-width: 52px;
-  }
-
-  .modal-content {
-    padding: 20px;
   }
 }

@@ -9,7 +9,7 @@ import adminSettingsIcon from "../assets/adminsettings.png";
 import defaultAvatar from "../assets/admin.png";
 import logoutIcon from "../assets/logout.png";
 
-function Navigation({ activeTab, setActiveTab, onLogout, userName, userAvatar }) {
+function Navigation({ activeTab, setActiveTab, onRequestLogout, userName, userAvatar, collapsed, onToggleCollapse }) {
   const navGroups = [
     {
       label: "Workspace",
@@ -17,21 +17,18 @@ function Navigation({ activeTab, setActiveTab, onLogout, userName, userAvatar })
         {
           key: "home",
           label: "Dashboard",
-          description: "Overview and priorities",
           icon: dashboardIcon,
           alt: "Dashboard",
         },
         {
           key: "students",
           label: "Students",
-          description: "Roster and directory",
           icon: studentsIcon,
           alt: "Students",
         },
         {
           key: "studentFee",
           label: "Student Fee",
-          description: "Collections and payments",
           icon: studentFeeIcon,
           alt: "BSIS Student Fee",
         },
@@ -42,15 +39,13 @@ function Navigation({ activeTab, setActiveTab, onLogout, userName, userAvatar })
       items: [
         {
           key: "manageStudent",
-          label: "Manage Student",
-          description: "Record maintenance",
+          label: "Manage Students",
           icon: manageStudentIcon,
           alt: "Manage Student",
         },
         {
           key: "manageFee",
-          label: "Manage Fee",
-          description: "Tuition breakdowns",
+          label: "Manage Fees",
           icon: manageFeeIcon,
           alt: "Manage Fee",
         },
@@ -61,8 +56,7 @@ function Navigation({ activeTab, setActiveTab, onLogout, userName, userAvatar })
       items: [
         {
           key: "analytics",
-          label: "Analytics & Reports",
-          description: "Insights and reporting",
+          label: "Analytics",
           icon: analyticsIcon,
           alt: "Analytics & Reports",
         },
@@ -73,8 +67,7 @@ function Navigation({ activeTab, setActiveTab, onLogout, userName, userAvatar })
       items: [
         {
           key: "adminSettings",
-          label: "Admin Settings",
-          description: "Profile and preferences",
+          label: "Settings",
           icon: adminSettingsIcon,
           alt: "Admin Settings",
         },
@@ -83,9 +76,20 @@ function Navigation({ activeTab, setActiveTab, onLogout, userName, userAvatar })
   ];
 
   return (
-    <nav className="sidebar">
+    <nav className={`sidebar${collapsed ? " collapsed" : ""}`}>
       <div className="sidebar-content">
         <div className="sidebar-header">
+          <button
+            type="button"
+            className="sidebar-collapse-btn"
+            onClick={onToggleCollapse}
+            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          >
+            <span />
+            <span />
+            <span />
+          </button>
           <div className="sidebar-user">
             <img
               src={userAvatar || defaultAvatar}
@@ -109,11 +113,11 @@ function Navigation({ activeTab, setActiveTab, onLogout, userName, userAvatar })
                       className={`nav-item ${activeTab === item.key ? "active" : ""}`}
                       onClick={() => setActiveTab(item.key)}
                       type="button"
+                      title={item.label}
                     >
                       <img src={item.icon} alt={item.alt} className="nav-icon" />
                       <span className="nav-copy">
                         <span className="nav-label">{item.label}</span>
-                        <span className="nav-description">{item.description}</span>
                       </span>
                     </button>
                   </li>
@@ -126,10 +130,13 @@ function Navigation({ activeTab, setActiveTab, onLogout, userName, userAvatar })
           <button
             type="button"
             className="nav-item nav-logout"
-            onClick={onLogout}
+            onClick={onRequestLogout}
+            title="Logout"
           >
             <img src={logoutIcon} alt="Logout" className="nav-icon" />
-            <span className="nav-label">Logout</span>
+            <span className="nav-copy">
+              <span className="nav-label">Logout</span>
+            </span>
           </button>
         </div>
       </div>

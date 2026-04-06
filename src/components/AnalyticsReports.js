@@ -1,6 +1,6 @@
 import React, { useMemo } from "react";
-import analyticsIcon from "../assets/analyticsdb.png";
 import { calculateAnalytics } from "../utils/analytics";
+import { ComparisonBarChart, DistributionDoughnutChart, TrendLineChart } from "./ChartComponents";
 
 const currencyFormatter = new Intl.NumberFormat("en-PH", {
   style: "currency",
@@ -10,37 +10,14 @@ const currencyFormatter = new Intl.NumberFormat("en-PH", {
 
 function AnalyticsReports({ students }) {
   const analytics = useMemo(() => calculateAnalytics(students), [students]);
+  const darkMode = document.documentElement.classList.contains("dark-mode");
   const visibleTopBalances = analytics.topBalances.slice(0, 2);
-  const maxPeriodValue = Math.max(
-    ...analytics.periodSeries.map((item) => item.scheduled || 0),
-    1
-  );
   const totalStatuses = analytics.statusSeries.reduce((total, item) => total + item.value, 0) || 1;
-  const statusBreakdown = analytics.statusSeries.reduce((segments, item, index) => {
-    const previousTotal = analytics.statusSeries
-      .slice(0, index)
-      .reduce((sum, current) => sum + current.value, 0);
-    const start = Math.round((previousTotal / totalStatuses) * 360);
-    const end = Math.round(((previousTotal + item.value) / totalStatuses) * 360);
-    segments.push({
-      ...item,
-      start,
-      end,
-      percent: Math.round((item.value / totalStatuses) * 100),
-    });
-    return segments;
-  }, []);
-  const donutBackground = statusBreakdown.length
-    ? `conic-gradient(${statusBreakdown
-        .map((segment) => `var(--chart-${segment.key}) ${segment.start}deg ${segment.end}deg`)
-        .join(", ")})`
-    : "conic-gradient(var(--surface-tint) 0deg 360deg)";
 
   const insightCards = [
     {
       label: "Total Fees",
       value: currencyFormatter.format(analytics.totalFees),
-      icon: analyticsIcon,
       primary: true,
     },
     {
@@ -66,7 +43,6 @@ function AnalyticsReports({ students }) {
             className={`analytics-insight-card ${card.primary ? "analytics-insight-card-primary" : ""}`}
           >
             <div className="analytics-insight-top">
-              {card.icon ? <img src={card.icon} alt={card.label} className="analytics-insight-icon" /> : null}
               <span>{card.label}</span>
             </div>
             <strong>{card.value}</strong>
@@ -79,26 +55,15 @@ function AnalyticsReports({ students }) {
           <div className="analytics-chart-header">
             <div>
               <span className="section-kicker">Fees Per Period</span>
-              <h3>Total fees collected per period</h3>
+              <h3>Collections Trend</h3>
             </div>
           </div>
-          <div className="period-bar-grid">
-            {analytics.periodSeries.map((item) => (
-              <div key={item.key} className="period-bar-card">
-                <div className="period-bar-chart">
-                  <div
-                    className="period-bar period-bar-scheduled"
-                    style={{ height: `${Math.max((item.scheduled / maxPeriodValue) * 100, 8)}%` }}
-                  />
-                  <div
-                    className="period-bar period-bar-collected"
-                    style={{ height: `${Math.max((item.collected / maxPeriodValue) * 100, item.collected > 0 ? 8 : 0)}%` }}
-                  />
-                </div>
-                <strong>{item.label}</strong>
-                <span>{currencyFormatter.format(item.collected)}</span>
-              </div>
-            ))}
+          <div className="chart-wrap chart-wrap-line">
+            <TrendLineChart
+              labels={analytics.periodSeries.map((item) => item.label)}
+              values={analytics.periodSeries.map((item) => item.collected)}
+              darkMode={darkMode}
+            />
           </div>
         </article>
 
@@ -106,23 +71,30 @@ function AnalyticsReports({ students }) {
           <div className="analytics-chart-header">
             <div>
               <span className="section-kicker">Payment Status</span>
-              <h3>Paid, unpaid, and partial</h3>
+              <h3>Paid, Partial, Unpaid</h3>
             </div>
           </div>
           <div className="analytics-donut-wrap">
-            <div className="analytics-donut" style={{ background: donutBackground }}>
+            <div className="analytics-donut">
+              <div className="chart-wrap chart-wrap-donut">
+                <DistributionDoughnutChart
+                  labels={analytics.statusSeries.map((segment) => segment.label)}
+                  values={analytics.statusSeries.map((segment) => segment.value)}
+                  darkMode={darkMode}
+                />
+              </div>
               <div className="analytics-donut-inner">
                 <strong>{analytics.totalStudents}</strong>
                 <span>students</span>
               </div>
             </div>
             <div className="analytics-legend">
-              {statusBreakdown.map((segment) => (
+              {analytics.statusSeries.map((segment) => (
                 <div key={segment.key} className="analytics-legend-item">
                   <span className={`analytics-legend-dot analytics-legend-dot-${segment.key}`} />
                   <span>{segment.label}</span>
                   <strong>{segment.value}</strong>
-                  <em>{segment.percent}%</em>
+                  <em>{Math.round((segment.value / totalStatuses) * 100)}%</em>
                 </div>
               ))}
             </div>
@@ -133,24 +105,15 @@ function AnalyticsReports({ students }) {
           <div className="analytics-chart-header">
             <div>
               <span className="section-kicker">Enrollment</span>
-              <h3>Student enrollment statistics</h3>
+              <h3>Program Comparison</h3>
             </div>
           </div>
-          <div className="analytics-progress-list">
-            {analytics.programSeries.map((item) => {
-              const width = analytics.totalStudents > 0 ? (item.value / analytics.totalStudents) * 100 : 0;
-              return (
-                <div key={item.key} className="analytics-progress-item">
-                  <div className="analytics-progress-meta">
-                    <span>{item.label}</span>
-                    <strong>{item.value}</strong>
-                  </div>
-                  <div className="analytics-progress-track">
-                    <div className="analytics-progress-fill" style={{ width: `${Math.max(width, item.value > 0 ? 8 : 0)}%` }} />
-                  </div>
-                </div>
-              );
-            })}
+          <div className="chart-wrap chart-wrap-bar">
+            <ComparisonBarChart
+              labels={analytics.programSeries.map((item) => item.label)}
+              values={analytics.programSeries.map((item) => item.value)}
+              darkMode={darkMode}
+            />
           </div>
         </article>
 

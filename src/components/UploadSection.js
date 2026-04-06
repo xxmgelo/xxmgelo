@@ -8,36 +8,38 @@ function UploadSection({
   searchQuery,
   setSearchQuery,
   isManageTab,
+  panelVariant,
   sectionTitle,
   onAddStudent,
   programFilter,
   onProgramFilterChange,
+  yearFilter,
+  onYearFilterChange,
   hideActionButton,
   noteText,
   showAllFilter,
   filtersOnLeft,
 }) {
+  const sectionClassName = [
+    "upload-section",
+    isManageTab ? "upload-section-manage" : "",
+    panelVariant ? `upload-section-${panelVariant}` : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+
   const programFilterControls = (
-    <div className="program-filter">
-      {showAllFilter && (
-        <button
-          type="button"
-          className={`filter-btn ${programFilter === "" ? "active" : ""}`}
-          onClick={() => onProgramFilterChange("")}
-        >
-          All Students
-        </button>
-      )}
+    <div className="tab-strip tab-strip-tight">
       <button
         type="button"
-        className={`filter-btn ${programFilter === "BSIS" ? "active" : ""}`}
+        className={`tab-btn ${programFilter === "BSIS" ? "active" : ""}`}
         onClick={() => onProgramFilterChange("BSIS")}
       >
         BSIS
       </button>
       <button
         type="button"
-        className={`filter-btn ${programFilter === "BSE" ? "active" : ""}`}
+        className={`tab-btn ${programFilter === "BSE" ? "active" : ""}`}
         onClick={() => onProgramFilterChange("BSE")}
       >
         BSE
@@ -45,14 +47,36 @@ function UploadSection({
     </div>
   );
 
+  const yearFilterControls = (
+    <div className="tab-strip tab-strip-chrome">
+      {["1st", "2nd", "3rd", "4th"].map((year) => (
+        <button
+          key={year}
+          type="button"
+          className={`tab-btn ${yearFilter === year ? "active" : ""}`}
+          onClick={() => onYearFilterChange(year)}
+        >
+          {year} Year
+        </button>
+      ))}
+    </div>
+  );
+
   return (
-    <section className="upload-section">
+    <section className={sectionClassName}>
       <div className="upload-left">
-        <div className="upload-copy">
-          <span className="section-kicker">Workspace Tools</span>
-          <h3>{sectionTitle || "Actions"}</h3>
-        </div>
-        {filtersOnLeft && <div className="upload-inline-tools">{programFilterControls}</div>}
+        {sectionTitle ? (
+          <div className="upload-copy">
+            <h3>{sectionTitle}</h3>
+          </div>
+        ) : null}
+        {filtersOnLeft && (
+          <div className="upload-inline-tools tab-row">
+            {yearFilterControls}
+            <div className="tab-spacer" />
+            {programFilterControls}
+          </div>
+        )}
       </div>
       <div className="upload-right">
         <div className="upload-controls">
@@ -78,7 +102,13 @@ function UploadSection({
               )}
             </div>
           )}
-          {!filtersOnLeft && programFilterControls}
+          {!filtersOnLeft && (
+            <div className="upload-inline-tools tab-row">
+              {yearFilterControls}
+              <div className="tab-spacer" />
+              {programFilterControls}
+            </div>
+          )}
         </div>
         <div className="search-box">
           <img src={searchIcon} alt="Search" className="search-icon-img" />

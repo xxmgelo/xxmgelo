@@ -13,7 +13,7 @@ function ManageStudentTable({ students, filteredStudents, onRemoveSelected, onDe
     totalItems,
     rangeStart,
     rangeEnd,
-  } = useTablePagination(filteredStudents);
+  } = useTablePagination(filteredStudents, 10);
 
   const visibleRowKeys = useMemo(
     () =>
@@ -75,14 +75,10 @@ function ManageStudentTable({ students, filteredStudents, onRemoveSelected, onDe
   };
 
   return (
-    <main className="student-dashboard">
+    <main className="student-dashboard manage-student-dashboard">
       <div className="section-header">
         <div>
-          <span className="section-kicker">Record Management</span>
           <h2>Manage Students</h2>
-          <p className="section-subtitle">
-            Maintain {filteredStudents.length} visible student profiles and keep the roster accurate.
-          </p>
         </div>
         <div className="section-actions">
           <div className="section-summary-pill">

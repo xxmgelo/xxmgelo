@@ -21,7 +21,7 @@ function StudentFeeTable({ students, filteredStudents, onPaid, onRemind }) {
     totalItems,
     rangeStart,
     rangeEnd,
-  } = useTablePagination(filteredStudents);
+  } = useTablePagination(filteredStudents, 10);
 
   const summary = useMemo(() => {
     return filteredStudents.reduce(
@@ -55,11 +55,7 @@ function StudentFeeTable({ students, filteredStudents, onPaid, onRemind }) {
     <main className="student-dashboard">
       <div className="section-header">
         <div>
-          <span className="section-kicker">Collections</span>
-          <h2>Student Fee Records</h2>
-          <p className="section-subtitle">
-            Review balances and launch payment actions for {filteredStudents.length} visible students.
-          </p>
+          <h2>Student Fees</h2>
         </div>
         <div className="section-stat-group">
           <div className="section-summary-pill">

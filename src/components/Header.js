@@ -3,7 +3,7 @@ import aclcLogo from "../assets/aclcanimated.gif";
 import lightIcon from "../assets/light.png";
 import darkIcon from "../assets/dark.png";
 
-function Header({ darkMode, toggleTheme, viewTitle, viewDescription, userName, studentCount }) {
+function Header({ darkMode, toggleTheme, viewTitle, userName, studentCount }) {
   return (
     <header className="header">
       <div className="header-content">
@@ -11,11 +11,6 @@ function Header({ darkMode, toggleTheme, viewTitle, viewDescription, userName, s
           <img src={aclcLogo} alt="ACLC Logo" className="header-logo" />
         </div>
         <div className="header-copy">
-          <div className="header-kicker-row">
-            <span className="header-kicker">ACLC Fee Management System</span>
-            <span className="header-kicker-dot" />
-            <span className="header-kicker-secondary">Admin Workspace</span>
-          </div>
           <h1>{viewTitle}</h1>
         </div>
       </div>

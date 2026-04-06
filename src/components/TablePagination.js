@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React from "react";
 
 function TablePagination({
   currentPage,
@@ -8,21 +8,6 @@ function TablePagination({
   rangeEnd,
   onPageChange,
 }) {
-  const pageNumbers = useMemo(() => {
-    if (totalPages <= 1) {
-      return [1];
-    }
-
-    const pages = new Set([1, totalPages, currentPage]);
-
-    for (let offset = 1; offset <= 1; offset += 1) {
-      pages.add(Math.max(1, currentPage - offset));
-      pages.add(Math.min(totalPages, currentPage + offset));
-    }
-
-    return Array.from(pages).sort((left, right) => left - right);
-  }, [currentPage, totalPages]);
-
   return (
     <div className="table-footer">
       <p className="pagination-info">
@@ -39,23 +24,14 @@ function TablePagination({
           Prev
         </button>
 
-        {pageNumbers.map((pageNumber, index) => {
-          const previousPage = pageNumbers[index - 1];
-          const showGap = previousPage && pageNumber - previousPage > 1;
-
-          return (
-            <React.Fragment key={pageNumber}>
-              {showGap ? <span className="pagination-gap">...</span> : null}
-              <button
-                type="button"
-                className={`pagination-btn ${currentPage === pageNumber ? "active" : ""}`}
-                onClick={() => onPageChange(pageNumber)}
-              >
-                {pageNumber}
-              </button>
-            </React.Fragment>
-          );
-        })}
+        <button
+          type="button"
+          className="pagination-btn active"
+          aria-current="page"
+          disabled
+        >
+          {currentPage}
+        </button>
 
         <button
           type="button"

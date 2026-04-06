@@ -1,344 +1,43 @@
-/* ========================================
-   BUTTON DESIGN SYSTEM - Modern
-   ======================================== */
-
-/* Base Button Styles */
 button {
   font-family: inherit;
   cursor: pointer;
   border: none;
-  transition: all 0.2s ease;
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast), filter var(--transition-fast), background-color var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
 }
 
-/* Button Size Variants */
 .btn-sm {
   padding: 8px 12px;
   font-size: 12px;
-  border-radius: 4px;
+  border-radius: 12px;
 }
 
 .btn-md {
   padding: 10px 16px;
   font-size: 14px;
-  border-radius: 6px;
+  border-radius: 14px;
 }
 
 .btn-lg {
   padding: 12px 20px;
   font-size: 15px;
-  border-radius: 8px;
+  border-radius: 16px;
 }
 
-/* ========================================
-   PRIMARY BUTTON (Blue)
-   Used for: Main actions, Save, Add, Upload
-   ======================================== */
-.btn-primary,
-.upload-btn,
-.add-student-btn,
-.save-btn {
-  background: var(--accent-primary);
-  color: var(--text-inverse);
-  border: none;
-  font-weight: 700;
+button:focus-visible {
+  outline: 2px solid rgba(var(--accent-primary-rgb), 0.24);
+  outline-offset: 2px;
 }
 
-.btn-primary:hover,
-.upload-btn:hover,
-.add-student-btn:hover,
-.save-btn:hover {
-  opacity: 0.85;
-  filter: brightness(0.9);
-}
-
-.btn-primary:active,
-.upload-btn:active,
-.add-student-btn:active,
-.save-btn:active {
-  opacity: 0.8;
-}
-
-.btn-primary:focus,
-.upload-btn:focus,
-.add-student-btn:focus,
-.save-btn:focus {
-  opacity: 0.9;
-}
-
-/* ========================================
-   EDIT BUTTON (Custom Blue)
-   Used for: Edit actions
-   ======================================== */
-.edit-btn {
-  background: #89c2d9;
-  color: var(--text-inverse);
-  border: none;
-  font-weight: 700;
-}
-
-.edit-btn:hover {
-  opacity: 0.85;
-  filter: brightness(0.9);
-}
-
-.edit-btn:active {
-  opacity: 0.8;
-}
-
-.edit-btn:focus {
-  opacity: 0.9;
-}
-
-/* ========================================
-   DANGER BUTTON (Red)
-   Used for: Delete and destructive actions
-   ======================================== */
-.btn-danger,
-.delete-btn {
-  background: #ee3134;
-  color: var(--text-inverse);
-  border: none;
-  font-weight: 700;
-}
-
-.btn-danger:hover,
-.delete-btn:hover {
-  opacity: 0.85;
-  filter: brightness(0.9);
-}
-
-.btn-danger:active,
-.delete-btn:active {
-  opacity: 0.8;
-}
-
-.btn-danger:focus,
-.delete-btn:focus {
-  opacity: 0.9;
-}
-
-/* ========================================
-   SOFT DANGER BUTTON
-   Used for: Close, Cancel, Exit
-   ======================================== */
-.close-btn {
-  background: rgba(var(--accent-danger-rgb), 0.12);
-  color: var(--accent-danger-strong);
-  border: 1px solid rgba(var(--accent-danger-rgb), 0.18);
-  font-weight: 700;
-}
-
-.close-btn:hover {
-  background: rgba(var(--accent-danger-rgb), 0.18);
-  border-color: rgba(var(--accent-danger-rgb), 0.28);
-  box-shadow: var(--shadow-md);
-}
-
-.close-btn:active {
-  background: rgba(var(--accent-danger-rgb), 0.24);
-  box-shadow: 0 0 0 3px rgba(var(--accent-danger-rgb), 0.12);
-}
-
-.close-btn:focus {
-  box-shadow: var(--shadow-md);
-}
-
-/* ========================================
-   SUCCESS BUTTON (Green)
-   Used for: Pay, Confirm, Approve
-   ======================================== */
-.btn-success,
-.pay-btn {
-  background: rgba(var(--accent-primary-rgb), 0.12);
-  color: var(--accent-primary);
-  border: 1px solid rgba(var(--accent-primary-rgb), 0.18);
-  font-weight: 700;
-}
-
-.btn-success:hover,
-.pay-btn:hover {
-  background: rgba(var(--accent-primary-rgb), 0.18);
-  box-shadow: var(--shadow-md);
-}
-
-.btn-success:active,
-.pay-btn:active {
-  background: rgba(var(--accent-primary-rgb), 0.24);
-  box-shadow: 0 0 0 3px rgba(var(--accent-success-rgb), 0.2);
-}
-
-.btn-success:focus,
-.pay-btn:focus {
-  box-shadow: var(--shadow-md);
-}
-
-/* ========================================
-   WARNING BUTTON (Amber)
-   Used for: Remind, Alert, Caution
-   ======================================== */
-.btn-warning,
-.remind-btn {
-  background: rgba(var(--accent-warning-rgb), 0.14);
-  color: var(--autumn-ember);
-  border: 1px solid rgba(var(--accent-warning-rgb), 0.18);
-  font-weight: 700;
-}
-
-.btn-warning:hover,
-.remind-btn:hover {
-  background: rgba(var(--accent-warning-rgb), 0.2);
-  box-shadow: var(--shadow-md);
-}
-
-.btn-warning:active,
-.remind-btn:active {
-  background: rgba(var(--accent-warning-rgb), 0.26);
-  box-shadow: 0 0 0 3px rgba(var(--accent-warning-rgb), 0.2);
-}
-
-.btn-warning:focus,
-.remind-btn:focus {
-  box-shadow: var(--shadow-md);
-}
-
-/* ========================================
-   SECONDARY BUTTON (Outline)
-   Used for: Alternative actions
-   ======================================== */
-.btn-secondary {
-  background: transparent;
-  border: 1px solid var(--accent-primary);
-  color: var(--accent-primary);
-  font-weight: 700;
-}
-
-.btn-secondary:hover {
-  background: rgba(var(--accent-primary-rgb), 0.1);
-  border-color: var(--accent-primary);
-  opacity: 0.9;
-}
-
-.btn-secondary:active {
-  background: rgba(var(--accent-primary-rgb), 0.12);
-}
-
-.btn-secondary:focus {
-  box-shadow: var(--shadow-md);
-}
-
-/* ========================================
-   ACTION BUTTONS (Table Buttons)
-   ======================================== */
-.action-buttons {
-  display: flex;
-  justify-content: center;
-  gap: 8px;
-}
-
-.action-btn {
-  padding: 8px 12px;
-  border-radius: 4px;
-  font-size: 12px;
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  transition: all 0.2s ease;
-  border: none;
-}
-
-.action-btn .btn-icon {
-  width: 14px;
-  height: 14px;
-  object-fit: contain;
-}
-
-/* ========================================
-   BUTTON ICON STYLING
-   ======================================== */
-.btn-icon {
-  width: 18px;
-  height: 18px;
-  object-fit: contain;
-}
-
-.upload-btn .btn-icon,
-.add-student-btn .btn-icon {
-  width: 18px;
-  height: 18px;
-}
-
-.add-student-btn .btn-icon {
-  filter: var(--icon-filter-accent);
-}
-
-/* ========================================
-   DISABLED STATE
-   ======================================== */
 button:disabled,
 .btn-primary:disabled,
 .btn-danger:disabled,
 .btn-success:disabled,
 .btn-warning:disabled,
 .btn-secondary:disabled {
-  background: var(--color-gray-300);
+  background: var(--color-gray-200);
   color: var(--color-gray-500);
   cursor: not-allowed;
   transform: none !important;
-  box-shadow: none;
-}
-
-button:disabled:hover,
-.btn-primary:disabled:hover,
-.btn-danger:disabled:hover,
-.btn-success:disabled:hover,
-.btn-warning:disabled:hover,
-.btn-secondary:disabled:hover {
-  transform: none;
-  box-shadow: none;
-  background: var(--color-gray-300);
-}
-
-/* ========================================
-   RESPONSIVE BUTTON SIZING
-   ======================================== */
-@media (max-width: 768px) {
-  .upload-btn,
-  .add-student-btn,
-  .save-btn,
-  .close-btn {
-    padding: 10px 14px;
-    font-size: 13px;
-  }
-
-  .action-btn {
-    padding: 6px 10px;
-    font-size: 11px;
-  }
-
-  .action-btn .btn-icon {
-    width: 12px;
-    height: 12px;
-  }
-}
-
-@media (max-width: 480px) {
-  .upload-btn,
-  .add-student-btn,
-  .save-btn,
-  .close-btn {
-    padding: 8px 12px;
-    font-size: 12px;
-  }
-
-  .action-btn {
-    padding: 5px 8px;
-    font-size: 10px;
-  }
-
-  .action-btn .btn-icon {
-    width: 10px;
-    height: 10px;
-  }
+  box-shadow: none !important;
+  border-color: transparent !important;
 }

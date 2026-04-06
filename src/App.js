@@ -47,19 +47,19 @@ const VIEW_META = {
     description: "Monitor collections, student records, and the next high-impact action from one workspace.",
   },
   studentFee: {
-    title: "Collection Desk",
+    title: "Student Fee",
     description: "Review balances, search students quickly, and move payment processing forward with less friction.",
   },
   manageStudent: {
-    title: "Student Records",
+    title: "Manage Students",
     description: "Add, update, and clean student information in a structured, low-error workflow.",
   },
   manageFee: {
-    title: "Fee Configuration",
+    title: "Manage Fees",
     description: "Adjust tuition breakdowns and keep every fee record accurate before collection time.",
   },
   students: {
-    title: "Student Directory",
+    title: "Students",
     description: "Scan the full roster, filter by program, and verify student details in seconds.",
   },
   analytics: {
@@ -88,10 +88,13 @@ function App() {
   const [editStudent, setEditStudent] = useState(null);
   const [confirmState, setConfirmState] = useState({ show: false, type: null, payload: null });
   const [programFilter, setProgramFilter] = useState("");
+  const [yearFilter, setYearFilter] = useState("");
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [authUser, setAuthUser] = useState(null);
   const [authLoading, setAuthLoading] = useState(false);
   const [authError, setAuthError] = useState("");
   const [themePrefs, setThemePrefs] = useState(DEFAULT_THEME);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   const toggleTheme = () => {
     setDarkMode((prev) => {
@@ -304,11 +307,13 @@ function App() {
     setStudents([]);
     setSearchQuery("");
     setProgramFilter("");
+    setYearFilter("");
     setActiveTab("home");
   };
 
   const normalizedQuery = searchQuery.toLowerCase();
   const normalizedProgramFilter = programFilter.toLowerCase();
+  const normalizedYearFilter = yearFilter.toLowerCase();
   const activeView = VIEW_META[activeTab] || VIEW_META.home;
 
   const filteredStudents = students.filter((student) => {
@@ -321,7 +326,12 @@ function App() {
       ? programValue.includes(normalizedProgramFilter)
       : true;
 
-    return matchesSearch && matchesProgram;
+    const yearValue = (student.YearLevel || "").toLowerCase();
+    const matchesYear = normalizedYearFilter
+      ? yearValue.includes(normalizedYearFilter)
+      : true;
+
+    return matchesSearch && matchesProgram && matchesYear;
   });
 
   const handlePaid = (student) => {
@@ -597,11 +607,13 @@ function App() {
         userName={authUser?.name}
         studentCount={students.length}
       />
-      <div className="dashboard-container">
+      <div className={`dashboard-container${sidebarCollapsed ? " sidebar-collapsed" : ""}`}>
         <Navigation
           activeTab={activeTab}
           setActiveTab={setActiveTab}
-          onLogout={handleLogout}
+          onRequestLogout={() => setShowLogoutConfirm(true)}
+          collapsed={sidebarCollapsed}
+          onToggleCollapse={() => setSidebarCollapsed((prev) => !prev)}
           userName={authUser?.name}
           userAvatar={
             authUser?.avatarUrl
@@ -623,9 +635,11 @@ function App() {
             searchQuery={searchQuery}
             setSearchQuery={setSearchQuery}
             isManageTab={false}
-            sectionTitle="Payment Queue"
+            sectionTitle="Student Fee"
             programFilter={programFilter}
             onProgramFilterChange={setProgramFilter}
+            yearFilter={yearFilter}
+            onYearFilterChange={setYearFilter}
             noteText="Upload records, search by student, and process collections with fewer clicks."
           />
           <StudentFeeTable 
@@ -644,10 +658,13 @@ function App() {
             searchQuery={searchQuery}
             setSearchQuery={setSearchQuery}
             isManageTab={true}
-            sectionTitle="Student Record Actions"
+            panelVariant="student-actions"
+            sectionTitle="Student Actions"
             onAddStudent={() => setShowAddStudentModal(true)}
             programFilter={programFilter}
             onProgramFilterChange={setProgramFilter}
+            yearFilter={yearFilter}
+            onYearFilterChange={setYearFilter}
             noteText="Keep the roster current by adding, editing, or removing records from one workspace."
           />
           <ManageStudentTable 
@@ -667,9 +684,11 @@ function App() {
             searchQuery={searchQuery}
             setSearchQuery={setSearchQuery}
             isManageTab={true}
-            sectionTitle="Fee Structure Controls"
+            sectionTitle="Fee Controls"
             programFilter={programFilter}
             onProgramFilterChange={setProgramFilter}
+            yearFilter={yearFilter}
+            onYearFilterChange={setYearFilter}
             hideActionButton={true}
             noteText="Review payment fields and tune the fee structure before posting or collecting balances."
           />
@@ -689,9 +708,11 @@ function App() {
             searchQuery={searchQuery}
             setSearchQuery={setSearchQuery}
             isManageTab={true}
-            sectionTitle="Student Directory"
+            sectionTitle="Directory"
             programFilter={programFilter}
             onProgramFilterChange={setProgramFilter}
+            yearFilter={yearFilter}
+            onYearFilterChange={setYearFilter}
             hideActionButton={true}
             noteText="Browse the full student list, confirm enrollment data, and narrow results by program."
             showAllFilter={true}
@@ -765,6 +786,18 @@ function App() {
         cancelLabel="Cancel"
         onConfirm={confirmAction}
         onCancel={closeConfirmModal}
+      />
+
+      <ConfirmModal
+        show={showLogoutConfirm}
+        message="Are you sure you want to log out?"
+        confirmLabel="Yes"
+        cancelLabel="Cancel"
+        onConfirm={() => {
+          setShowLogoutConfirm(false);
+          handleLogout();
+        }}
+        onCancel={() => setShowLogoutConfirm(false)}
       />
         </main>
       </div>

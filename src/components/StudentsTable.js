@@ -11,17 +11,13 @@ function StudentsTable({ students, filteredStudents }) {
     totalItems,
     rangeStart,
     rangeEnd,
-  } = useTablePagination(filteredStudents);
+  } = useTablePagination(filteredStudents, 10);
 
   return (
     <main className="student-dashboard">
       <div className="section-header">
         <div>
-          <span className="section-kicker">Directory</span>
           <h2>Students</h2>
-          <p className="section-subtitle">
-            Showing {filteredStudents.length} of {students.length} student records.
-          </p>
         </div>
         <div className="section-summary-pill">
           <span>Active records</span>
