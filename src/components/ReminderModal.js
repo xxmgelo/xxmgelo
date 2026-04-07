@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { normalizeStudentFinancials, PAYMENT_MODES } from "../utils/fees";
+import { normalizeStudentFinancials } from "../utils/fees";
+import { buildReminderDraft } from "../utils/reminders";
 
 const currencyFormatter = new Intl.NumberFormat("en-PH", {
   style: "currency",
@@ -7,41 +8,28 @@ const currencyFormatter = new Intl.NumberFormat("en-PH", {
   maximumFractionDigits: 0,
 });
 
-function buildDefaultMessage(student) {
-  const modeLabel = student.PaymentMode === PAYMENT_MODES.FULL ? "full payment" : "installment payment";
-
-  return [
-    `Good day ${student.Name},`,
-    "",
-    "This is a friendly reminder from ACLC College of Manila regarding your tuition fee balance.",
-    `Your current remaining balance is ${currencyFormatter.format(student.TotalBalance)} under the ${modeLabel} option.`,
-    "Please settle your due payment as soon as possible to avoid delays in your clearance and other school transactions.",
-    "",
-    "If you already paid recently, please disregard this message and coordinate with the accounting office for verification.",
-    "",
-    "Thank you.",
-    "ACLC Fee Management System",
-  ].join("\n");
-}
-
 function ReminderModal({ show, student, onClose, onConfirm, sending = false }) {
   const normalizedStudent = useMemo(
     () => (student ? normalizeStudentFinancials(student) : null),
     [student]
   );
+  const reminderDraft = useMemo(
+    () => (normalizedStudent ? buildReminderDraft(normalizedStudent) : null),
+    [normalizedStudent]
+  );
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
 
   useEffect(() => {
-    if (!show || !normalizedStudent) {
+    if (!show || !normalizedStudent || !reminderDraft) {
       return;
     }
 
-    setSubject(`Payment Reminder for ${normalizedStudent.Name}`);
-    setMessage(buildDefaultMessage(normalizedStudent));
-  }, [show, normalizedStudent]);
+    setSubject(reminderDraft.subject);
+    setMessage(reminderDraft.message);
+  }, [show, normalizedStudent, reminderDraft]);
 
-  if (!show || !normalizedStudent) {
+  if (!show || !normalizedStudent || !reminderDraft) {
     return null;
   }
 
@@ -55,6 +43,10 @@ function ReminderModal({ show, student, onClose, onConfirm, sending = false }) {
       PaymentMode: normalizedStudent.PaymentMode,
       TotalFee: normalizedStudent.TotalFee,
       TotalBalance: normalizedStudent.TotalBalance,
+      due_type: reminderDraft.dueType,
+      due_label: reminderDraft.dueLabel,
+      due_amount: reminderDraft.dueAmount,
+      html: reminderDraft.html,
       subject,
       message,
     });
@@ -84,8 +76,8 @@ function ReminderModal({ show, student, onClose, onConfirm, sending = false }) {
             <strong>{normalizedStudent.Gmail || "No email saved"}</strong>
           </div>
           <div>
-            <span>Balance Due</span>
-            <strong>{currencyFormatter.format(normalizedStudent.TotalBalance)}</strong>
+            <span>{reminderDraft.dueLabel || "Balance Due"}</span>
+            <strong>{currencyFormatter.format(reminderDraft.dueAmount)}</strong>
           </div>
         </div>
 

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import "./index.css";
 import Header from "./components/Header";
 import Navigation from "./components/Navigation";
@@ -10,7 +10,6 @@ import StudentFeeAdminTable from "./components/StudentFeeAdminTable";
 import ManageStudentTable from "./components/ManageStudentTable";
 import StudentsTable from "./components/StudentsTable";
 import PaymentModal from "./components/PaymentModal";
-import ReminderModal from "./components/ReminderModal";
 import AddStudentModal from "./components/AddStudentModal";
 import EditStudentModal from "./components/EditStudentModal";
 import ConfirmModal from "./components/ConfirmModal";
@@ -20,6 +19,8 @@ import mainAdminAvatar from "./assets/admin.png";
 import assistantAdminAvatar from "./assets/administrator.png";
 import { handleFileUpload, handleAddStudent, handleInputChange, INITIAL_STUDENT } from "./utils/handlers";
 import { applyFeeFieldChange, normalizeStudentFinancials } from "./utils/fees";
+import { buildReminderDraft } from "./utils/reminders";
+import { buildPaymentReceiptDraft } from "./utils/receipts";
 import {
   getStudents,
   deleteStudent,
@@ -76,12 +77,15 @@ const VIEW_META = {
 function App() {
   const [students, setStudents] = useState([]);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
-  const [showReminderModal, setShowReminderModal] = useState(false);
   const [showAddStudentModal, setShowAddStudentModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState(null);
-  const [selectedReminderStudent, setSelectedReminderStudent] = useState(null);
   const [sendingReminder, setSendingReminder] = useState(false);
+  const [reminderNotice, setReminderNotice] = useState({
+    visible: false,
+    message: "",
+    tone: "success",
+  });
   const [darkMode, setDarkMode] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState("home");
@@ -96,6 +100,7 @@ function App() {
   const [authError, setAuthError] = useState("");
   const [themePrefs, setThemePrefs] = useState(DEFAULT_THEME);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const reminderNoticeTimerRef = useRef(null);
 
   const toggleTheme = () => {
     setDarkMode((prev) => {
@@ -245,6 +250,14 @@ function App() {
   }, [themePrefs, applyThemeColors]);
 
   useEffect(() => {
+    return () => {
+      if (reminderNoticeTimerRef.current) {
+        window.clearTimeout(reminderNoticeTimerRef.current);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
     if (!authUser) {
       return;
     }
@@ -346,9 +359,74 @@ function App() {
     setShowEditModal(true);
   };
 
-  const handleRemind = (student) => {
-    setSelectedReminderStudent(normalizeStudentFinancials(student));
-    setShowReminderModal(true);
+  const showReminderToast = useCallback((message, tone = "success") => {
+    if (reminderNoticeTimerRef.current) {
+      window.clearTimeout(reminderNoticeTimerRef.current);
+    }
+
+    setReminderNotice({ visible: true, message, tone });
+    reminderNoticeTimerRef.current = window.setTimeout(() => {
+      setReminderNotice((prev) => ({ ...prev, visible: false }));
+    }, 2800);
+  }, []);
+
+  const buildReminderPayload = useCallback((student) => {
+    const reminderDraft = buildReminderDraft(student);
+    const reminderStudent = reminderDraft.student;
+    const payload = {
+      StudentID: reminderStudent.StudentID,
+      Name: reminderStudent.Name,
+      Gmail: reminderStudent.Gmail,
+      Program: reminderStudent.Program,
+      YearLevel: reminderStudent.YearLevel,
+      PaymentMode: reminderStudent.PaymentMode,
+      TotalFee: reminderStudent.TotalFee,
+      TotalBalance: reminderStudent.TotalBalance,
+      due_type: reminderDraft.dueType,
+      due_label: reminderDraft.dueLabel,
+      due_amount: reminderDraft.dueAmount,
+      subject: reminderDraft.subject,
+      message: reminderDraft.message,
+      html: reminderDraft.html,
+    };
+
+    return {
+      payload,
+      reminderStudent,
+    };
+  }, []);
+
+  const handleRemind = async (student) => {
+    if (sendingReminder) {
+      return;
+    }
+
+    const normalizedStudent = normalizeStudentFinancials(student);
+    if (!normalizedStudent.Gmail || normalizedStudent.TotalBalance <= 0 || !normalizedStudent.CanRemind) {
+      if (!normalizedStudent.CanRemind) {
+        showReminderToast("Reminder is available only after saving a payment for this student.", "error");
+      }
+      return;
+    }
+
+    setSendingReminder(true);
+    try {
+      const { payload } = buildReminderPayload(normalizedStudent);
+      await sendPaymentReminder(payload);
+      showReminderToast(`Reminder sent to ${payload.Gmail}.`, "success");
+      setStudents((prev) =>
+        prev.map((item) =>
+          item.StudentID === normalizedStudent.StudentID
+            ? normalizeStudentFinancials({ ...item, CanRemind: false })
+            : item
+        )
+      );
+    } catch (error) {
+      console.error(error);
+      showReminderToast(error?.message || "Reminder email could not be sent.", "error");
+    } finally {
+      setSendingReminder(false);
+    }
   };
 
   const handleFeeFieldChange = (rowKey, field, value) => {
@@ -475,15 +553,6 @@ function App() {
     setSelectedStudent(null);
   };
 
-  const closeReminderModal = () => {
-    if (sendingReminder) {
-      return;
-    }
-
-    setShowReminderModal(false);
-    setSelectedReminderStudent(null);
-  };
-
   const handleSavePayment = async (payload) => {
     const incomingStudent = payload?.student ? payload.student : payload;
     const paymentMeta = payload?.payment || null;
@@ -492,7 +561,10 @@ function App() {
       return;
     }
 
-    const normalizedIncomingStudent = normalizeStudentFinancials(incomingStudent);
+    const normalizedIncomingStudent = normalizeStudentFinancials({
+      ...incomingStudent,
+      CanRemind: true,
+    });
 
     try {
       const savedStudent = normalizeStudentFinancials(await updateStudent(normalizedIncomingStudent));
@@ -509,6 +581,8 @@ function App() {
         Number(paymentMeta.amount_applied) > 0
       ) {
         try {
+          const receiptDraft = buildPaymentReceiptDraft(savedStudent, paymentMeta);
+
           await sendPaymentReceipt({
             StudentID: savedStudent.StudentID,
             Name: savedStudent.Name,
@@ -524,6 +598,14 @@ function App() {
             outstanding_before: paymentMeta.outstanding_before,
             outstanding_after: paymentMeta.outstanding_after,
             official_receipt: paymentMeta.official_receipt,
+            stage_field: paymentMeta.stage_field,
+            stage_label: paymentMeta.stage_label,
+            stage_amount_before: paymentMeta.stage_amount_before,
+            stage_amount_paid: paymentMeta.stage_amount_paid,
+            stage_amount_remaining: paymentMeta.stage_amount_remaining,
+            subject: receiptDraft.subject,
+            message: receiptDraft.message,
+            html: receiptDraft.html,
           });
         } catch (emailError) {
           console.error(emailError);
@@ -535,22 +617,6 @@ function App() {
     } catch (error) {
       console.error(error);
       alert("Payment could not be saved. Please try again.");
-    }
-  };
-
-  const handleSendReminder = async (payload) => {
-    setSendingReminder(true);
-
-    try {
-      await sendPaymentReminder(payload);
-      alert(`Reminder email sent to ${payload.Gmail}.`);
-      setShowReminderModal(false);
-      setSelectedReminderStudent(null);
-    } catch (error) {
-      console.error(error);
-      alert(error.message || "Reminder email could not be sent.");
-    } finally {
-      setSendingReminder(false);
     }
   };
 
@@ -566,11 +632,12 @@ function App() {
           Boolean(student.StudentID) &&
           Boolean(student.Name) &&
           Boolean(student.Gmail) &&
-          student.TotalBalance > 0
+          student.TotalBalance > 0 &&
+          student.CanRemind
       );
 
     if (eligibleStudents.length === 0) {
-      alert("No eligible selected students to remind. Select students with a Gmail and outstanding balance.");
+      alert("No eligible selected students to remind. Save payment first, then select students with Gmail and outstanding balance.");
       return;
     }
 
@@ -586,31 +653,29 @@ function App() {
 
     let successCount = 0;
     const failures = [];
+    const successfullyRemindedIds = [];
 
     try {
       for (const student of eligibleStudents) {
+        const { reminderStudent, payload } = buildReminderPayload(student);
+
         try {
-          await sendPaymentReminder({
-            StudentID: student.StudentID,
-            Name: student.Name,
-            Gmail: student.Gmail,
-            Program: student.Program,
-            YearLevel: student.YearLevel,
-            PaymentMode: student.PaymentMode,
-            TotalFee: student.TotalFee,
-            TotalBalance: student.TotalBalance,
-          });
+          await sendPaymentReminder(payload);
           successCount += 1;
+          successfullyRemindedIds.push(reminderStudent.StudentID);
         } catch (error) {
           failures.push({
-            name: student.Name || student.StudentID,
+            name: reminderStudent.Name || reminderStudent.StudentID,
             message: error?.message || "Send failed",
           });
         }
       }
 
       if (failures.length === 0) {
-        alert(`Reminder email${successCount === 1 ? "" : "s"} sent to ${successCount} student${successCount === 1 ? "" : "s"}.`);
+        showReminderToast(
+          `Reminder email${successCount === 1 ? "" : "s"} sent to ${successCount} student${successCount === 1 ? "" : "s"}.`,
+          "success"
+        );
         return;
       }
 
@@ -620,10 +685,21 @@ function App() {
         .join("\n");
       const extraFailed = failures.length - 5;
 
-      alert(
-        `Reminders sent: ${successCount}/${eligibleStudents.length}\n\nFailed:\n${failedPreview}${extraFailed > 0 ? `\n...and ${extraFailed} more.` : ""}`
+      showReminderToast(
+        `Reminders sent: ${successCount}/${eligibleStudents.length}. ${failures.length} failed.`,
+        "error"
       );
+      console.warn(`Reminder failures:\n${failedPreview}${extraFailed > 0 ? `\n...and ${extraFailed} more.` : ""}`);
     } finally {
+      if (successfullyRemindedIds.length > 0) {
+        setStudents((prev) =>
+          prev.map((item) =>
+            successfullyRemindedIds.includes(item.StudentID)
+              ? normalizeStudentFinancials({ ...item, CanRemind: false })
+              : item
+          )
+        );
+      }
       setSendingReminder(false);
     }
   };
@@ -709,6 +785,11 @@ function App() {
 
   return (
     <div className={`dashboard ${darkMode ? 'dark-mode' : 'light-mode'}`}>
+      {reminderNotice.visible ? (
+        <div className={`inline-toast inline-toast-${reminderNotice.tone}`} role="status" aria-live="polite">
+          {reminderNotice.message}
+        </div>
+      ) : null}
       <Header
         darkMode={darkMode}
         toggleTheme={toggleTheme}
@@ -745,6 +826,7 @@ function App() {
             searchQuery={searchQuery}
             setSearchQuery={setSearchQuery}
             isManageTab={false}
+            panelVariant="student-actions"
             sectionTitle="Student Fee"
             programFilter={programFilter}
             onProgramFilterChange={setProgramFilter}
@@ -860,14 +942,6 @@ function App() {
         selectedStudent={selectedStudent}
         onClose={closePaymentModal}
         onSavePayment={handleSavePayment}
-      />
-
-      <ReminderModal
-        show={showReminderModal}
-        student={selectedReminderStudent}
-        onClose={closeReminderModal}
-        onConfirm={handleSendReminder}
-        sending={sendingReminder}
       />
 
       <AddStudentModal 

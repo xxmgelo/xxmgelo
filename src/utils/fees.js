@@ -21,6 +21,7 @@ export const INSTALLMENT_LABELS = {
 
 const roundCurrency = (value) => Math.round(value * 100) / 100;
 const INSTALLMENT_COUNT = INSTALLMENT_FIELDS.length;
+const MAX_DISCOUNT_PERCENT = 100;
 
 export const parseAmount = (value) => {
   if (value === null || value === undefined || value === "") return 0;
@@ -33,6 +34,16 @@ export const parseAmount = (value) => {
 };
 
 const toPositiveAmount = (value) => Math.max(parseAmount(value), 0);
+const toDiscountPercent = (value) =>
+  Math.min(Math.max(roundCurrency(parseAmount(value)), 0), MAX_DISCOUNT_PERCENT);
+const toBooleanFlag = (value) => {
+  if (typeof value === "boolean") return value;
+  if (typeof value === "number") return value === 1;
+  const normalized = String(value ?? "").trim().toLowerCase();
+  return normalized === "1" || normalized === "true" || normalized === "yes";
+};
+const applyDiscount = (baseTotalFee, discountPercent) =>
+  roundCurrency(Math.max(baseTotalFee * (1 - discountPercent / 100), 0));
 
 export const sanitizePaymentMode = (value) => {
   const normalized = String(value || "").trim().toLowerCase();
@@ -45,6 +56,15 @@ export const getInstallmentBalances = (student = {}) =>
     return balances;
   }, {});
 
+export const getDiscountPercent = (student = {}) =>
+  toDiscountPercent(
+    student.Discount ??
+    student.DiscountPercent ??
+    student.discount ??
+    student.discount_percent ??
+    student["Discount (%)"]
+  );
+
 export const sumInstallments = (student = {}) =>
   roundCurrency(
     INSTALLMENT_FIELDS.reduce((total, field) => total + toPositiveAmount(student[field]), 0)
@@ -52,6 +72,65 @@ export const sumInstallments = (student = {}) =>
 
 export const getCurrentInstallmentIndex = (student = {}) =>
   INSTALLMENT_FIELDS.findIndex((field) => toPositiveAmount(student[field]) > 0);
+
+export const getReminderDueDetails = (student = {}) => {
+  const normalized = normalizeStudentFinancials(student);
+
+  if (normalized.TotalBalance <= 0) {
+    return {
+      type: "none",
+      field: null,
+      label: "No Balance Due",
+      amount: 0,
+      student: normalized,
+    };
+  }
+
+  if (normalized.PaymentMode === PAYMENT_MODES.FULL) {
+    return {
+      type: "full",
+      field: "TotalBalance",
+      label: "Total Balance",
+      amount: normalized.TotalBalance,
+      student: normalized,
+    };
+  }
+
+  const rawInstallmentBalances = getInstallmentBalances(student);
+  const hasRawInstallmentDue = INSTALLMENT_FIELDS.some((field) => rawInstallmentBalances[field] > 0);
+  const rawTotalBalance = toPositiveAmount(student.TotalBalance ?? student.total_balance);
+
+  if (!hasRawInstallmentDue && rawTotalBalance > 0) {
+    return {
+      type: "remaining_balance",
+      field: "TotalBalance",
+      label: "Total Remaining Balance",
+      amount: normalized.TotalBalance,
+      student: normalized,
+    };
+  }
+
+  const currentIndex = getCurrentInstallmentIndex(normalized);
+
+  if (currentIndex !== -1) {
+    const dueField = INSTALLMENT_FIELDS[currentIndex];
+    return {
+      type: "installment_stage",
+      field: dueField,
+      label: INSTALLMENT_LABELS[dueField],
+      amount: toPositiveAmount(normalized[dueField]),
+      student: normalized,
+    };
+  }
+
+  return {
+    type: "remaining_balance",
+    field: "TotalBalance",
+    label: "Total Remaining Balance",
+    amount: normalized.TotalBalance,
+    student: normalized,
+  };
+};
 
 export const distributeTotalAcrossInstallments = (total) => {
   const normalizedTotal = toPositiveAmount(total);
@@ -107,8 +186,24 @@ const fitInstallmentsToTotal = (balances, targetTotal) => {
 
 export const normalizeStudentFinancials = (student = {}) => {
   const paymentMode = sanitizePaymentMode(student.PaymentMode || student.payment_mode);
+  const canRemind = toBooleanFlag(student.CanRemind ?? student.can_remind ?? false);
+  const discount = getDiscountPercent(student);
   let installmentBalances = getInstallmentBalances(student);
-  let totalFee = toPositiveAmount(student.TotalFee ?? student.total_fee);
+  const rawTotalFee = toPositiveAmount(student.TotalFee ?? student.total_fee);
+  let baseTotalFee = toPositiveAmount(
+    student.BaseTotalFee ??
+    student.base_total_fee ??
+    student["Base Total Fee"] ??
+    student.OriginalTotalFee ??
+    student.original_total_fee
+  );
+  if (baseTotalFee <= 0) {
+    baseTotalFee = rawTotalFee;
+  }
+  let totalFee = applyDiscount(baseTotalFee, discount);
+  if (totalFee <= 0 && rawTotalFee > 0) {
+    totalFee = rawTotalFee;
+  }
   let fullPaymentAmount = toPositiveAmount(student.FullPaymentAmount ?? student.full_payment_amount);
   const rawTotalBalance = student.TotalBalance ?? student.total_balance;
   const hasExplicitTotalBalance = rawTotalBalance !== undefined && rawTotalBalance !== null && rawTotalBalance !== "";
@@ -127,7 +222,11 @@ export const normalizeStudentFinancials = (student = {}) => {
       ...student,
       ...installmentBalances,
       PaymentMode: paymentMode,
+      Discount: discount,
+      DiscountPercent: discount,
+      BaseTotalFee: baseTotalFee,
       FullPaymentAmount: fullPaymentAmount,
+      CanRemind: canRemind,
       TotalFee: totalFee,
       TotalBalance: roundCurrency(Math.max(totalFee - fullPaymentAmount, 0)),
     };
@@ -158,7 +257,11 @@ export const normalizeStudentFinancials = (student = {}) => {
     ...student,
     ...installmentBalances,
     PaymentMode: paymentMode,
+    Discount: discount,
+    DiscountPercent: discount,
+    BaseTotalFee: baseTotalFee,
     FullPaymentAmount: fullPaymentAmount,
+    CanRemind: canRemind,
     TotalFee: totalFee,
     TotalBalance: nextStageTotal,
   };
@@ -167,6 +270,11 @@ export const normalizeStudentFinancials = (student = {}) => {
 export const getCollectedAmount = (student = {}) => {
   const normalized = normalizeStudentFinancials(student);
   return roundCurrency(Math.max(normalized.TotalFee - normalized.TotalBalance, 0));
+};
+
+export const getEffectiveTotalFee = (student = {}) => {
+  const normalized = normalizeStudentFinancials(student);
+  return normalized.TotalFee;
 };
 
 export const applyFeeFieldChange = (student, field, value) => {
@@ -180,13 +288,16 @@ export const applyFeeFieldChange = (student, field, value) => {
   }
 
   if (field === "TotalFee") {
-    const nextTotalFee = toPositiveAmount(value);
+    const nextBaseTotalFee = toPositiveAmount(value);
+    const discountPercent = getDiscountPercent(current);
+    const nextTotalFee = applyDiscount(nextBaseTotalFee, discountPercent);
     const nextInstallments = distributeTotalAcrossInstallments(nextTotalFee);
 
     if (current.PaymentMode === PAYMENT_MODES.FULL) {
       return normalizeStudentFinancials({
         ...current,
         ...nextInstallments,
+        BaseTotalFee: nextBaseTotalFee,
         TotalFee: nextTotalFee,
       });
     }
@@ -194,6 +305,7 @@ export const applyFeeFieldChange = (student, field, value) => {
     return normalizeStudentFinancials({
       ...current,
       ...nextInstallments,
+      BaseTotalFee: nextBaseTotalFee,
       TotalFee: nextTotalFee,
       TotalBalance: nextTotalFee,
     });
@@ -203,6 +315,32 @@ export const applyFeeFieldChange = (student, field, value) => {
     return normalizeStudentFinancials({
       ...current,
       FullPaymentAmount: value,
+    });
+  }
+
+  if (field === "Discount" || field === "DiscountPercent") {
+    const nextDiscount = toDiscountPercent(value);
+    const nextBaseTotalFee = toPositiveAmount(current.BaseTotalFee ?? current.TotalFee);
+    const nextTotalFee = applyDiscount(nextBaseTotalFee, nextDiscount);
+    const nextInstallments = distributeTotalAcrossInstallments(nextTotalFee);
+
+    if (current.PaymentMode === PAYMENT_MODES.FULL) {
+      return normalizeStudentFinancials({
+        ...current,
+        ...nextInstallments,
+        BaseTotalFee: nextBaseTotalFee,
+        Discount: nextDiscount,
+        TotalFee: nextTotalFee,
+      });
+    }
+
+    return normalizeStudentFinancials({
+      ...current,
+      ...nextInstallments,
+      BaseTotalFee: nextBaseTotalFee,
+      Discount: nextDiscount,
+      TotalFee: nextTotalFee,
+      TotalBalance: nextTotalFee,
     });
   }
 
@@ -281,9 +419,9 @@ export const previewPaymentApplication = (student, paymentAmount, overrides = {}
         let excess = Math.abs(difference);
 
         for (let index = currentIndex + 1; index < INSTALLMENT_FIELDS.length; index += 1) {
-          const field = INSTALLMENT_FIELDS[index];
-          const reduction = Math.min(nextBalances[field], excess);
-          nextBalances[field] = roundCurrency(nextBalances[field] - reduction);
+          const fieldName = INSTALLMENT_FIELDS[index];
+          const reduction = Math.min(nextBalances[fieldName], excess);
+          nextBalances[fieldName] = roundCurrency(nextBalances[fieldName] - reduction);
           excess = roundCurrency(excess - reduction);
 
           if (excess <= 0) {

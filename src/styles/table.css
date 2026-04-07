@@ -167,6 +167,19 @@ th .checklist-box {
   min-width: 0;
 }
 
+.fee-total-display {
+  display: grid;
+  gap: 3px;
+  justify-items: center;
+}
+
+.fee-effective-note {
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
 .balance-pill,
 .payment-mode-pill {
   display: inline-flex;

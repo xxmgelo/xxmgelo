@@ -1,5 +1,5 @@
 import React, { useMemo } from "react";
-import { normalizeStudentFinancials, PAYMENT_MODES, getCollectedAmount } from "../utils/fees";
+import { normalizeStudentFinancials, PAYMENT_MODES, getCollectedAmount, getEffectiveTotalFee } from "../utils/fees";
 import TablePagination from "./TablePagination";
 import useTablePagination from "../hooks/useTablePagination";
 
@@ -29,7 +29,7 @@ function StudentFeeAdminTable({ students, filteredStudents, onFieldChange, onFie
     return filteredStudents.reduce(
       (totals, student) => {
         const normalized = normalizeStudentFinancials(student);
-        totals.totalFee += normalized.TotalFee;
+        totals.totalFee += getEffectiveTotalFee(normalized);
         totals.outstanding += normalized.TotalBalance;
         totals.collected += getCollectedAmount(normalized);
         return totals;
@@ -97,6 +97,7 @@ function StudentFeeAdminTable({ students, filteredStudents, onFieldChange, onFie
               <th>Gmail</th>
               <th>Payment Mode</th>
               <th>Total Fee</th>
+              <th>Discount (%)</th>
               <th>Downpayment</th>
               <th>Prelim</th>
               <th>Midterm</th>
@@ -124,7 +125,20 @@ function StudentFeeAdminTable({ students, filteredStudents, onFieldChange, onFie
                     <td>{normalized.YearLevel || "N/A"}</td>
                     <td>{normalized.Gmail || "N/A"}</td>
                     <td>{renderModeSelect(normalized, rowKey)}</td>
-                    <td>{renderFeeInput(normalized, rowKey, "TotalFee", { placeholder: String(normalized.TotalFee || 0) })}</td>
+                    <td>
+                      <div className="fee-total-display">
+                        {renderFeeInput(normalized, rowKey, "TotalFee", {
+                          value: normalized.BaseTotalFee ?? normalized.TotalFee,
+                          placeholder: String(normalized.BaseTotalFee || normalized.TotalFee || 0),
+                        })}
+                        {Number(normalized.Discount || 0) > 0 ? (
+                          <span className="fee-effective-note">
+                            Effective: {currencyFormatter.format(getEffectiveTotalFee(normalized))}
+                          </span>
+                        ) : null}
+                      </div>
+                    </td>
+                    <td>{renderFeeInput(normalized, rowKey, "Discount", { placeholder: "0" })}</td>
                     <td>{renderFeeInput(normalized, rowKey, "Downpayment", { disabled: installmentDisabled })}</td>
                     <td>{renderFeeInput(normalized, rowKey, "Prelim", { disabled: installmentDisabled })}</td>
                     <td>{renderFeeInput(normalized, rowKey, "Midterm", { disabled: installmentDisabled })}</td>
@@ -137,7 +151,7 @@ function StudentFeeAdminTable({ students, filteredStudents, onFieldChange, onFie
               })
             ) : (
               <tr>
-                <td colSpan="15" className="table-empty-cell">
+                <td colSpan="16" className="table-empty-cell">
                   No data uploaded yet. Add a spreadsheet to configure student fee records.
                 </td>
               </tr>

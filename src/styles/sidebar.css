@@ -1,17 +1,27 @@
+:root {
+  --sidebar-width: 228px;
+  --sidebar-width-collapsed: 84px;
+  --sidebar-current-width: var(--sidebar-width);
+  --sidebar-collapse-duration: 0.2s;
+  --sidebar-collapse-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --sidebar-fade-duration: 0.14s;
+}
+
 .dashboard-container {
   display: grid;
-  grid-template-columns: 228px minmax(0, 1fr);
+  grid-template-columns: var(--sidebar-current-width) minmax(0, 1fr);
   gap: 16px;
   padding: 12px 16px 14px;
   align-items: stretch;
   flex: 1;
   min-height: 0;
   min-width: 0;
-  transition: grid-template-columns 0.26s cubic-bezier(0.22, 1, 0.36, 1);
+  transition: grid-template-columns var(--sidebar-collapse-duration) var(--sidebar-collapse-ease);
+  will-change: grid-template-columns;
 }
 
 .dashboard-container.sidebar-collapsed {
-  grid-template-columns: 84px minmax(0, 1fr);
+  --sidebar-current-width: var(--sidebar-width-collapsed);
 }
 
 .sidebar {
@@ -22,6 +32,7 @@
   width: 100%;
   height: 100%;
   contain: layout paint;
+  backface-visibility: hidden;
 }
 
 .sidebar-content {
@@ -32,20 +43,18 @@
   gap: 8px;
   padding: 10px 10px;
   border-radius: 20px;
-  background: rgba(255, 255, 255, 0.9);
+  background: var(--bg-secondary);
   border: 1px solid var(--border-color);
   box-shadow: var(--shadow-lg);
   overflow: hidden;
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  transition: padding 0.22s cubic-bezier(0.22, 1, 0.36, 1), border-radius 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+  transition: border-radius var(--sidebar-collapse-duration) var(--sidebar-collapse-ease);
   justify-content: space-between;
   transform: translateZ(0);
   contain: layout paint;
 }
 
 .dark-mode .sidebar-content {
-  background: rgba(20, 31, 51, 0.92);
+  background: var(--bg-secondary);
 }
 
 .sidebar-header {
@@ -67,7 +76,8 @@
   background: rgba(var(--accent-primary-rgb), 0.06);
   color: var(--text-primary);
   box-shadow: var(--shadow-sm);
-  transition: transform var(--transition-fast), background var(--transition-fast), border-color var(--transition-fast), box-shadow var(--transition-fast);
+  transition: transform var(--sidebar-collapse-duration) var(--sidebar-collapse-ease), background var(--transition-fast), border-color var(--transition-fast), box-shadow var(--transition-fast);
+  will-change: transform;
 }
 
 .sidebar-collapse-btn:hover {
@@ -92,7 +102,7 @@
   border-radius: 14px;
   background: rgba(var(--accent-primary-rgb), 0.1);
   border: 1px solid rgba(var(--accent-primary-rgb), 0.12);
-  transition: padding var(--transition-fast), gap var(--transition-fast), border-radius var(--transition-fast);
+  transition: background var(--transition-fast), border-color var(--transition-fast);
 }
 
 .sidebar-user-avatar {
@@ -113,7 +123,7 @@
   max-width: 150px;
   opacity: 1;
   transform: translateX(0);
-  transition: max-width 0.2s ease, opacity 0.16s ease, transform 0.2s ease;
+  transition: opacity var(--sidebar-fade-duration) ease, transform var(--sidebar-collapse-duration) var(--sidebar-collapse-ease);
   will-change: transform, opacity;
 }
 
@@ -174,7 +184,8 @@
   color: var(--text-secondary);
   text-align: left;
   border: 1px solid transparent;
-  transition: background 0.16s ease, color 0.16s ease, transform 0.18s ease, box-shadow 0.18s ease, border-color 0.16s ease, gap 0.2s ease, padding 0.2s ease;
+  transition: background 0.16s ease, color 0.16s ease, transform 0.18s ease, box-shadow 0.18s ease, border-color 0.16s ease;
+  will-change: transform;
 }
 
 .nav-item:hover {
@@ -224,7 +235,7 @@
   max-width: 160px;
   opacity: 1;
   transform: translateX(0);
-  transition: max-width 0.2s ease, opacity 0.16s ease, transform 0.2s ease;
+  transition: opacity var(--sidebar-fade-duration) ease, transform var(--sidebar-collapse-duration) var(--sidebar-collapse-ease);
   will-change: transform, opacity;
 }
 
@@ -293,6 +304,11 @@
 
 .sidebar.collapsed .sidebar-collapse-btn {
   width: 40px;
+  transform: rotate(180deg);
+}
+
+.sidebar.collapsed .sidebar-collapse-btn:hover {
+  transform: rotate(180deg) translateY(-1px);
 }
 
 .sidebar.collapsed .sidebar-user {
@@ -304,7 +320,7 @@
 .sidebar.collapsed .nav-copy {
   max-width: 0;
   opacity: 0;
-  transform: translateX(-6px);
+  transform: translateX(-8px);
   pointer-events: none;
 }
 
@@ -333,7 +349,7 @@
 
 @media (max-width: 1440px) {
   .dashboard-container {
-    grid-template-columns: 214px minmax(0, 1fr);
+    --sidebar-width: 214px;
     gap: 12px;
     padding: 10px 12px 12px;
   }
@@ -341,6 +357,17 @@
 
 @media (max-width: 1200px) {
   .dashboard-container {
-    grid-template-columns: 202px minmax(0, 1fr);
+    --sidebar-width: 202px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dashboard-container,
+  .sidebar-content,
+  .sidebar-collapse-btn,
+  .sidebar-user-text,
+  .nav-item,
+  .nav-copy {
+    transition: none !important;
   }
 }

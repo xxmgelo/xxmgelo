@@ -10,10 +10,19 @@ async function request(path, options = {}) {
   });
 
   const text = await response.text();
-  const data = text ? JSON.parse(text) : null;
+  let data = null;
+  if (text) {
+    try {
+      data = JSON.parse(text);
+    } catch (error) {
+      data = null;
+    }
+  }
 
   if (!response.ok) {
-    const message = (data && data.error) || response.statusText;
+    const baseMessage = (data && data.error) || response.statusText;
+    const detailMessage = data && data.details ? ` ${String(data.details)}` : "";
+    const message = `${baseMessage}${detailMessage}`.trim();
     throw new Error(message);
   }
 

@@ -9,6 +9,8 @@ const INITIAL_STUDENT = {
   YearLevel: "",
   Gmail: "",
   TotalFee: 0,
+  BaseTotalFee: 0,
+  Discount: 0,
   Downpayment: 0,
   Prelim: 0,
   Midterm: 0,
@@ -17,6 +19,7 @@ const INITIAL_STUDENT = {
   TotalBalance: 0,
   PaymentMode: PAYMENT_MODES.INSTALLMENT,
   FullPaymentAmount: 0,
+  CanRemind: false,
 };
 
 export const handleFileUpload = (event, setStudents) => {
@@ -39,6 +42,17 @@ export const handleFileUpload = (event, setStudents) => {
       YearLevel: row["Year Level"] || row.Year || row.YearLevel || "",
       Gmail: row.Gmail || row.Email || "",
       TotalFee: row["Total Fee"] ?? row.total_fee ?? row.TotalFee ?? 0,
+      BaseTotalFee:
+        row["Base Total Fee"] ??
+        row.BaseTotalFee ??
+        row.base_total_fee ??
+        row["Original Total Fee"] ??
+        row.original_total_fee ??
+        row["Total Fee"] ??
+        row.total_fee ??
+        row.TotalFee ??
+        0,
+      Discount: row["Discount (%)"] ?? row.Discount ?? row.discount ?? row.discount_percent ?? 0,
       Downpayment: row.Downpayment ?? row.downpayment ?? 0,
       Prelim: row.Prelim ?? row.prelim ?? 0,
       Midterm: row.Midterm ?? row.midterm ?? 0,
@@ -47,6 +61,7 @@ export const handleFileUpload = (event, setStudents) => {
       TotalBalance: row["Total Balance"] ?? row.TotalBalance ?? row.total_balance ?? 0,
       PaymentMode: row["Payment Mode"] ?? row.PaymentMode ?? row.payment_mode ?? PAYMENT_MODES.INSTALLMENT,
       FullPaymentAmount: row["Full Payment Amount"] ?? row.FullPaymentAmount ?? row.full_payment_amount ?? 0,
+      CanRemind: row.CanRemind ?? row.can_remind ?? false,
     })).map((student) => normalizeStudentFinancials(student));
 
     try {

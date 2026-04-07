@@ -2,6 +2,8 @@ import {
   PAYMENT_MODES,
   applyFeeFieldChange,
   getCollectedAmount,
+  getEffectiveTotalFee,
+  getReminderDueDetails,
   normalizeStudentFinancials,
   previewPaymentApplication,
 } from "./fees";
@@ -155,5 +157,97 @@ describe("fee utilities", () => {
     expect(updated.PreFinal).toBe(4800);
     expect(updated.Finals).toBe(4800);
     expect(updated.TotalBalance).toBe(24000);
+  });
+
+  test("applies discount to installment total and schedule", () => {
+    const updated = applyFeeFieldChange(
+      {
+        TotalFee: 48000,
+        PaymentMode: PAYMENT_MODES.INSTALLMENT,
+        Downpayment: 9600,
+        Prelim: 9600,
+        Midterm: 9600,
+        PreFinal: 9600,
+        Finals: 9600,
+      },
+      "Discount",
+      50
+    );
+
+    expect(updated.Discount).toBe(50);
+    expect(updated.BaseTotalFee).toBe(48000);
+    expect(updated.TotalFee).toBe(24000);
+    expect(updated.TotalBalance).toBe(24000);
+    expect(updated.Downpayment).toBe(4800);
+    expect(updated.Prelim).toBe(4800);
+    expect(updated.Midterm).toBe(4800);
+    expect(updated.PreFinal).toBe(4800);
+    expect(updated.Finals).toBe(4800);
+  });
+
+  test("keeps discount applied when total fee is edited after discount is set", () => {
+    const updated = applyFeeFieldChange(
+      {
+        TotalFee: 24000,
+        Discount: 50,
+        PaymentMode: PAYMENT_MODES.INSTALLMENT,
+        Downpayment: 4800,
+        Prelim: 4800,
+        Midterm: 4800,
+        PreFinal: 4800,
+        Finals: 4800,
+      },
+      "TotalFee",
+      50000
+    );
+
+    expect(updated.Discount).toBe(50);
+    expect(updated.BaseTotalFee).toBe(50000);
+    expect(updated.TotalFee).toBe(25000);
+    expect(updated.TotalBalance).toBe(25000);
+  });
+
+  test("derives effective total fee for display only", () => {
+    const effective = getEffectiveTotalFee({
+      TotalFee: 48000,
+      Discount: 50,
+    });
+
+    expect(effective).toBe(24000);
+  });
+
+  test("resolves reminder due to the next unpaid installment stage", () => {
+    const due = getReminderDueDetails({
+      TotalFee: 24000,
+      PaymentMode: PAYMENT_MODES.INSTALLMENT,
+      Downpayment: 0,
+      Prelim: 4800,
+      Midterm: 4800,
+      PreFinal: 4800,
+      Finals: 4800,
+      TotalBalance: 19200,
+    });
+
+    expect(due.type).toBe("installment_stage");
+    expect(due.field).toBe("Prelim");
+    expect(due.label).toBe("Prelim");
+    expect(due.amount).toBe(4800);
+  });
+
+  test("falls back to total remaining balance when installments are all zero but balance remains", () => {
+    const due = getReminderDueDetails({
+      TotalFee: 24000,
+      PaymentMode: PAYMENT_MODES.INSTALLMENT,
+      Downpayment: 0,
+      Prelim: 0,
+      Midterm: 0,
+      PreFinal: 0,
+      Finals: 0,
+      TotalBalance: 1200,
+    });
+
+    expect(due.type).toBe("remaining_balance");
+    expect(due.label).toBe("Total Remaining Balance");
+    expect(due.amount).toBe(1200);
   });
 });

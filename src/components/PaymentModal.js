@@ -1,6 +1,9 @@
 import React, { useEffect, useMemo, useState } from "react";
 import {
+  INSTALLMENT_FIELDS,
+  INSTALLMENT_LABELS,
   PAYMENT_MODES,
+  getCurrentInstallmentIndex,
   getCollectedAmount,
   normalizeStudentFinancials,
   parseAmount,
@@ -12,6 +15,7 @@ const currencyFormatter = new Intl.NumberFormat("en-PH", {
   currency: "PHP",
   maximumFractionDigits: 0,
 });
+const roundCurrency = (value) => Math.round((Number(value) || 0) * 100) / 100;
 
 function PaymentModal({ showPaymentModal, selectedStudent, onClose, onSavePayment }) {
   const [paymentMode, setPaymentMode] = useState(PAYMENT_MODES.INSTALLMENT);
@@ -64,6 +68,43 @@ function PaymentModal({ showPaymentModal, selectedStudent, onClose, onSavePaymen
       return;
     }
 
+    const stageMeta =
+      paymentMode === PAYMENT_MODES.FULL
+        ? {
+          stage_field: "FullPaymentAmount",
+          stage_label: "Full Payment",
+          stage_amount_before: roundCurrency(currentStudent.TotalBalance),
+          stage_amount_paid: roundCurrency(preview.appliedAmount),
+          stage_amount_remaining: roundCurrency(preview.outstandingAfter),
+        }
+        : (() => {
+          const currentIndex = getCurrentInstallmentIndex(currentStudent);
+
+          if (currentIndex === -1) {
+            return {
+              stage_field: null,
+              stage_label: "Installment",
+              stage_amount_before: 0,
+              stage_amount_paid: roundCurrency(preview.appliedAmount),
+              stage_amount_remaining: 0,
+            };
+          }
+
+          const stageField = INSTALLMENT_FIELDS[currentIndex];
+          const stageLabel = INSTALLMENT_LABELS[stageField];
+          const stageAmountBefore = roundCurrency(currentStudent[stageField]);
+          const stageAmountPaid = roundCurrency(Math.min(preview.appliedAmount, stageAmountBefore));
+          const stageAmountRemaining = roundCurrency(Math.max(stageAmountBefore - stageAmountPaid, 0));
+
+          return {
+            stage_field: stageField,
+            stage_label: stageLabel,
+            stage_amount_before: stageAmountBefore,
+            stage_amount_paid: stageAmountPaid,
+            stage_amount_remaining: stageAmountRemaining,
+          };
+        })();
+
     onSavePayment({
       student: {
         ...preview.nextStudent,
@@ -76,6 +117,7 @@ function PaymentModal({ showPaymentModal, selectedStudent, onClose, onSavePaymen
         outstanding_before: preview.outstandingBefore,
         outstanding_after: preview.outstandingAfter,
         official_receipt: officialReceipt.trim(),
+        ...stageMeta,
       },
     });
   };

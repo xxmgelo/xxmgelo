@@ -1,7 +1,7 @@
 import React, { useCallback, useMemo, useState } from "react";
 import payIcon from "../assets/pay.png";
 import remindIcon from "../assets/reminder.png";
-import { getCollectedAmount, normalizeStudentFinancials, PAYMENT_MODES } from "../utils/fees";
+import { getCollectedAmount, getEffectiveTotalFee, normalizeStudentFinancials, PAYMENT_MODES } from "../utils/fees";
 import TablePagination from "./TablePagination";
 import useTablePagination from "../hooks/useTablePagination";
 
@@ -72,7 +72,7 @@ function StudentFeeTable({
     () =>
       selectedStudents
         .map((student) => normalizeStudentFinancials(student))
-        .filter((student) => student.Gmail && student.TotalBalance > 0),
+        .filter((student) => student.Gmail && student.TotalBalance > 0 && student.CanRemind),
     [selectedStudents]
   );
 
@@ -201,7 +201,7 @@ function StudentFeeTable({
                         {normalized.PaymentMode === PAYMENT_MODES.FULL ? "Full" : "Installment"}
                       </span>
                     </td>
-                    <td>{currencyFormatter.format(normalized.TotalFee)}</td>
+                    <td>{currencyFormatter.format(getEffectiveTotalFee(normalized))}</td>
                     <td>{currencyFormatter.format(normalized.Downpayment)}</td>
                     <td>{currencyFormatter.format(normalized.Prelim)}</td>
                     <td>{currencyFormatter.format(normalized.Midterm)}</td>
@@ -227,8 +227,9 @@ function StudentFeeTable({
                         <button
                           className="action-btn remind-btn"
                           type="button"
-                          disabled={isPaid || !normalized.Gmail || sendingReminder}
+                          disabled={isPaid || !normalized.Gmail || sendingReminder || !normalized.CanRemind}
                           onClick={() => onRemind(normalized)}
+                          title={!normalized.CanRemind ? "Save payment first before sending a reminder." : ""}
                         >
                           <img src={remindIcon} alt="Remind" className="btn-icon" />
                           Remind
