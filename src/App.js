@@ -27,6 +27,7 @@ import {
   adminLogin,
   updateAdminProfile,
   updateAdminPassword,
+  sendPaymentReceipt,
   sendPaymentReminder,
 } from "./utils/api";
 
@@ -483,19 +484,54 @@ function App() {
     setSelectedReminderStudent(null);
   };
 
-  const handleSavePayment = async (updatedStudent) => {
-    if (!updatedStudent || !updatedStudent.StudentID) {
+  const handleSavePayment = async (payload) => {
+    const incomingStudent = payload?.student ? payload.student : payload;
+    const paymentMeta = payload?.payment || null;
+
+    if (!incomingStudent || !incomingStudent.StudentID) {
       return;
     }
 
+    const normalizedIncomingStudent = normalizeStudentFinancials(incomingStudent);
+
     try {
-      const savedStudent = normalizeStudentFinancials(await updateStudent(updatedStudent));
+      const savedStudent = normalizeStudentFinancials(await updateStudent(normalizedIncomingStudent));
       setStudents((prev) =>
         prev.map((student) =>
           student.StudentID === savedStudent.StudentID ? savedStudent : student
         )
       );
       closePaymentModal();
+
+      if (
+        paymentMeta &&
+        savedStudent.Gmail &&
+        Number(paymentMeta.amount_applied) > 0
+      ) {
+        try {
+          await sendPaymentReceipt({
+            StudentID: savedStudent.StudentID,
+            Name: savedStudent.Name,
+            Gmail: savedStudent.Gmail,
+            Program: savedStudent.Program,
+            YearLevel: savedStudent.YearLevel,
+            PaymentMode: savedStudent.PaymentMode,
+            TotalFee: savedStudent.TotalFee,
+            TotalBalance: savedStudent.TotalBalance,
+            FullPaymentAmount: savedStudent.FullPaymentAmount,
+            amount_requested: paymentMeta.amount_requested,
+            amount_applied: paymentMeta.amount_applied,
+            outstanding_before: paymentMeta.outstanding_before,
+            outstanding_after: paymentMeta.outstanding_after,
+            official_receipt: paymentMeta.official_receipt,
+          });
+        } catch (emailError) {
+          console.error(emailError);
+          alert(
+            `Payment was saved, but receipt email failed to send to ${savedStudent.Gmail}. ${emailError?.message || ""}`.trim()
+          );
+        }
+      }
     } catch (error) {
       console.error(error);
       alert("Payment could not be saved. Please try again.");
@@ -513,6 +549,80 @@ function App() {
     } catch (error) {
       console.error(error);
       alert(error.message || "Reminder email could not be sent.");
+    } finally {
+      setSendingReminder(false);
+    }
+  };
+
+  const handleSendRemindersAtOnce = async (selectedStudents) => {
+    if (sendingReminder) {
+      return;
+    }
+
+    const eligibleStudents = (selectedStudents || [])
+      .map((student) => normalizeStudentFinancials(student))
+      .filter(
+        (student) =>
+          Boolean(student.StudentID) &&
+          Boolean(student.Name) &&
+          Boolean(student.Gmail) &&
+          student.TotalBalance > 0
+      );
+
+    if (eligibleStudents.length === 0) {
+      alert("No eligible selected students to remind. Select students with a Gmail and outstanding balance.");
+      return;
+    }
+
+    const proceed = window.confirm(
+      `Send reminder email${eligibleStudents.length === 1 ? "" : "s"} to ${eligibleStudents.length} selected student${eligibleStudents.length === 1 ? "" : "s"} now?`
+    );
+
+    if (!proceed) {
+      return;
+    }
+
+    setSendingReminder(true);
+
+    let successCount = 0;
+    const failures = [];
+
+    try {
+      for (const student of eligibleStudents) {
+        try {
+          await sendPaymentReminder({
+            StudentID: student.StudentID,
+            Name: student.Name,
+            Gmail: student.Gmail,
+            Program: student.Program,
+            YearLevel: student.YearLevel,
+            PaymentMode: student.PaymentMode,
+            TotalFee: student.TotalFee,
+            TotalBalance: student.TotalBalance,
+          });
+          successCount += 1;
+        } catch (error) {
+          failures.push({
+            name: student.Name || student.StudentID,
+            message: error?.message || "Send failed",
+          });
+        }
+      }
+
+      if (failures.length === 0) {
+        alert(`Reminder email${successCount === 1 ? "" : "s"} sent to ${successCount} student${successCount === 1 ? "" : "s"}.`);
+        return;
+      }
+
+      const failedPreview = failures
+        .slice(0, 5)
+        .map((item) => `${item.name}: ${item.message}`)
+        .join("\n");
+      const extraFailed = failures.length - 5;
+
+      alert(
+        `Reminders sent: ${successCount}/${eligibleStudents.length}\n\nFailed:\n${failedPreview}${extraFailed > 0 ? `\n...and ${extraFailed} more.` : ""}`
+      );
     } finally {
       setSendingReminder(false);
     }
@@ -647,6 +757,8 @@ function App() {
             filteredStudents={filteredStudents}
             onPaid={handlePaid}
             onRemind={handleRemind}
+            onRemindSelected={handleSendRemindersAtOnce}
+            sendingReminder={sendingReminder}
           />
         </>
       )}

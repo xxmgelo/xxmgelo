@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import payIcon from "../assets/pay.png";
 import remindIcon from "../assets/reminder.png";
 import { getCollectedAmount, normalizeStudentFinancials, PAYMENT_MODES } from "../utils/fees";
@@ -11,7 +11,14 @@ const currencyFormatter = new Intl.NumberFormat("en-PH", {
   maximumFractionDigits: 0,
 });
 
-function StudentFeeTable({ students, filteredStudents, onPaid, onRemind }) {
+function StudentFeeTable({
+  students,
+  filteredStudents,
+  onPaid,
+  onRemind,
+  onRemindSelected,
+  sendingReminder = false,
+}) {
   const [selectedRows, setSelectedRows] = useState(new Set());
   const {
     currentPage,
@@ -22,6 +29,19 @@ function StudentFeeTable({ students, filteredStudents, onPaid, onRemind }) {
     rangeStart,
     rangeEnd,
   } = useTablePagination(filteredStudents, 10);
+
+  const getRowKey = useCallback((student) => {
+    const originalIndex = students.indexOf(student);
+    return student.StudentID || `row-${originalIndex}`;
+  }, [students]);
+
+  const visibleRowKeys = useMemo(
+    () => paginatedItems.map((student) => getRowKey(student)),
+    [paginatedItems, getRowKey]
+  );
+
+  const allSelected =
+    visibleRowKeys.length > 0 && visibleRowKeys.every((rowKey) => selectedRows.has(rowKey));
 
   const summary = useMemo(() => {
     return filteredStudents.reduce(
@@ -39,6 +59,23 @@ function StudentFeeTable({ students, filteredStudents, onPaid, onRemind }) {
     );
   }, [filteredStudents]);
 
+  const selectedStudents = useMemo(
+    () =>
+      filteredStudents.filter((student) => {
+        const rowKey = getRowKey(student);
+        return selectedRows.has(rowKey);
+      }),
+    [filteredStudents, selectedRows, getRowKey]
+  );
+
+  const eligibleSelectedStudents = useMemo(
+    () =>
+      selectedStudents
+        .map((student) => normalizeStudentFinancials(student))
+        .filter((student) => student.Gmail && student.TotalBalance > 0),
+    [selectedStudents]
+  );
+
   const toggleRow = (rowKey) => {
     setSelectedRows((prev) => {
       const next = new Set(prev);
@@ -51,13 +88,35 @@ function StudentFeeTable({ students, filteredStudents, onPaid, onRemind }) {
     });
   };
 
+  const toggleAll = () => {
+    setSelectedRows((prev) => {
+      if (allSelected) {
+        const next = new Set(prev);
+        visibleRowKeys.forEach((rowKey) => next.delete(rowKey));
+        return next;
+      }
+
+      const next = new Set(prev);
+      visibleRowKeys.forEach((rowKey) => next.add(rowKey));
+      return next;
+    });
+  };
+
+  const handleRemindSelected = async () => {
+    if (!onRemindSelected || sendingReminder || eligibleSelectedStudents.length === 0) {
+      return;
+    }
+
+    await onRemindSelected(eligibleSelectedStudents);
+  };
+
   return (
     <main className="student-dashboard">
       <div className="section-header">
         <div>
           <h2>Student Fees</h2>
         </div>
-        <div className="section-stat-group">
+        <div className="section-actions">
           <div className="section-summary-pill">
             <span>Collected</span>
             <strong>{currencyFormatter.format(summary.collected)}</strong>
@@ -66,6 +125,19 @@ function StudentFeeTable({ students, filteredStudents, onPaid, onRemind }) {
             <span>Outstanding</span>
             <strong>{currencyFormatter.format(summary.outstanding)}</strong>
           </div>
+          <div className="section-summary-pill">
+            <span>Selected</span>
+            <strong>{selectedRows.size}</strong>
+          </div>
+          <button
+            className="action-btn remind-btn"
+            type="button"
+            onClick={handleRemindSelected}
+            disabled={sendingReminder || eligibleSelectedStudents.length === 0}
+          >
+            <img src={remindIcon} alt="Remind selected" className="btn-icon" />
+            {sendingReminder ? "Sending..." : `Send ${eligibleSelectedStudents.length} Reminder${eligibleSelectedStudents.length === 1 ? "" : "s"}`}
+          </button>
         </div>
       </div>
       <div className="table-container">
@@ -73,7 +145,16 @@ function StudentFeeTable({ students, filteredStudents, onPaid, onRemind }) {
           <thead>
             <tr>
               <th>#</th>
-              <th>Select</th>
+              <th>
+                Select
+                <input
+                  type="checkbox"
+                  className="checklist-box"
+                  checked={allSelected}
+                  onChange={toggleAll}
+                  aria-label="Select all students in current page"
+                />
+              </th>
               <th>USN #</th>
               <th>Name</th>
               <th>Program/Course</th>
@@ -94,8 +175,7 @@ function StudentFeeTable({ students, filteredStudents, onPaid, onRemind }) {
           <tbody>
             {filteredStudents.length > 0 ? (
               paginatedItems.map((student, index) => {
-                const originalIndex = students.indexOf(student);
-                const rowKey = student.StudentID || `row-${originalIndex}`;
+                const rowKey = getRowKey(student);
                 const isSelected = selectedRows.has(rowKey);
                 const normalized = normalizeStudentFinancials(student);
                 const isPaid = normalized.TotalBalance <= 0;
@@ -147,7 +227,7 @@ function StudentFeeTable({ students, filteredStudents, onPaid, onRemind }) {
                         <button
                           className="action-btn remind-btn"
                           type="button"
-                          disabled={isPaid || !normalized.Gmail}
+                          disabled={isPaid || !normalized.Gmail || sendingReminder}
                           onClick={() => onRemind(normalized)}
                         >
                           <img src={remindIcon} alt="Remind" className="btn-icon" />

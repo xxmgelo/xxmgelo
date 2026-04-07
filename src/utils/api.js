@@ -99,3 +99,10 @@ export async function sendPaymentReminder(payload) {
     body: JSON.stringify(payload),
   });
 }
+
+export async function sendPaymentReceipt(payload) {
+  return request("/payment_receipts.php", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}

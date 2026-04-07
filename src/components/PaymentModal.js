@@ -65,8 +65,18 @@ function PaymentModal({ showPaymentModal, selectedStudent, onClose, onSavePaymen
     }
 
     onSavePayment({
-      ...preview.nextStudent,
-      PaymentMode: paymentMode,
+      student: {
+        ...preview.nextStudent,
+        PaymentMode: paymentMode,
+      },
+      payment: {
+        mode: paymentMode,
+        amount_requested: enteredPayment,
+        amount_applied: preview.appliedAmount,
+        outstanding_before: preview.outstandingBefore,
+        outstanding_after: preview.outstandingAfter,
+        official_receipt: officialReceipt.trim(),
+      },
     });
   };
 
