@@ -15,13 +15,15 @@ describe("payment receipt drafts", () => {
         stage_amount_paid: 2000,
         stage_amount_remaining: 4100,
         amount_applied: 2000,
+        date_paid: "2026-04-11T09:30:00.000Z",
       }
     );
 
     expect(draft.subject).toBe("Payment Confirmation - ACLC Fee Management System");
     expect(draft.message).toContain("This is to confirm that your recent tuition fee payment has been successfully recorded.");
-    expect(draft.message).toContain("Stage: Prelim");
+    expect(draft.message).toContain("Type: Prelim");
     expect(draft.message).toContain("Amount Paid:");
+    expect(draft.message).toContain("Date Paid: April 11, 2026");
     expect(draft.message).toContain("Remaining Balance:");
     expect(draft.message).toContain("Please ensure that the remaining balance is settled within the required period.");
     expect(draft.message).not.toContain("Requested Amount");
@@ -30,6 +32,7 @@ describe("payment receipt drafts", () => {
     expect(draft.message).not.toContain("Outstanding After");
     expect(draft.html).toContain("Payment Details");
     expect(draft.html).toContain("Prelim");
+    expect(draft.html).toContain("Date Paid");
     expect(draft.html).toContain("receivednotif.png");
     expect(draft.html).toContain("font-family:'Inter'");
   });

@@ -34,9 +34,17 @@ export async function getStudents() {
 }
 
 export async function createStudent(student) {
+  const payload = {
+    StudentID: student.StudentID,
+    Name: student.Name,
+    Program: student.Program,
+    YearLevel: student.YearLevel,
+    Gmail: student.Gmail,
+  };
+
   const result = await request("/students.php", {
     method: "POST",
-    body: JSON.stringify(student),
+    body: JSON.stringify(payload),
   });
 
   return result && result.student ? result.student : student;

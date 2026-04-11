@@ -139,7 +139,7 @@ describe("fee utilities", () => {
     expect(updated.Finals).toBe(840);
   });
 
-  test("auto-divides full payment total fee across the five schedule fields", () => {
+  test("keeps installment columns cleared for full payment mode", () => {
     const updated = applyFeeFieldChange(
       {
         TotalFee: 0,
@@ -151,11 +151,11 @@ describe("fee utilities", () => {
     );
 
     expect(updated.TotalFee).toBe(24000);
-    expect(updated.Downpayment).toBe(4800);
-    expect(updated.Prelim).toBe(4800);
-    expect(updated.Midterm).toBe(4800);
-    expect(updated.PreFinal).toBe(4800);
-    expect(updated.Finals).toBe(4800);
+    expect(updated.Downpayment).toBe(0);
+    expect(updated.Prelim).toBe(0);
+    expect(updated.Midterm).toBe(0);
+    expect(updated.PreFinal).toBe(0);
+    expect(updated.Finals).toBe(0);
     expect(updated.TotalBalance).toBe(24000);
   });
 

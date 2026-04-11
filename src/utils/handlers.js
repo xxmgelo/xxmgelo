@@ -20,6 +20,14 @@ const INITIAL_STUDENT = {
   PaymentMode: PAYMENT_MODES.INSTALLMENT,
   FullPaymentAmount: 0,
   CanRemind: false,
+  date_paid: null,
+  DatePaid: null,
+  downpayment_date: null,
+  prelim_date: null,
+  midterm_date: null,
+  prefinal_date: null,
+  final_date: null,
+  total_balance_date: null,
 };
 
 export const handleFileUpload = (event, setStudents) => {
@@ -62,6 +70,14 @@ export const handleFileUpload = (event, setStudents) => {
       PaymentMode: row["Payment Mode"] ?? row.PaymentMode ?? row.payment_mode ?? PAYMENT_MODES.INSTALLMENT,
       FullPaymentAmount: row["Full Payment Amount"] ?? row.FullPaymentAmount ?? row.full_payment_amount ?? 0,
       CanRemind: row.CanRemind ?? row.can_remind ?? false,
+      date_paid: row["Date Paid"] ?? row.DatePaid ?? row.date_paid ?? null,
+      DatePaid: row["Date Paid"] ?? row.DatePaid ?? row.date_paid ?? null,
+      downpayment_date: row["Downpayment Date"] ?? row.downpayment_date ?? row.DownpaymentDate ?? null,
+      prelim_date: row["Prelim Date"] ?? row.prelim_date ?? row.PrelimDate ?? null,
+      midterm_date: row["Midterm Date"] ?? row.midterm_date ?? row.MidtermDate ?? null,
+      prefinal_date: row["Pre-Final Date"] ?? row.prefinal_date ?? row.PreFinalDate ?? null,
+      final_date: row["Final Date"] ?? row.final_date ?? row.FinalDate ?? null,
+      total_balance_date: row["Total Balance Date"] ?? row.total_balance_date ?? row.TotalBalanceDate ?? null,
     })).map((student) => normalizeStudentFinancials(student));
 
     try {
@@ -86,11 +102,23 @@ export const handleAddStudent = async (
   students,
   setStudents,
   setShowAddStudentModal,
-  setNewStudent
+  setNewStudent,
+  setFormError
 ) => {
   e.preventDefault();
-  if (!newStudent.StudentID || !newStudent.Name) {
-    alert("Please fill in required fields");
+  if (!newStudent.StudentID || !newStudent.Name || !newStudent.Program) {
+    setFormError?.("Please fill in the required fields: USN #, Student Name, and Program/Course.");
+    return;
+  }
+
+  const normalizedGmail = String(newStudent.Gmail || "").trim().toLowerCase();
+  if (
+    normalizedGmail &&
+    students.some(
+      (student) => String(student.Gmail || student.gmail || "").trim().toLowerCase() === normalizedGmail
+    )
+  ) {
+    setFormError?.("This Gmail account is already assigned to another student.");
     return;
   }
 
@@ -99,10 +127,11 @@ export const handleAddStudent = async (
     setStudents([...students, created]);
   } catch (error) {
     console.error(error);
-    alert("Saved locally only. API not reachable.");
-    setStudents([...students, normalizeStudentFinancials(newStudent)]);
+    setFormError?.(error?.message || "Student could not be added.");
+    return;
   }
 
+  setFormError?.("");
   setShowAddStudentModal(false);
   setNewStudent(INITIAL_STUDENT);
 };

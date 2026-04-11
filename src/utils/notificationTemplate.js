@@ -44,6 +44,7 @@ export const buildPaymentNotificationHtml = ({
   studentId = "",
   bodyParagraphs = [],
   highlightRows = [],
+  breakdownRows = [],
   closing = "Thank you.",
   closingPlacement = "footer",
   systemName = "ACLC Fee Management System",
@@ -52,6 +53,7 @@ export const buildPaymentNotificationHtml = ({
 }) => {
   const safeParagraphs = (bodyParagraphs || []).filter(Boolean);
   const safeHighlights = (highlightRows || []).filter((row) => row && row.label);
+  const safeBreakdownRows = (breakdownRows || []).filter((row) => row && row.label);
   const logoUrl = resolveAssetUrl("aclclogo.png");
   const iconUrl = notificationIcon ? resolveAssetUrl(notificationIcon) : "";
   const shouldRenderClosingInBody = closingPlacement === "body";
@@ -136,6 +138,16 @@ export const buildPaymentNotificationHtml = ({
             </table>
           </td>
         </tr>
+        ${safeBreakdownRows.length > 0 ? `
+        <tr>
+          <td style="padding:0 24px 14px 24px;">
+            <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background:#f8fafc; border:1px solid #cbd5e1; border-radius:10px; padding:12px;">
+              <tr><td style="font-size:12px; font-weight:700; color:#334155; padding:0 0 8px 0;">Balance Breakdown</td></tr>
+              ${safeBreakdownRows.map((row) => buildHighlightRow(row.label, row.value)).join("")}
+            </table>
+          </td>
+        </tr>
+        ` : ""}
         <tr>
           <td style="padding:8px 24px 22px 24px; border-top:1px solid #e5e7eb;">
             ${shouldRenderClosingInBody

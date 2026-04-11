@@ -180,6 +180,63 @@ th .checklist-box {
   white-space: nowrap;
 }
 
+.payment-amount-cell {
+  display: grid;
+  gap: 3px;
+  justify-items: center;
+  min-width: 84px;
+}
+
+.payment-amount-date {
+  color: var(--text-secondary);
+  font-size: 9px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.payment-column-header {
+  display: grid;
+  gap: 5px;
+  justify-items: stretch;
+  min-width: 112px;
+}
+
+.payment-column-header > span {
+  display: block;
+  text-align: center;
+}
+
+.column-filter-select,
+.column-filter-input {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid var(--input-border);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.96);
+  color: var(--text-primary);
+  font-size: 9px;
+  font-weight: 600;
+}
+
+.column-filter-select {
+  padding: 4px 6px;
+}
+
+.column-filter-input {
+  padding: 3px 5px;
+}
+
+.dark-mode .column-filter-select,
+.dark-mode .column-filter-input {
+  background: rgba(15, 23, 42, 0.9);
+  color: var(--text-primary);
+}
+
+.column-filter-range {
+  display: grid;
+  gap: 4px;
+}
+
 .balance-pill,
 .payment-mode-pill {
   display: inline-flex;

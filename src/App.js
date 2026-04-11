@@ -18,7 +18,12 @@ import AdminSettingsPage from "./components/AdminSettingsPage";
 import mainAdminAvatar from "./assets/admin.png";
 import assistantAdminAvatar from "./assets/administrator.png";
 import { handleFileUpload, handleAddStudent, handleInputChange, INITIAL_STUDENT } from "./utils/handlers";
-import { applyFeeFieldChange, normalizeStudentFinancials } from "./utils/fees";
+import {
+  applyFeeFieldChange,
+  INSTALLMENT_DATE_FIELDS,
+  getLatestPaymentReminderToken,
+  normalizeStudentFinancials,
+} from "./utils/fees";
 import { buildReminderDraft } from "./utils/reminders";
 import { buildPaymentReceiptDraft } from "./utils/receipts";
 import {
@@ -36,6 +41,7 @@ const AUTH_STORAGE_KEY = "aclc_admin_session";
 const ASSISTANT_ADMIN_USERNAME = "assistantadmin";
 const THEME_STORAGE_KEY = "aclc_theme_preferences";
 const DARK_MODE_STORAGE_KEY = "aclc_dark_mode";
+const PAYMENT_CACHE_STORAGE_KEY = "aclc_payment_detail_cache";
 const HEX_COLOR_PATTERN = /^#[0-9A-F]{6}$/;
 
 const DEFAULT_THEME = {
@@ -74,6 +80,159 @@ const VIEW_META = {
   },
 };
 
+const resolvePaymentDateFields = (paymentMeta, paymentTimestamp) => {
+  const nextDateFields = {};
+  const paymentBreakdown = Array.isArray(paymentMeta?.payment_breakdown) ? paymentMeta.payment_breakdown : [];
+
+  paymentBreakdown.forEach((item) => {
+    const dateField = INSTALLMENT_DATE_FIELDS[item?.field];
+    if (dateField && item?.field !== "FullPaymentAmount" && Number(item?.applied) > 0) {
+      nextDateFields[dateField] = paymentTimestamp;
+    }
+  });
+
+  if (Object.keys(nextDateFields).length === 0) {
+    const fallbackDateField = INSTALLMENT_DATE_FIELDS[paymentMeta?.stage_field];
+    if (fallbackDateField && paymentMeta?.stage_field !== "FullPaymentAmount" && Number(paymentMeta?.amount_applied) > 0) {
+      nextDateFields[fallbackDateField] = paymentTimestamp;
+    }
+  }
+
+  if (Number(paymentMeta?.outstanding_after) <= 0) {
+    nextDateFields.total_balance_date = paymentTimestamp;
+  }
+
+  return nextDateFields;
+};
+
+const resolvePaymentAmountFields = (paymentMeta) => {
+  const nextAmountFields = {};
+  const paymentBreakdown = Array.isArray(paymentMeta?.payment_breakdown) ? paymentMeta.payment_breakdown : [];
+
+  paymentBreakdown.forEach((item) => {
+    const amountField =
+      item?.field === "Downpayment"
+        ? "downpayment_paid_amount"
+        : item?.field === "Prelim"
+          ? "prelim_paid_amount"
+          : item?.field === "Midterm"
+            ? "midterm_paid_amount"
+            : item?.field === "PreFinal"
+              ? "prefinal_paid_amount"
+              : item?.field === "Finals"
+                ? "final_paid_amount"
+                : item?.field === "FullPaymentAmount"
+                  ? "total_balance_paid_amount"
+                  : "";
+
+    if (amountField && Number(item?.applied) > 0) {
+      nextAmountFields[amountField] = Number(item.applied);
+    }
+  });
+
+  if (Object.keys(nextAmountFields).length === 0) {
+    const fallbackAmountField =
+      paymentMeta?.stage_field === "Downpayment"
+        ? "downpayment_paid_amount"
+        : paymentMeta?.stage_field === "Prelim"
+          ? "prelim_paid_amount"
+          : paymentMeta?.stage_field === "Midterm"
+            ? "midterm_paid_amount"
+            : paymentMeta?.stage_field === "PreFinal"
+              ? "prefinal_paid_amount"
+              : paymentMeta?.stage_field === "Finals"
+                ? "final_paid_amount"
+                : paymentMeta?.stage_field === "FullPaymentAmount"
+                  ? "total_balance_paid_amount"
+                  : "";
+
+    if (fallbackAmountField && Number(paymentMeta?.stage_amount_paid ?? paymentMeta?.amount_applied) > 0) {
+      nextAmountFields[fallbackAmountField] = Number(paymentMeta.stage_amount_paid ?? paymentMeta.amount_applied);
+    }
+  }
+
+  return nextAmountFields;
+};
+
+const getStageLabelFromField = (stageField) => {
+  switch (stageField) {
+    case "Downpayment":
+      return "Downpayment";
+    case "Prelim":
+      return "Prelim";
+    case "Midterm":
+      return "Midterm";
+    case "PreFinal":
+      return "Pre-Final";
+    case "Finals":
+      return "Finals";
+    case "FullPaymentAmount":
+      return "Full Payment";
+    default:
+      return "Payment";
+  }
+};
+
+const loadPaymentDetailCache = () => {
+  try {
+    const stored = localStorage.getItem(PAYMENT_CACHE_STORAGE_KEY);
+    if (!stored) {
+      return {};
+    }
+
+    const parsed = JSON.parse(stored);
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch (error) {
+    console.warn("Failed to parse payment detail cache.", error);
+    return {};
+  }
+};
+
+const savePaymentDetailCache = (cache) => {
+  try {
+    localStorage.setItem(PAYMENT_CACHE_STORAGE_KEY, JSON.stringify(cache || {}));
+  } catch (error) {
+    console.warn("Failed to persist payment detail cache.", error);
+  }
+};
+
+const mergePaymentDetailsIntoStudent = (student, cache = {}) => {
+  if (!student || !student.StudentID) {
+    return student;
+  }
+
+  const cacheKey = String(student.StudentID);
+  const cached = cache[cacheKey];
+  if (!cached || typeof cached !== "object") {
+    return student;
+  }
+
+  return {
+    ...student,
+    ...Object.fromEntries(
+      Object.entries(cached).filter(([, value]) => value !== undefined && value !== null && value !== "")
+    ),
+  };
+};
+
+const extractPersistedPaymentDetails = (student = {}) => ({
+  downpayment_date: student.downpayment_date ?? null,
+  prelim_date: student.prelim_date ?? null,
+  midterm_date: student.midterm_date ?? null,
+  prefinal_date: student.prefinal_date ?? null,
+  final_date: student.final_date ?? null,
+  total_balance_date: student.total_balance_date ?? null,
+  downpayment_paid_amount: student.downpayment_paid_amount ?? null,
+  prelim_paid_amount: student.prelim_paid_amount ?? null,
+  midterm_paid_amount: student.midterm_paid_amount ?? null,
+  prefinal_paid_amount: student.prefinal_paid_amount ?? null,
+  final_paid_amount: student.final_paid_amount ?? null,
+  total_balance_paid_amount: student.total_balance_paid_amount ?? null,
+  date_paid: student.date_paid ?? student.DatePaid ?? null,
+  DatePaid: student.DatePaid ?? student.date_paid ?? null,
+  reminder_sent_token: student.reminder_sent_token ?? null,
+});
+
 function App() {
   const [students, setStudents] = useState([]);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -90,6 +249,7 @@ function App() {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState("home");
   const [newStudent, setNewStudent] = useState(INITIAL_STUDENT);
+  const [addStudentError, setAddStudentError] = useState("");
   const [editStudent, setEditStudent] = useState(null);
   const [confirmState, setConfirmState] = useState({ show: false, type: null, payload: null });
   const [programFilter, setProgramFilter] = useState("");
@@ -266,7 +426,12 @@ function App() {
       try {
         const data = await getStudents();
         if (Array.isArray(data)) {
-          setStudents(data.map((student) => normalizeStudentFinancials(student)));
+          const paymentCache = loadPaymentDetailCache();
+          setStudents(
+            data.map((student) =>
+              normalizeStudentFinancials(mergePaymentDetailsIntoStudent(student, paymentCache))
+            )
+          );
         }
       } catch (error) {
         console.error(error);
@@ -396,15 +561,38 @@ function App() {
     };
   }, []);
 
+  const getReminderState = useCallback((student) => {
+    const normalizedStudent = normalizeStudentFinancials(student);
+    const reminderToken = getLatestPaymentReminderToken(normalizedStudent);
+    const isReminderAlreadySent =
+      Boolean(normalizedStudent.reminder_sent_token) &&
+      Boolean(reminderToken) &&
+      normalizedStudent.reminder_sent_token === reminderToken;
+
+    return {
+      normalizedStudent,
+      reminderToken,
+      isReminderAlreadySent,
+      canRemind:
+        Boolean(normalizedStudent.Gmail) &&
+        normalizedStudent.TotalBalance > 0 &&
+        normalizedStudent.CanRemind &&
+        Boolean(reminderToken) &&
+        !isReminderAlreadySent,
+    };
+  }, []);
+
   const handleRemind = async (student) => {
     if (sendingReminder) {
       return;
     }
 
-    const normalizedStudent = normalizeStudentFinancials(student);
-    if (!normalizedStudent.Gmail || normalizedStudent.TotalBalance <= 0 || !normalizedStudent.CanRemind) {
+    const { normalizedStudent, reminderToken, isReminderAlreadySent, canRemind } = getReminderState(student);
+    if (!canRemind) {
       if (!normalizedStudent.CanRemind) {
         showReminderToast("Reminder is available only after saving a payment for this student.", "error");
+      } else if (isReminderAlreadySent) {
+        showReminderToast("Reminder has already been sent for the latest paid stage.", "error");
       }
       return;
     }
@@ -413,11 +601,14 @@ function App() {
     try {
       const { payload } = buildReminderPayload(normalizedStudent);
       await sendPaymentReminder(payload);
-      showReminderToast(`Reminder sent to ${payload.Gmail}.`, "success");
       setStudents((prev) =>
         prev.map((item) =>
           item.StudentID === normalizedStudent.StudentID
-            ? normalizeStudentFinancials({ ...item, CanRemind: false })
+            ? normalizeStudentFinancials({
+                ...item,
+                CanRemind: false,
+                reminder_sent_token: reminderToken,
+              })
             : item
         )
       );
@@ -504,12 +695,16 @@ function App() {
 
     try {
       await Promise.all(ids.map((id) => deleteStudent(id)));
+      const nextCache = loadPaymentDetailCache();
+      ids.forEach((id) => {
+        delete nextCache[String(id)];
+      });
+      savePaymentDetailCache(nextCache);
+      setStudents((prev) => prev.filter((student) => !ids.includes(student.StudentID)));
     } catch (error) {
       console.error(error);
-      alert("Some deletions failed. Please try again.");
+      alert(error?.message || "Some deletions failed. Please try again.");
     }
-
-    setStudents((prev) => prev.filter((student) => !ids.includes(student.StudentID)));
   };
 
   const executeDeleteStudent = async (student) => {
@@ -519,10 +714,13 @@ function App() {
 
     try {
       await deleteStudent(student.StudentID);
+      const nextCache = loadPaymentDetailCache();
+      delete nextCache[String(student.StudentID)];
+      savePaymentDetailCache(nextCache);
       setStudents((prev) => prev.filter((item) => item.StudentID !== student.StudentID));
     } catch (error) {
       console.error(error);
-      alert("Delete failed. Please try again.");
+      alert(error?.message || "Delete failed. Please try again.");
     }
   };
 
@@ -561,27 +759,57 @@ function App() {
       return;
     }
 
+    const datePaid = new Date().toISOString();
+    const paymentDateFields = resolvePaymentDateFields(paymentMeta, datePaid);
+    const paymentAmountFields = resolvePaymentAmountFields(paymentMeta);
+    const receiptPaymentMeta = paymentMeta
+      ? {
+        ...paymentMeta,
+        date_paid: datePaid,
+        payment_type: getStageLabelFromField(paymentMeta.stage_field),
+        stage_label: getStageLabelFromField(paymentMeta.stage_field),
+      }
+      : null;
     const normalizedIncomingStudent = normalizeStudentFinancials({
       ...incomingStudent,
       CanRemind: true,
+      date_paid: datePaid,
+      DatePaid: datePaid,
+      ...paymentDateFields,
+      ...paymentAmountFields,
     });
 
     try {
-      const savedStudent = normalizeStudentFinancials(await updateStudent(normalizedIncomingStudent));
+      const persistedStudent = await updateStudent(normalizedIncomingStudent);
+      const savedStudent = normalizeStudentFinancials({
+        ...normalizedIncomingStudent,
+        ...persistedStudent,
+      });
+      const nextCache = loadPaymentDetailCache();
+      nextCache[String(savedStudent.StudentID)] = {
+        ...nextCache[String(savedStudent.StudentID)],
+        ...extractPersistedPaymentDetails(savedStudent),
+      };
+      savePaymentDetailCache(nextCache);
       setStudents((prev) =>
         prev.map((student) =>
-          student.StudentID === savedStudent.StudentID ? savedStudent : student
+          student.StudentID === savedStudent.StudentID
+            ? normalizeStudentFinancials({
+                ...savedStudent,
+                reminder_sent_token: null,
+              })
+            : student
         )
       );
       closePaymentModal();
 
       if (
-        paymentMeta &&
+        receiptPaymentMeta &&
         savedStudent.Gmail &&
-        Number(paymentMeta.amount_applied) > 0
+        Number(receiptPaymentMeta.amount_applied) > 0
       ) {
         try {
-          const receiptDraft = buildPaymentReceiptDraft(savedStudent, paymentMeta);
+          const receiptDraft = buildPaymentReceiptDraft(savedStudent, receiptPaymentMeta);
 
           await sendPaymentReceipt({
             StudentID: savedStudent.StudentID,
@@ -593,16 +821,31 @@ function App() {
             TotalFee: savedStudent.TotalFee,
             TotalBalance: savedStudent.TotalBalance,
             FullPaymentAmount: savedStudent.FullPaymentAmount,
-            amount_requested: paymentMeta.amount_requested,
-            amount_applied: paymentMeta.amount_applied,
-            outstanding_before: paymentMeta.outstanding_before,
-            outstanding_after: paymentMeta.outstanding_after,
-            official_receipt: paymentMeta.official_receipt,
-            stage_field: paymentMeta.stage_field,
-            stage_label: paymentMeta.stage_label,
-            stage_amount_before: paymentMeta.stage_amount_before,
-            stage_amount_paid: paymentMeta.stage_amount_paid,
-            stage_amount_remaining: paymentMeta.stage_amount_remaining,
+            amount_requested: receiptPaymentMeta.amount_requested,
+            amount_applied: receiptPaymentMeta.amount_applied,
+            outstanding_before: receiptPaymentMeta.outstanding_before,
+            outstanding_after: receiptPaymentMeta.outstanding_after,
+            official_receipt: receiptPaymentMeta.official_receipt,
+            stage_field: receiptPaymentMeta.stage_field,
+            stage_label: receiptPaymentMeta.stage_label,
+            stage_amount_before: receiptPaymentMeta.stage_amount_before,
+            stage_amount_paid: receiptPaymentMeta.stage_amount_paid,
+            stage_amount_remaining: receiptPaymentMeta.stage_amount_remaining,
+            payment_type: receiptPaymentMeta.payment_type,
+            date_paid: datePaid,
+            DatePaid: datePaid,
+            downpayment_date: normalizedIncomingStudent.downpayment_date,
+            prelim_date: normalizedIncomingStudent.prelim_date,
+            midterm_date: normalizedIncomingStudent.midterm_date,
+            prefinal_date: normalizedIncomingStudent.prefinal_date,
+            final_date: normalizedIncomingStudent.final_date,
+            total_balance_date: normalizedIncomingStudent.total_balance_date,
+            downpayment_paid_amount: normalizedIncomingStudent.downpayment_paid_amount,
+            prelim_paid_amount: normalizedIncomingStudent.prelim_paid_amount,
+            midterm_paid_amount: normalizedIncomingStudent.midterm_paid_amount,
+            prefinal_paid_amount: normalizedIncomingStudent.prefinal_paid_amount,
+            final_paid_amount: normalizedIncomingStudent.final_paid_amount,
+            total_balance_paid_amount: normalizedIncomingStudent.total_balance_paid_amount,
             subject: receiptDraft.subject,
             message: receiptDraft.message,
             html: receiptDraft.html,
@@ -672,10 +915,6 @@ function App() {
       }
 
       if (failures.length === 0) {
-        showReminderToast(
-          `Reminder email${successCount === 1 ? "" : "s"} sent to ${successCount} student${successCount === 1 ? "" : "s"}.`,
-          "success"
-        );
         return;
       }
 
@@ -695,7 +934,11 @@ function App() {
         setStudents((prev) =>
           prev.map((item) =>
             successfullyRemindedIds.includes(item.StudentID)
-              ? normalizeStudentFinancials({ ...item, CanRemind: false })
+              ? normalizeStudentFinancials({
+                  ...item,
+                  CanRemind: false,
+                  reminder_sent_token: getLatestPaymentReminderToken(item),
+                })
               : item
           )
         );
@@ -707,6 +950,7 @@ function App() {
   const closeAddStudentModal = () => {
     setShowAddStudentModal(false);
     setNewStudent(INITIAL_STUDENT);
+    setAddStudentError("");
   };
 
   const closeEditModal = () => {
@@ -947,10 +1191,26 @@ function App() {
       <AddStudentModal 
         showAddStudentModal={showAddStudentModal}
         newStudent={newStudent}
+        addStudentError={addStudentError}
         onClose={closeAddStudentModal}
-        onSubmit={(e) => handleAddStudent(e, newStudent, students, setStudents, setShowAddStudentModal, setNewStudent)}
-        onInputChange={(e) => handleInputChange(e, newStudent, setNewStudent)}
-      />
+        onSubmit={(e) =>
+          handleAddStudent(
+            e,
+            newStudent,
+            students,
+            setStudents,
+            setShowAddStudentModal,
+            setNewStudent,
+            setAddStudentError
+          )
+        }
+        onInputChange={(e) => {
+          if (addStudentError) {
+            setAddStudentError("");
+          }
+          handleInputChange(e, newStudent, setNewStudent);
+        }}
+the      />
 
       <EditStudentModal
         showEditModal={showEditModal}

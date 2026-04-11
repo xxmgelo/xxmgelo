@@ -3,6 +3,9 @@ import { buildPaymentNotificationHtml, formatCurrency } from "./notificationTemp
 
 const REMINDER_SUBJECT = "Tuition Fee Payment Reminder - ACLC College of Manila";
 
+const renderPaidStatus = (amount, dateValue) =>
+  amount === 0 && dateValue ? "PAID" : formatCurrency(amount);
+
 const buildInstallmentMessage = (stageLabel, amount) => [
   "Good day,",
   "",
@@ -75,6 +78,14 @@ const buildBodyParagraphs = (dueDetails, paymentMode) => {
   ];
 };
 
+const buildBalanceBreakdown = (student = {}) => [
+  `Prelim: ${renderPaidStatus(student.Prelim ?? 0, student.prelim_date)}`,
+  `Midterm: ${renderPaidStatus(student.Midterm ?? 0, student.midterm_date)}`,
+  `Prefinal: ${renderPaidStatus(student.PreFinal ?? 0, student.prefinal_date)}`,
+  `Final: ${renderPaidStatus(student.Finals ?? 0, student.final_date)}`,
+  `Total Balance: ${formatCurrency(student.TotalBalance ?? 0)}`,
+];
+
 export const buildReminderDraft = (student = {}) => {
   const dueDetails = getReminderDueDetails(student);
   const normalizedStudent = dueDetails.student || student;
@@ -109,7 +120,7 @@ export const buildReminderDraft = (student = {}) => {
     notificationIconAlt: "Reminder Notification",
     studentName: normalizedStudent.Name || "Student",
     studentId: normalizedStudent.StudentID || "N/A",
-    bodyParagraphs: buildBodyParagraphs(dueDetails, paymentMode),
+    bodyParagraphs: [...buildBodyParagraphs(dueDetails, paymentMode), ...buildBalanceBreakdown(normalizedStudent)],
     highlightRows,
     closing: "Thank you.",
     systemName: "ACLC Fee Management System",
@@ -125,6 +136,7 @@ export const buildReminderDraft = (student = {}) => {
     dueAmount: dueDetails.amount,
     dueDetails,
     student: normalizedStudent,
+    breakdown: buildBalanceBreakdown(normalizedStudent),
   };
 };
 

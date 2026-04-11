@@ -117,6 +117,7 @@ function PaymentModal({ showPaymentModal, selectedStudent, onClose, onSavePaymen
         outstanding_before: preview.outstandingBefore,
         outstanding_after: preview.outstandingAfter,
         official_receipt: officialReceipt.trim(),
+        payment_breakdown: preview.breakdown,
         ...stageMeta,
       },
     });

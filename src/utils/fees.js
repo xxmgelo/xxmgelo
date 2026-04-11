@@ -11,6 +11,33 @@ export const INSTALLMENT_FIELDS = [
   "Finals",
 ];
 
+export const INSTALLMENT_DATE_FIELDS = {
+  Downpayment: "downpayment_date",
+  Prelim: "prelim_date",
+  Midterm: "midterm_date",
+  PreFinal: "prefinal_date",
+  Finals: "final_date",
+  FullPaymentAmount: "total_balance_date",
+};
+
+export const INSTALLMENT_PAID_AMOUNT_FIELDS = {
+  Downpayment: "downpayment_paid_amount",
+  Prelim: "prelim_paid_amount",
+  Midterm: "midterm_paid_amount",
+  PreFinal: "prefinal_paid_amount",
+  Finals: "final_paid_amount",
+  FullPaymentAmount: "total_balance_paid_amount",
+};
+
+export const REMINDER_STAGE_DATE_FIELDS = [
+  "downpayment_date",
+  "prelim_date",
+  "midterm_date",
+  "prefinal_date",
+  "final_date",
+  "total_balance_date",
+];
+
 export const INSTALLMENT_LABELS = {
   Downpayment: "Downpayment",
   Prelim: "Prelim",
@@ -132,6 +159,32 @@ export const getReminderDueDetails = (student = {}) => {
   };
 };
 
+export const getLatestPaymentReminderToken = (student = {}) => {
+  const normalized = normalizeStudentFinancials(student);
+
+  const stageDates = [
+    { field: "Downpayment", value: normalized.downpayment_date },
+    { field: "Prelim", value: normalized.prelim_date },
+    { field: "Midterm", value: normalized.midterm_date },
+    { field: "PreFinal", value: normalized.prefinal_date },
+    { field: "Finals", value: normalized.final_date },
+    { field: "FullPaymentAmount", value: normalized.total_balance_date },
+  ]
+    .map((item) => ({
+      ...item,
+      timestamp: item.value ? new Date(item.value).getTime() : NaN,
+    }))
+    .filter((item) => Number.isFinite(item.timestamp));
+
+  if (stageDates.length === 0) {
+    return "";
+  }
+
+  stageDates.sort((a, b) => a.timestamp - b.timestamp);
+  const latest = stageDates[stageDates.length - 1];
+  return `${latest.field}:${latest.timestamp}`;
+};
+
 export const distributeTotalAcrossInstallments = (total) => {
   const normalizedTotal = toPositiveAmount(total);
 
@@ -185,8 +238,22 @@ const fitInstallmentsToTotal = (balances, targetTotal) => {
 };
 
 export const normalizeStudentFinancials = (student = {}) => {
+  const gmail = student.Gmail ?? student.gmail ?? student.email ?? "";
   const paymentMode = sanitizePaymentMode(student.PaymentMode || student.payment_mode);
   const canRemind = toBooleanFlag(student.CanRemind ?? student.can_remind ?? false);
+  const datePaid = student.date_paid ?? student.DatePaid ?? null;
+  const downpaymentDate = student.downpayment_date ?? student.DownpaymentDate ?? null;
+  const prelimDate = student.prelim_date ?? student.PrelimDate ?? null;
+  const midtermDate = student.midterm_date ?? student.MidtermDate ?? null;
+  const prefinalDate = student.prefinal_date ?? student.PreFinalDate ?? student.PreFinal_date ?? null;
+  const finalDate = student.final_date ?? student.FinalDate ?? null;
+  const totalBalanceDate = student.total_balance_date ?? student.TotalBalanceDate ?? null;
+  const downpaymentPaidAmount = student.downpayment_paid_amount ?? student.DownpaymentPaidAmount ?? null;
+  const prelimPaidAmount = student.prelim_paid_amount ?? student.PrelimPaidAmount ?? null;
+  const midtermPaidAmount = student.midterm_paid_amount ?? student.MidtermPaidAmount ?? null;
+  const prefinalPaidAmount = student.prefinal_paid_amount ?? student.PreFinalPaidAmount ?? null;
+  const finalPaidAmount = student.final_paid_amount ?? student.FinalPaidAmount ?? null;
+  const totalBalancePaidAmount = student.total_balance_paid_amount ?? student.TotalBalancePaidAmount ?? null;
   const discount = getDiscountPercent(student);
   let installmentBalances = getInstallmentBalances(student);
   const rawTotalFee = toPositiveAmount(student.TotalFee ?? student.total_fee);
@@ -220,13 +287,32 @@ export const normalizeStudentFinancials = (student = {}) => {
 
     return {
       ...student,
-      ...installmentBalances,
+      Gmail: gmail,
+      Downpayment: 0,
+      Prelim: 0,
+      Midterm: 0,
+      PreFinal: 0,
+      Finals: 0,
       PaymentMode: paymentMode,
       Discount: discount,
       DiscountPercent: discount,
       BaseTotalFee: baseTotalFee,
       FullPaymentAmount: fullPaymentAmount,
       CanRemind: canRemind,
+      date_paid: datePaid,
+      DatePaid: datePaid,
+      downpayment_date: downpaymentDate,
+      prelim_date: prelimDate,
+      midterm_date: midtermDate,
+      prefinal_date: prefinalDate,
+      final_date: finalDate,
+      total_balance_date: totalBalanceDate,
+      downpayment_paid_amount: downpaymentPaidAmount,
+      prelim_paid_amount: prelimPaidAmount,
+      midterm_paid_amount: midtermPaidAmount,
+      prefinal_paid_amount: prefinalPaidAmount,
+      final_paid_amount: finalPaidAmount,
+      total_balance_paid_amount: totalBalancePaidAmount,
       TotalFee: totalFee,
       TotalBalance: roundCurrency(Math.max(totalFee - fullPaymentAmount, 0)),
     };
@@ -255,6 +341,7 @@ export const normalizeStudentFinancials = (student = {}) => {
 
   return {
     ...student,
+    Gmail: gmail,
     ...installmentBalances,
     PaymentMode: paymentMode,
     Discount: discount,
@@ -262,6 +349,20 @@ export const normalizeStudentFinancials = (student = {}) => {
     BaseTotalFee: baseTotalFee,
     FullPaymentAmount: fullPaymentAmount,
     CanRemind: canRemind,
+    date_paid: datePaid,
+    DatePaid: datePaid,
+    downpayment_date: downpaymentDate,
+    prelim_date: prelimDate,
+    midterm_date: midtermDate,
+    prefinal_date: prefinalDate,
+    final_date: finalDate,
+    total_balance_date: totalBalanceDate,
+    downpayment_paid_amount: downpaymentPaidAmount,
+    prelim_paid_amount: prelimPaidAmount,
+    midterm_paid_amount: midtermPaidAmount,
+    prefinal_paid_amount: prefinalPaidAmount,
+    final_paid_amount: finalPaidAmount,
+    total_balance_paid_amount: totalBalancePaidAmount,
     TotalFee: totalFee,
     TotalBalance: nextStageTotal,
   };
@@ -291,20 +392,29 @@ export const applyFeeFieldChange = (student, field, value) => {
     const nextBaseTotalFee = toPositiveAmount(value);
     const discountPercent = getDiscountPercent(current);
     const nextTotalFee = applyDiscount(nextBaseTotalFee, discountPercent);
-    const nextInstallments = distributeTotalAcrossInstallments(nextTotalFee);
 
     if (current.PaymentMode === PAYMENT_MODES.FULL) {
       return normalizeStudentFinancials({
         ...current,
-        ...nextInstallments,
+        Downpayment: 0,
+        Prelim: 0,
+        Midterm: 0,
+        PreFinal: 0,
+        Finals: 0,
         BaseTotalFee: nextBaseTotalFee,
         TotalFee: nextTotalFee,
+        FullPaymentAmount: Math.min(toPositiveAmount(current.FullPaymentAmount), nextTotalFee),
+        TotalBalance: roundCurrency(Math.max(nextTotalFee - toPositiveAmount(current.FullPaymentAmount), 0)),
       });
     }
 
     return normalizeStudentFinancials({
       ...current,
-      ...nextInstallments,
+      Downpayment: 0,
+      Prelim: 0,
+      Midterm: 0,
+      PreFinal: 0,
+      Finals: 0,
       BaseTotalFee: nextBaseTotalFee,
       TotalFee: nextTotalFee,
       TotalBalance: nextTotalFee,
@@ -322,21 +432,30 @@ export const applyFeeFieldChange = (student, field, value) => {
     const nextDiscount = toDiscountPercent(value);
     const nextBaseTotalFee = toPositiveAmount(current.BaseTotalFee ?? current.TotalFee);
     const nextTotalFee = applyDiscount(nextBaseTotalFee, nextDiscount);
-    const nextInstallments = distributeTotalAcrossInstallments(nextTotalFee);
 
     if (current.PaymentMode === PAYMENT_MODES.FULL) {
       return normalizeStudentFinancials({
         ...current,
-        ...nextInstallments,
+        Downpayment: 0,
+        Prelim: 0,
+        Midterm: 0,
+        PreFinal: 0,
+        Finals: 0,
         BaseTotalFee: nextBaseTotalFee,
         Discount: nextDiscount,
         TotalFee: nextTotalFee,
+        FullPaymentAmount: Math.min(toPositiveAmount(current.FullPaymentAmount), nextTotalFee),
+        TotalBalance: roundCurrency(Math.max(nextTotalFee - toPositiveAmount(current.FullPaymentAmount), 0)),
       });
     }
 
     return normalizeStudentFinancials({
       ...current,
-      ...nextInstallments,
+      Downpayment: 0,
+      Prelim: 0,
+      Midterm: 0,
+      PreFinal: 0,
+      Finals: 0,
       BaseTotalFee: nextBaseTotalFee,
       Discount: nextDiscount,
       TotalFee: nextTotalFee,
@@ -410,12 +529,12 @@ export const previewPaymentApplication = (student, paymentAmount, overrides = {}
     if (currentIndex === INSTALLMENT_FIELDS.length - 1) {
       nextBalances[currentField] = roundCurrency(Math.max(currentDue - appliedAmount, 0));
     } else {
-      nextBalances[currentField] = 0;
-
       if (difference > 0) {
+        nextBalances[currentField] = 0;
         const nextField = INSTALLMENT_FIELDS[currentIndex + 1];
         nextBalances[nextField] = roundCurrency(nextBalances[nextField] + difference);
       } else if (difference < 0) {
+        nextBalances[currentField] = 0;
         let excess = Math.abs(difference);
 
         for (let index = currentIndex + 1; index < INSTALLMENT_FIELDS.length; index += 1) {
@@ -428,6 +547,8 @@ export const previewPaymentApplication = (student, paymentAmount, overrides = {}
             break;
           }
         }
+      } else {
+        nextBalances[currentField] = 0;
       }
     }
   }

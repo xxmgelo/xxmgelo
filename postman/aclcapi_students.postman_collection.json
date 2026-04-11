@@ -10,9 +10,15 @@
         "method": "GET",
         "header": [],
         "url": {
-          "raw": "{{baseUrl}}/students.php",
+          "raw": "{{baseUrl}}/students.php?fields=basic",
           "host": ["{{baseUrl}}"],
-          "path": ["students.php"]
+          "path": ["students.php"],
+          "query": [
+            {
+              "key": "fields",
+              "value": "basic"
+            }
+          ]
         }
       }
     },
@@ -22,13 +28,17 @@
         "method": "GET",
         "header": [],
         "url": {
-          "raw": "{{baseUrl}}/students.php?student_id=22000080800",
+          "raw": "{{baseUrl}}/students.php?student_id=22000080800&fields=basic",
           "host": ["{{baseUrl}}"],
           "path": ["students.php"],
           "query": [
             {
               "key": "student_id",
               "value": "22000080800"
+            },
+            {
+              "key": "fields",
+              "value": "basic"
             }
           ]
         }
@@ -40,13 +50,17 @@
         "method": "GET",
         "header": [],
         "url": {
-          "raw": "{{baseUrl}}/students.php?id=12",
+          "raw": "{{baseUrl}}/students.php?id=12&fields=basic",
           "host": ["{{baseUrl}}"],
           "path": ["students.php"],
           "query": [
             {
               "key": "id",
               "value": "12"
+            },
+            {
+              "key": "fields",
+              "value": "basic"
             }
           ]
         }
@@ -66,11 +80,28 @@
           "mode": "raw",
           "raw": "{\n  \"StudentID\": \"22000080800\",\n  \"Name\": \"Juan Dela Cruz\",\n  \"Program\": \"BSIS\",\n  \"YearLevel\": \"2\",\n  \"Gmail\": \"juan.delacruz@gmail.com\"\n}"
         },
+        "description": "Student payload is intentionally limited to StudentID, Name, Program, YearLevel, and Gmail.",
         "url": {
           "raw": "{{baseUrl}}/students.php",
           "host": ["{{baseUrl}}"],
           "path": ["students.php"]
-        }
+        },
+        "event": [
+          {
+            "listen": "test",
+            "script": {
+              "type": "text/javascript",
+              "exec": [
+                "const body = JSON.parse(pm.request.body.raw);",
+                "const allowed = ['StudentID', 'Name', 'Program', 'YearLevel', 'Gmail'];",
+                "const keys = Object.keys(body);",
+                "pm.test('Student payload only includes the allowed fields', function () {",
+                "  pm.expect(keys.sort()).to.eql(allowed.sort());",
+                "});"
+              ]
+            }
+          }
+        ]
       }
     },
     {
@@ -87,11 +118,28 @@
           "mode": "raw",
           "raw": "{\n  \"StudentID\": \"22000080800\",\n  \"Name\": \"Juan Dela Cruz Jr.\",\n  \"Program\": \"BSIS\",\n  \"YearLevel\": \"3\",\n  \"Gmail\": \"juan.delacruz@gmail.com\"\n}"
         },
+        "description": "Student payload is intentionally limited to StudentID, Name, Program, YearLevel, and Gmail.",
         "url": {
           "raw": "{{baseUrl}}/students.php",
           "host": ["{{baseUrl}}"],
           "path": ["students.php"]
-        }
+        },
+        "event": [
+          {
+            "listen": "test",
+            "script": {
+              "type": "text/javascript",
+              "exec": [
+                "const body = JSON.parse(pm.request.body.raw);",
+                "const allowed = ['StudentID', 'Name', 'Program', 'YearLevel', 'Gmail'];",
+                "const keys = Object.keys(body);",
+                "pm.test('Student payload only includes the allowed fields', function () {",
+                "  pm.expect(keys.sort()).to.eql(allowed.sort());",
+                "});"
+              ]
+            }
+          }
+        ]
       }
     },
     {

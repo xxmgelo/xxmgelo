@@ -2,6 +2,11 @@ import { PAYMENT_MODES } from "./fees";
 import { buildPaymentNotificationHtml, formatCurrency } from "./notificationTemplate";
 
 const RECEIPT_SUBJECT = "Payment Confirmation - ACLC Fee Management System";
+const dateFormatter = new Intl.DateTimeFormat("en-US", {
+  month: "long",
+  day: "2-digit",
+  year: "numeric",
+});
 
 const toPositiveAmount = (value) => {
   const parsed = Number(value);
@@ -16,7 +21,39 @@ const getStageBalanceGuidance = (remainingBalance) =>
     ? "This payment completes the required amount for this stage."
     : "Please ensure that the remaining balance is settled within the required period.";
 
-const buildReceiptMessage = ({ stageLabel, amountPaid, remainingBalance }) => {
+const formatDatePaid = (value) => {
+  if (!value) {
+    return "N/A";
+  }
+
+  const parsedDate = new Date(value);
+  if (Number.isNaN(parsedDate.getTime())) {
+    return "N/A";
+  }
+
+  return dateFormatter.format(parsedDate);
+};
+
+const getStageLabelFromField = (stageField, fallback = "Installment") => {
+  switch (stageField) {
+    case "Downpayment":
+      return "Downpayment";
+    case "Prelim":
+      return "Prelim";
+    case "Midterm":
+      return "Midterm";
+    case "PreFinal":
+      return "Pre-Final";
+    case "Finals":
+      return "Finals";
+    case "FullPaymentAmount":
+      return "Full Payment";
+    default:
+      return fallback;
+  }
+};
+
+const buildReceiptMessage = ({ stageLabel, amountPaid, remainingBalance, datePaid, paymentBreakdown }) => {
   const stageGuidance = getStageBalanceGuidance(remainingBalance);
 
   return [
@@ -24,10 +61,16 @@ const buildReceiptMessage = ({ stageLabel, amountPaid, remainingBalance }) => {
     "",
     "This is to confirm that your recent tuition fee payment has been successfully recorded.",
     "",
-    "Payment Details:",
-    `Stage: ${stageLabel}`,
+    "Payment Received:",
+    `Type: ${stageLabel}`,
     `Amount Paid: ${formatCurrency(amountPaid)}`,
-    `Remaining Balance: ${formatCurrency(remainingBalance)}`,
+    `Date Paid: ${formatDatePaid(datePaid)}`,
+    "",
+    "Remaining Balance Breakdown:",
+    `Prelim: ${formatCurrency(paymentBreakdown?.Prelim ?? 0)}`,
+    `Midterm: ${formatCurrency(paymentBreakdown?.Midterm ?? 0)}`,
+    `Prefinal: ${formatCurrency(paymentBreakdown?.PreFinal ?? 0)}`,
+    `Final: ${formatCurrency(paymentBreakdown?.Finals ?? 0)}`,
     "",
     "Your payment has been applied to the specified installment stage.",
     "",
@@ -42,6 +85,13 @@ const buildReceiptMessage = ({ stageLabel, amountPaid, remainingBalance }) => {
 
 const getReceiptStageDetails = (student = {}, payment = {}) => {
   const paymentMode = payment.mode || student.PaymentMode;
+  const datePaid = payment.date_paid ?? student.date_paid ?? null;
+  const paymentBreakdown = {
+    Prelim: student.Prelim ?? 0,
+    Midterm: student.Midterm ?? 0,
+    PreFinal: student.PreFinal ?? 0,
+    Finals: student.Finals ?? 0,
+  };
 
   if (paymentMode === PAYMENT_MODES.FULL) {
     const amountPaid = toPositiveAmount(payment.amount_applied);
@@ -51,10 +101,12 @@ const getReceiptStageDetails = (student = {}, payment = {}) => {
       stageLabel: "Full Payment",
       amountPaid,
       remainingBalance,
+      datePaid,
+      paymentBreakdown,
     };
   }
 
-  const stageLabel = payment.stage_label || "Installment";
+  const stageLabel = getStageLabelFromField(payment.stage_field, payment.stage_label || "Installment");
   const amountPaid = toPositiveAmount(payment.stage_amount_paid ?? payment.amount_applied);
   const remainingBalance = toPositiveAmount(
     payment.stage_amount_remaining ?? payment.outstanding_after ?? student.TotalBalance
@@ -64,6 +116,8 @@ const getReceiptStageDetails = (student = {}, payment = {}) => {
     stageLabel,
     amountPaid,
     remainingBalance,
+    datePaid,
+    paymentBreakdown,
   };
 };
 
@@ -83,13 +137,21 @@ export const buildPaymentReceiptDraft = (student = {}, payment = {}) => {
     bodyParagraphs: [
       "This is to confirm that your recent tuition fee payment has been successfully recorded.",
       "Your payment has been applied to the specified installment stage.",
+      `Date Paid: ${formatDatePaid(details.datePaid)}`,
       stageGuidance,
       "If you have any questions or concerns regarding your account, please contact the accounting office.",
     ],
     highlightRows: [
-      { label: "Stage", value: details.stageLabel },
+      { label: "Payment Type", value: details.stageLabel },
       { label: "Amount Paid", value: formatCurrency(details.amountPaid) },
-      { label: "Remaining Balance", value: formatCurrency(details.remainingBalance) },
+      { label: "Date Paid", value: formatDatePaid(details.datePaid) },
+      { label: "Total Balance", value: formatCurrency(details.remainingBalance) },
+    ],
+    breakdownRows: [
+      { label: "Prelim", value: formatCurrency(details.paymentBreakdown?.Prelim ?? 0) },
+      { label: "Midterm", value: formatCurrency(details.paymentBreakdown?.Midterm ?? 0) },
+      { label: "Prefinal", value: formatCurrency(details.paymentBreakdown?.PreFinal ?? 0) },
+      { label: "Final", value: formatCurrency(details.paymentBreakdown?.Finals ?? 0) },
     ],
     closing: "Thank you.",
     closingPlacement: "body",
@@ -105,5 +167,7 @@ export const buildPaymentReceiptDraft = (student = {}, payment = {}) => {
     stageLabel: details.stageLabel,
     amountPaid: details.amountPaid,
     remainingBalance: details.remainingBalance,
+    datePaid: details.datePaid,
+    paymentBreakdown: details.paymentBreakdown,
   };
 };

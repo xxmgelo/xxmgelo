@@ -1,6 +1,6 @@
 import React from "react";
 
-function AddStudentModal({ showAddStudentModal, newStudent, onClose, onSubmit, onInputChange }) {
+function AddStudentModal({ showAddStudentModal, newStudent, addStudentError, onClose, onSubmit, onInputChange }) {
   if (!showAddStudentModal) return null;
 
   return (
@@ -36,11 +36,12 @@ function AddStudentModal({ showAddStudentModal, newStudent, onClose, onSubmit, o
             />
           </div>
           <div className="form-group">
-            <label>Program/Course</label>
+            <label>Program/Course *</label>
             <select
               name="Program"
               value={newStudent.Program}
               onChange={onInputChange}
+              required
             >
               <option value="">Select Program/Course</option>
               <option value="Bachelor of Science in Information System (BSIS)">
@@ -76,6 +77,7 @@ function AddStudentModal({ showAddStudentModal, newStudent, onClose, onSubmit, o
               onChange={onInputChange}
               placeholder="student@acl.edu.ph"
             />
+            {addStudentError ? <p className="form-field-error">{addStudentError}</p> : null}
           </div>
           <div className="modal-buttons">
             <button type="submit" className="save-btn">Add Student</button>

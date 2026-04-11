@@ -8,6 +8,24 @@ import {
 
 const PERIOD_KEYS = INSTALLMENT_FIELDS;
 
+const hasPaymentMarker = (student = {}) =>
+  Boolean(
+    student.date_paid ||
+    student.DatePaid ||
+    student.downpayment_date ||
+    student.prelim_date ||
+    student.midterm_date ||
+    student.prefinal_date ||
+    student.final_date ||
+    student.total_balance_date ||
+    student.downpayment_paid_amount > 0 ||
+    student.prelim_paid_amount > 0 ||
+    student.midterm_paid_amount > 0 ||
+    student.prefinal_paid_amount > 0 ||
+    student.final_paid_amount > 0 ||
+    student.total_balance_paid_amount > 0
+  );
+
 export function calculateAnalytics(students = []) {
   const metrics = {
     totalStudents: 0,
@@ -48,7 +66,7 @@ export function calculateAnalytics(students = []) {
     const collectedAmount = getCollectedAmount(student);
     metrics.totalCollected += collectedAmount;
 
-    if (student.TotalBalance <= 0) {
+    if (student.TotalBalance <= 0 && hasPaymentMarker(student)) {
       metrics.paidCount += 1;
     } else if (collectedAmount <= 0) {
       metrics.unpaidCount += 1;
