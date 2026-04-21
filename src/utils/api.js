@@ -1,5 +1,15 @@
 const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost/aclcapi/api";
 
+function toStudentPayload(student = {}) {
+  return {
+    StudentID: student.StudentID ?? student.student_id ?? "",
+    Name: student.Name ?? student.name ?? "",
+    Program: student.Program ?? student.program ?? "",
+    YearLevel: student.YearLevel ?? student.year_level ?? "",
+    Gmail: student.Gmail ?? student.gmail ?? "",
+  };
+}
+
 async function request(path, options = {}) {
   const response = await fetch(`${API_BASE}${path}`, {
     headers: {
@@ -30,19 +40,13 @@ async function request(path, options = {}) {
 }
 
 export async function getStudents() {
-  return request("/students.php");
+  return request("/students.php?view=full");
 }
 
 export async function createStudent(student) {
-  const payload = {
-    StudentID: student.StudentID,
-    Name: student.Name,
-    Program: student.Program,
-    YearLevel: student.YearLevel,
-    Gmail: student.Gmail,
-  };
+  const payload = toStudentPayload(student);
 
-  const result = await request("/students.php", {
+  const result = await request("/students.php?view=full", {
     method: "POST",
     body: JSON.stringify(payload),
   });
@@ -51,7 +55,7 @@ export async function createStudent(student) {
 }
 
 export async function updateStudent(student) {
-  const result = await request("/student.php", {
+  const result = await request("/students.php?view=full", {
     method: "PUT",
     body: JSON.stringify(student),
   });
@@ -60,13 +64,13 @@ export async function updateStudent(student) {
 }
 
 export async function deleteStudent(studentId) {
-  return request(`/student.php?student_id=${encodeURIComponent(studentId)}`, {
+  return request(`/students.php?student_id=${encodeURIComponent(studentId)}&view=full`, {
     method: "DELETE",
   });
 }
 
 export async function upsertStudents(students) {
-  return request("/students_bulk.php", {
+  return request("/students_bulk.php?view=full", {
     method: "POST",
     body: JSON.stringify(students),
   });
