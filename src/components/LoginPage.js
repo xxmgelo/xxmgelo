@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import mainAdminAvatar from "../assets/admindb.png";
 import assistantAdminAvatar from "../assets/admindb.png";
 import loginGif from "../assets/aclcanimated2.gif";
+import admissionImage from "../assets/admission.jpg";
 
 function LoginPage({ onLogin, loading, error }) {
   const [showModal, setShowModal] = useState(false);
@@ -52,7 +53,7 @@ function LoginPage({ onLogin, loading, error }) {
             >
               <img src={mainAdminAvatar} alt="Main Admin" className="login-profile-avatar" />
               <span className="login-profile-role">Main Admin</span>
-              <span className="login-profile-name">Jhea Pelonio</span>
+              <span className="login-profile-name">Ms. Jhea Pelonio</span>
             </button>
 
             <button
@@ -60,15 +61,16 @@ function LoginPage({ onLogin, loading, error }) {
               className="login-profile-card"
               onClick={() => handleSelectRole("assistant")}
             >
-              <img src={assistantAdminAvatar} alt="Assistant Admin" className="login-profile-avatar" />
-              <span className="login-profile-role">Assistant Admin</span>
-              <span className="login-profile-name">Beben Magbanua</span>
+              <img src={assistantAdminAvatar} alt="Assistant Cashier" className="login-profile-avatar" />
+              <span className="login-profile-role">Assistant Cashier</span>
+              <span className="login-profile-name">Ms. Amy Alpay</span>
             </button>
           </div>
           {error && <div className="login-error">{error}</div>}
         </div>
 
         <div className="login-side">
+          <img src={admissionImage} alt="" className="login-admission-shadow" aria-hidden="true" />
           <div className="login-visual">
             <div className="login-visual-inner">
               <div className="login-visual-brand">
@@ -97,7 +99,7 @@ function LoginPage({ onLogin, loading, error }) {
                 <div>
                   <p className="login-modal-eyebrow">Sign in as</p>
                   <h2 className="login-modal-title">
-                    {selectedRole === "assistant" ? "Assistant Admin" : "Main Admin"}
+                    {selectedRole === "assistant" ? "Assistant Cashier" : "Main Admin"}
                   </h2>
                 </div>
                 <button type="button" className="login-inline-close" onClick={closeModal}>

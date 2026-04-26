@@ -1,5 +1,5 @@
 import React from "react";
-import aclcLogo from "../assets/aclcanimated.gif";
+import aclcLogo from "../assets/aclclogo.png";
 import lightIcon from "../assets/light.png";
 import darkIcon from "../assets/dark.png";
 
@@ -11,7 +11,12 @@ function Header({ darkMode, toggleTheme, viewTitle, userName, studentCount }) {
           <img src={aclcLogo} alt="ACLC Logo" className="header-logo" />
         </div>
         <div className="header-copy">
-          <h1>{viewTitle}</h1>
+          <div className="header-kicker-row">
+            <span className="header-kicker">ACLC College of Manila</span>
+            <span className="header-kicker-dot" aria-hidden="true" />
+            <span className="header-kicker-secondary">Cashier Dashboard</span>
+          </div>
+          <h1>Student Fee Management</h1>
         </div>
       </div>
       <div className="header-actions">

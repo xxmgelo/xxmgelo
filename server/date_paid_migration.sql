@@ -1,8 +1,0 @@
-ALTER TABLE students
-ADD COLUMN date_paid DATETIME NULL,
-ADD COLUMN downpayment_date DATETIME NULL,
-ADD COLUMN prelim_date DATETIME NULL,
-ADD COLUMN midterm_date DATETIME NULL,
-ADD COLUMN prefinal_date DATETIME NULL,
-ADD COLUMN final_date DATETIME NULL,
-ADD COLUMN total_balance_date DATETIME NULL;

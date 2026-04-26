@@ -17,7 +17,7 @@ import LoginPage from "./components/LoginPage";
 import AdminSettingsPage from "./components/AdminSettingsPage";
 import mainAdminAvatar from "./assets/admin.png";
 import assistantAdminAvatar from "./assets/administrator.png";
-import { handleFileUpload, handleAddStudent, handleInputChange, INITIAL_STUDENT } from "./utils/handlers";
+import { handleAddStudent, handleInputChange, INITIAL_STUDENT } from "./utils/handlers";
 import {
   applyFeeFieldChange,
   INSTALLMENT_DATE_FIELDS,
@@ -316,7 +316,15 @@ function App() {
   }, []);
 
   useEffect(() => {
+    const navigationEntry = performance.getEntriesByType?.("navigation")?.[0];
+    const isReload = navigationEntry?.type === "reload";
     const stored = localStorage.getItem(AUTH_STORAGE_KEY);
+
+    if (!isReload) {
+      localStorage.removeItem(AUTH_STORAGE_KEY);
+      return;
+    }
+
     if (!stored) {
       return;
     }
@@ -520,7 +528,10 @@ function App() {
 
   const handleEditStudent = (student) => {
     if (!student) return;
-    setEditStudent({ ...student });
+    setEditStudent({
+      ...student,
+      OriginalStudentID: student.StudentID || student.student_id || "",
+    });
     setShowEditModal(true);
   };
 
@@ -668,7 +679,9 @@ function App() {
       const updated = normalizeStudentFinancials(await updateStudent(editStudent));
       setStudents((prev) =>
         prev.map((item) =>
-          item.StudentID === updated.StudentID ? updated : item
+          item.StudentID === (editStudent.OriginalStudentID || editStudent.StudentID)
+            ? updated
+            : item
         )
       );
     } catch (error) {
@@ -685,22 +698,31 @@ function App() {
       return;
     }
 
-    const ids = selectedStudents
-      .map((student) => student.StudentID)
-      .filter((id) => Boolean(id));
+    const deletableStudents = selectedStudents.filter((student) => student?.StudentID || student?.id);
 
-    if (ids.length === 0) {
+    if (deletableStudents.length === 0) {
       return;
     }
 
     try {
-      await Promise.all(ids.map((id) => deleteStudent(id)));
+      await Promise.all(deletableStudents.map((student) => deleteStudent(student)));
       const nextCache = loadPaymentDetailCache();
-      ids.forEach((id) => {
-        delete nextCache[String(id)];
+      deletableStudents.forEach((student) => {
+        if (student.StudentID) {
+          delete nextCache[String(student.StudentID)];
+        }
       });
       savePaymentDetailCache(nextCache);
-      setStudents((prev) => prev.filter((student) => !ids.includes(student.StudentID)));
+      setStudents((prev) =>
+        prev.filter(
+          (student) =>
+            !deletableStudents.some(
+              (deleted) =>
+                (deleted.StudentID && student.StudentID === deleted.StudentID) ||
+                (!deleted.StudentID && deleted.id && student.id === deleted.id)
+            )
+        )
+      );
     } catch (error) {
       console.error(error);
       alert(error?.message || "Some deletions failed. Please try again.");
@@ -708,16 +730,24 @@ function App() {
   };
 
   const executeDeleteStudent = async (student) => {
-    if (!student || !student.StudentID) {
+    if (!student || (!student.StudentID && !student.id)) {
       return;
     }
 
     try {
-      await deleteStudent(student.StudentID);
+      await deleteStudent(student);
       const nextCache = loadPaymentDetailCache();
-      delete nextCache[String(student.StudentID)];
+      if (student.StudentID) {
+        delete nextCache[String(student.StudentID)];
+      }
       savePaymentDetailCache(nextCache);
-      setStudents((prev) => prev.filter((item) => item.StudentID !== student.StudentID));
+      setStudents((prev) =>
+        prev.filter((item) =>
+          student.StudentID
+            ? item.StudentID !== student.StudentID
+            : item.id !== student.id
+        )
+      );
     } catch (error) {
       console.error(error);
       alert(error?.message || "Delete failed. Please try again.");
@@ -736,7 +766,7 @@ function App() {
   };
 
   const requestDeleteStudent = (student) => {
-    if (!student || !student.StudentID) {
+    if (!student || (!student.StudentID && !student.id)) {
       return;
     }
     setConfirmState({
@@ -1066,7 +1096,6 @@ function App() {
       {activeTab === 'studentFee' && (
         <>
           <UploadSection 
-            onFileUpload={(e) => handleFileUpload(e, setStudents)}
             searchQuery={searchQuery}
             setSearchQuery={setSearchQuery}
             isManageTab={false}
@@ -1076,7 +1105,7 @@ function App() {
             onProgramFilterChange={setProgramFilter}
             yearFilter={yearFilter}
             onYearFilterChange={setYearFilter}
-            noteText="Upload records, search by student, and process collections with fewer clicks."
+            noteText="Search by student and process collections with fewer clicks."
           />
           <StudentFeeTable 
             students={students}
@@ -1092,7 +1121,6 @@ function App() {
       {activeTab === 'manageStudent' && (
         <>
           <UploadSection 
-            onFileUpload={() => {}}
             searchQuery={searchQuery}
             setSearchQuery={setSearchQuery}
             isManageTab={true}
@@ -1118,7 +1146,6 @@ function App() {
       {activeTab === 'manageFee' && (
         <>
           <UploadSection 
-            onFileUpload={(e) => handleFileUpload(e, setStudents)}
             searchQuery={searchQuery}
             setSearchQuery={setSearchQuery}
             isManageTab={true}
@@ -1142,7 +1169,6 @@ function App() {
       {activeTab === 'students' && (
         <>
           <UploadSection 
-            onFileUpload={() => {}}
             searchQuery={searchQuery}
             setSearchQuery={setSearchQuery}
             isManageTab={true}

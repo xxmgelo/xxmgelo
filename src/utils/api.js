@@ -3,6 +3,7 @@ const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost/aclcapi/api
 function toStudentPayload(student = {}) {
   return {
     StudentID: student.StudentID ?? student.student_id ?? "",
+    OriginalStudentID: student.OriginalStudentID ?? student.original_student_id ?? "",
     Name: student.Name ?? student.name ?? "",
     Program: student.Program ?? student.program ?? "",
     YearLevel: student.YearLevel ?? student.year_level ?? "",
@@ -63,8 +64,16 @@ export async function updateStudent(student) {
   return result && result.student ? result.student : student;
 }
 
-export async function deleteStudent(studentId) {
-  return request(`/students.php?student_id=${encodeURIComponent(studentId)}&view=full`, {
+export async function deleteStudent(student) {
+  const studentId = typeof student === "object"
+    ? student.StudentID ?? student.student_id ?? ""
+    : student;
+  const rowId = typeof student === "object" ? student.id ?? 0 : 0;
+  const query = studentId
+    ? `student_id=${encodeURIComponent(studentId)}`
+    : `id=${encodeURIComponent(rowId)}`;
+
+  return request(`/students.php?${query}&view=full`, {
     method: "DELETE",
   });
 }

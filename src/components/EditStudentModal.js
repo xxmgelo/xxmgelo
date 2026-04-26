@@ -14,7 +14,12 @@ function EditStudentModal({ showEditModal, editStudent, onClose, onSubmit, onInp
               type="text"
               name="StudentID"
               value={editStudent.StudentID}
-              disabled
+              onChange={(event) => {
+                const digitsOnly = event.target.value.replace(/\D/g, "");
+                onInputChange({ target: { name: "StudentID", value: digitsOnly } });
+              }}
+              placeholder="Enter USN number"
+              required
             />
           </div>
           <div className="form-group">

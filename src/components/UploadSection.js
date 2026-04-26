@@ -1,10 +1,8 @@
 import React from "react";
-import uploadIcon from "../assets/upload.png";
 import searchIcon from "../assets/search.png";
 import addIcon from "../assets/add.png";
 
 function UploadSection({
-  onFileUpload,
   searchQuery,
   setSearchQuery,
   isManageTab,
@@ -82,24 +80,12 @@ function UploadSection({
         <div className="upload-controls">
           {!hideActionButton && (
             <div className="upload-action-cluster">
-              {!isManageTab ? (
-                <label className="upload-btn">
-                  <img src={uploadIcon} alt="Upload" className="btn-icon" />
-                  Upload File
-                  <input
-                    type="file"
-                    accept=".xlsx, .xls"
-                    onChange={onFileUpload}
-                    className="file-input"
-                    hidden
-                  />
-                </label>
-              ) : (
+              {isManageTab ? (
                 <button className="add-student-btn" onClick={onAddStudent} type="button">
                   <img src={addIcon} alt="Add" className="btn-icon" />
                   Add Student
                 </button>
-              )}
+              ) : null}
             </div>
           )}
           {!filtersOnLeft && (
