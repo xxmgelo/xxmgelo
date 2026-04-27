@@ -32,8 +32,17 @@ const buildSharedOptions = (darkMode) => {
   return {
     responsive: true,
     maintainAspectRatio: false,
+    resizeDelay: 0,
     animation: {
       duration: 600,
+    },
+    layout: {
+      padding: {
+        top: 4,
+        right: 6,
+        bottom: 2,
+        left: 2,
+      },
     },
     plugins: {
       legend: {
@@ -60,6 +69,9 @@ const buildSharedOptions = (darkMode) => {
             size: 11,
             weight: 600,
           },
+          autoSkip: true,
+          maxRotation: 0,
+          minRotation: 0,
         },
         border: {
           display: false,
@@ -76,6 +88,8 @@ const buildSharedOptions = (darkMode) => {
           font: {
             size: 10,
           },
+          precision: 0,
+          maxTicksLimit: 5,
         },
         border: {
           display: false,
@@ -109,6 +123,7 @@ const buildSafeSeries = (labels = [], values = []) => {
 
 export function TrendLineChart({ labels, values, darkMode }) {
   const safeSeries = buildSafeSeries(labels, values);
+  const sharedOptions = buildSharedOptions(darkMode);
   const data = {
     labels: safeSeries.labels,
     datasets: [
@@ -118,19 +133,33 @@ export function TrendLineChart({ labels, values, darkMode }) {
         borderColor: darkMode ? "#63D1D4" : "#0C7C86",
         backgroundColor: darkMode ? "rgba(99, 209, 212, 0.16)" : "rgba(12, 124, 134, 0.12)",
         fill: true,
-        tension: 0.38,
-        pointRadius: 0,
-        pointHoverRadius: 4,
-        borderWidth: 3,
       },
     ],
   };
 
-  return <Line data={data} options={buildSharedOptions(darkMode)} />;
+  return (
+    <Line
+      data={data}
+      options={{
+        ...sharedOptions,
+        elements: {
+          line: {
+            tension: 0.38,
+            borderWidth: 3,
+          },
+          point: {
+            radius: 0,
+            hoverRadius: 4,
+          },
+        },
+      }}
+    />
+  );
 }
 
 export function ComparisonBarChart({ labels, values, darkMode }) {
   const safeSeries = buildSafeSeries(labels, values);
+  const sharedOptions = buildSharedOptions(darkMode);
   const data = {
     labels: safeSeries.labels,
     datasets: [
@@ -145,7 +174,27 @@ export function ComparisonBarChart({ labels, values, darkMode }) {
     ],
   };
 
-  return <Bar data={data} options={buildSharedOptions(darkMode)} />;
+  return (
+    <Bar
+      data={data}
+      options={{
+        ...sharedOptions,
+        scales: {
+          ...sharedOptions.scales,
+          x: {
+            ...sharedOptions.scales.x,
+            ticks: {
+              ...sharedOptions.scales.x.ticks,
+              font: {
+                size: 10,
+                weight: 600,
+              },
+            },
+          },
+        },
+      }}
+    />
+  );
 }
 
 export function DistributionDoughnutChart({ labels, values, darkMode }) {
@@ -170,7 +219,11 @@ export function DistributionDoughnutChart({ labels, values, darkMode }) {
       options={{
         responsive: true,
         maintainAspectRatio: false,
+        resizeDelay: 0,
         cutout: "72%",
+        layout: {
+          padding: 4,
+        },
         plugins: {
           legend: {
             display: false,

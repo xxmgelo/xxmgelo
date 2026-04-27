@@ -27,8 +27,6 @@
   }
 
   .dashboard-container {
-    --sidebar-width: 200px;
-    grid-template-columns: var(--sidebar-current-width) minmax(0, 1fr);
     height: calc(100vh - 88px);
     padding: 12px 16px 16px;
   }
@@ -109,35 +107,12 @@
 
   .dashboard-container,
   .dashboard-container.sidebar-collapsed {
-    grid-template-columns: 1fr;
     height: auto;
   }
 
-  .sidebar,
+  .menu-bar,
   .main-content {
     height: auto;
-  }
-
-  .sidebar-content {
-    max-height: none;
-  }
-
-  .sidebar.collapsed .sidebar-user-text,
-  .sidebar.collapsed .nav-label {
-    display: flex;
-  }
-
-  .sidebar.collapsed .nav-item {
-    justify-content: flex-start;
-  }
-
-  .sidebar.collapsed .nav-item.active::before {
-    left: 8px;
-    top: 10px;
-    bottom: 10px;
-    width: 3px;
-    height: auto;
-    transform: none;
   }
 
   .header-stat,

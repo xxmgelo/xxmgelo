@@ -147,9 +147,82 @@ The current API does not implement server-side pagination. Pagination shown in t
 
 #### Authentication
 
-Administrator login is handled through `/admin_login.php`. After a successful login, the frontend stores the returned admin session in browser `localStorage` under the key `aclc_admin_session`.
+Protected administrative actions in this system require a valid administrator login through `/admin_login.php`. After a successful login, the frontend stores the returned administrator session in browser `localStorage` under the key `aclc_admin_session`. This stored session is then used to keep the administrator signed in while the current browser session remains active.
 
-The current system does not implement JWT, OAuth, token expiration, or a refresh-token endpoint.
+```text
+Authentication Type  : Local administrator session
+Token Type           : None
+Session Storage      : Browser localStorage
+Storage Key          : aclc_admin_session
+Authorization Header : Not used
+Refresh Endpoint     : Not applicable
+```
+
+> Warning: This system does not currently use Bearer tokens, JWT, OAuth, token expiration, or `/auth/refresh`. Authentication is session-based on the frontend and depends on a successful administrator login response from the local API.
+
+#### Standard Response Shape
+
+The API in this project does not use one global response envelope such as `{ "success": true, "data": ... }`. Instead, each endpoint returns a response body that matches the action being performed.
+
+Common response patterns used by the current system include:
+
+```json
+{
+  "admin": {
+    "id": 1,
+    "username": "mainadmin",
+    "email": "mainadmin@example.com",
+    "full_name": "Ms. Jhea Pelonio",
+    "role": "admin",
+    "avatar": ""
+  }
+}
+```
+
+```json
+[
+  {
+    "StudentID": "22000080800",
+    "Name": "Juan Dela Cruz",
+    "Program": "Bachelor of Science in Information System (BSIS)",
+    "YearLevel": "1st Year",
+    "Gmail": "juan@example.com"
+  }
+]
+```
+
+```json
+{
+  "student": {
+    "StudentID": "22000080800",
+    "Name": "Juan Dela Cruz"
+  }
+}
+```
+
+```json
+{
+  "deleted": true,
+  "count": 1
+}
+```
+
+For presentation purposes, this section can also be summarized in a screenshot-friendly format:
+
+```text
+Authentication
+Protected administrative actions require a successful login through /admin_login.php.
+The system does not use Bearer tokens. Instead, the frontend stores the active
+administrator session in browser localStorage under aclc_admin_session.
+
+WARNING
+This system has no JWT refresh flow and no /auth/refresh endpoint. If token-based
+authentication is added later, the authentication section must be updated.
+
+Standard Response Shape
+Responses are endpoint-specific. The API does not currently use a global
+success/data/meta/errors response envelope.
+```
 
 #### Error Response Format
 

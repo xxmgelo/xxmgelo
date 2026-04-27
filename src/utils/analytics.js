@@ -26,6 +26,18 @@ const hasPaymentMarker = (student = {}) =>
     student.total_balance_paid_amount > 0
   );
 
+const classifyPaymentStatus = (student, collectedAmount) => {
+  if (student.TotalBalance <= 0) {
+    return hasPaymentMarker(student) || student.TotalFee > 0 ? "paid" : "unpaid";
+  }
+
+  if (collectedAmount <= 0) {
+    return "unpaid";
+  }
+
+  return "partial";
+};
+
 export function calculateAnalytics(students = []) {
   const metrics = {
     totalStudents: 0,
@@ -65,10 +77,11 @@ export function calculateAnalytics(students = []) {
 
     const collectedAmount = getCollectedAmount(student);
     metrics.totalCollected += collectedAmount;
+    const paymentStatus = classifyPaymentStatus(student, collectedAmount);
 
-    if (student.TotalBalance <= 0 && hasPaymentMarker(student)) {
+    if (paymentStatus === "paid") {
       metrics.paidCount += 1;
-    } else if (collectedAmount <= 0) {
+    } else if (paymentStatus === "unpaid") {
       metrics.unpaidCount += 1;
       metrics.overdueCount += 1;
     } else {
@@ -85,16 +98,18 @@ export function calculateAnalytics(students = []) {
       metrics.programCounts.Other += 1;
     }
 
-    const scheduledDistribution = distributeTotalAcrossInstallments(student.TotalFee);
-    PERIOD_KEYS.forEach((key) => {
-      const scheduled = scheduledDistribution[key] || 0;
-      const outstanding = student[key] || 0;
-      const collected = Math.max(scheduled - outstanding, 0);
+    if (student.PaymentMode !== "full") {
+      const scheduledDistribution = distributeTotalAcrossInstallments(student.TotalFee);
+      PERIOD_KEYS.forEach((key) => {
+        const scheduled = scheduledDistribution[key] || 0;
+        const outstanding = student[key] || 0;
+        const collected = Math.max(scheduled - outstanding, 0);
 
-      metrics.perPeriod[key].scheduled += scheduled;
-      metrics.perPeriod[key].outstanding += outstanding;
-      metrics.perPeriod[key].collected += collected;
-    });
+        metrics.perPeriod[key].scheduled += scheduled;
+        metrics.perPeriod[key].outstanding += outstanding;
+        metrics.perPeriod[key].collected += collected;
+      });
+    }
   });
 
   metrics.collectionRate = metrics.totalFees > 0

@@ -1,9 +1,24 @@
 const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost/aclcapi/api";
 
+const resolveStudentId = (student = {}) =>
+  student.StudentID ??
+  student.student_id ??
+  student.studentId ??
+  student.id_number ??
+  student.IDNumber ??
+  student.IdNumber ??
+  student.usn ??
+  student.USN ??
+  student.student_no ??
+  student.StudentNo ??
+  student.student_number ??
+  student.StudentNumber ??
+  "";
+
 function toStudentPayload(student = {}) {
   return {
-    StudentID: student.StudentID ?? student.student_id ?? "",
-    OriginalStudentID: student.OriginalStudentID ?? student.original_student_id ?? "",
+    StudentID: resolveStudentId(student),
+    OriginalStudentID: student.OriginalStudentID ?? student.original_student_id ?? resolveStudentId(student),
     Name: student.Name ?? student.name ?? "",
     Program: student.Program ?? student.program ?? "",
     YearLevel: student.YearLevel ?? student.year_level ?? "",
@@ -66,7 +81,7 @@ export async function updateStudent(student) {
 
 export async function deleteStudent(student) {
   const studentId = typeof student === "object"
-    ? student.StudentID ?? student.student_id ?? ""
+    ? resolveStudentId(student)
     : student;
   const rowId = typeof student === "object" ? student.id ?? 0 : 0;
   const query = studentId

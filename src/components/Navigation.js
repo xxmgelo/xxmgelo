@@ -76,36 +76,35 @@ function Navigation({ activeTab, setActiveTab, onRequestLogout, userName, userAv
   ];
 
   return (
-    <nav className={`sidebar${collapsed ? " collapsed" : ""}`}>
-      <div className="sidebar-content">
-        <div className="sidebar-header">
+    <nav className={`menu-bar${collapsed ? " collapsed" : ""}`}>
+      <div className="menu-bar-content">
+        <div className="menu-bar-header">
           <button
             type="button"
-            className="sidebar-collapse-btn"
+            className="menu-bar-collapse-btn"
             onClick={onToggleCollapse}
-            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-            title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            aria-label={collapsed ? "Expand menu bar" : "Collapse menu bar"}
+            title={collapsed ? "Expand menu bar" : "Collapse menu bar"}
           >
             <span />
             <span />
             <span />
           </button>
-          <div className="sidebar-user">
+          <div className="menu-bar-user">
             <img
               src={userAvatar || defaultAvatar}
               alt={userName || "Admin"}
-              className="sidebar-user-avatar"
+              className="menu-bar-user-avatar"
             />
-            <div className="sidebar-user-text">
-              <span className="sidebar-user-name">{userName || "Admin"}</span>
-              <span className="sidebar-user-role">Administrator</span>
+            <div className="menu-bar-user-text">
+              <span className="menu-bar-user-name">{userName || "Admin"}</span>
+              <span className="menu-bar-user-role">Administrator</span>
             </div>
           </div>
         </div>
-        <div className="nav-groups">
+        <div className="menu-bar-groups">
           {navGroups.map((group) => (
-            <div key={group.label} className="nav-group">
-              <span className="nav-group-label">{group.label}</span>
+            <div key={group.label} className="menu-group">
               <ul className="nav-menu">
                 {group.items.map((item) => (
                   <li key={item.key}>
@@ -126,7 +125,7 @@ function Navigation({ activeTab, setActiveTab, onRequestLogout, userName, userAv
             </div>
           ))}
         </div>
-        <div className="nav-footer">
+        <div className="menu-bar-footer">
           <button
             type="button"
             className="nav-item nav-logout"

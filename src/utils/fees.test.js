@@ -216,6 +216,18 @@ describe("fee utilities", () => {
     expect(effective).toBe(24000);
   });
 
+  test("maps alternate API id fields into StudentID for UI display", () => {
+    const normalized = normalizeStudentFinancials({
+      id_number: "2026-0099",
+      Name: "Sample Student",
+      Program: "BSIS",
+      TotalFee: 10000,
+      TotalBalance: 10000,
+    });
+
+    expect(normalized.StudentID).toBe("2026-0099");
+  });
+
   test("resolves reminder due to the next unpaid installment stage", () => {
     const due = getReminderDueDetails({
       TotalFee: 24000,

@@ -34,16 +34,7 @@ function LoginPage({ onLogin, loading, error }) {
       <div className="login-layout">
         <div className="login-card">
           <div className="login-card-intro">
-            <span className="login-eyebrow">Secure access</span>
             <h1>ACLC Fee Management System</h1>
-            <p className="login-subtitle">
-              Choose an administrator account to continue managing student records, balances, and payment activity.
-            </p>
-            <div className="login-highlights">
-              <span>Fast balance lookup</span>
-              <span>Cleaner payment workflow</span>
-              <span>Centralized student data</span>
-            </div>
           </div>
           <div className="login-profiles">
             <button
@@ -66,11 +57,12 @@ function LoginPage({ onLogin, loading, error }) {
               <span className="login-profile-name">Ms. Amy Alpay</span>
             </button>
           </div>
-          {error && <div className="login-error">{error}</div>}
         </div>
 
         <div className="login-side">
-          <img src={admissionImage} alt="" className="login-admission-shadow" aria-hidden="true" />
+          <div className="login-side-background" aria-hidden="true">
+            <img src={admissionImage} alt="" className="login-admission-image" />
+          </div>
           <div className="login-visual">
             <div className="login-visual-inner">
               <div className="login-visual-brand">
@@ -79,16 +71,6 @@ function LoginPage({ onLogin, loading, error }) {
                 <p className="login-visual-address">
                   2355 Legarda corner Manrique St., Sampaloc Manila.
                 </p>
-              </div>
-              <div className="login-visual-stats">
-                <div className="login-visual-stat">
-                  <strong>1</strong>
-                  <span>System for records and collections</span>
-                </div>
-                <div className="login-visual-stat">
-                  <strong>2</strong>
-                  <span>Admin roles with guided access</span>
-                </div>
               </div>
             </div>
           </div>
@@ -108,6 +90,7 @@ function LoginPage({ onLogin, loading, error }) {
               </div>
 
               <form className="login-modal-form" onSubmit={handleSubmit}>
+                {error ? <div className="login-form-error">{error}</div> : null}
                 <label className="login-label">
                   Username
                   <input

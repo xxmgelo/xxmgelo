@@ -50,6 +50,21 @@ const roundCurrency = (value) => Math.round(value * 100) / 100;
 const INSTALLMENT_COUNT = INSTALLMENT_FIELDS.length;
 const MAX_DISCOUNT_PERCENT = 100;
 
+const resolveStudentId = (student = {}) =>
+  student.StudentID ??
+  student.student_id ??
+  student.studentId ??
+  student.id_number ??
+  student.IDNumber ??
+  student.IdNumber ??
+  student.usn ??
+  student.USN ??
+  student.student_no ??
+  student.StudentNo ??
+  student.student_number ??
+  student.StudentNumber ??
+  "";
+
 export const parseAmount = (value) => {
   if (value === null || value === undefined || value === "") return 0;
   const cleaned = String(value).replace(/[^0-9.-]/g, "");
@@ -238,6 +253,7 @@ const fitInstallmentsToTotal = (balances, targetTotal) => {
 };
 
 export const normalizeStudentFinancials = (student = {}) => {
+  const studentId = resolveStudentId(student);
   const gmail = student.Gmail ?? student.gmail ?? student.email ?? "";
   const paymentMode = sanitizePaymentMode(student.PaymentMode || student.payment_mode);
   const canRemind = toBooleanFlag(student.CanRemind ?? student.can_remind ?? false);
@@ -287,6 +303,7 @@ export const normalizeStudentFinancials = (student = {}) => {
 
     return {
       ...student,
+      StudentID: studentId,
       Gmail: gmail,
       Downpayment: 0,
       Prelim: 0,
@@ -341,6 +358,7 @@ export const normalizeStudentFinancials = (student = {}) => {
 
   return {
     ...student,
+    StudentID: studentId,
     Gmail: gmail,
     ...installmentBalances,
     PaymentMode: paymentMode,
