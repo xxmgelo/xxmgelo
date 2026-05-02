@@ -2,13 +2,22 @@ import React, { useCallback, useMemo, useState } from "react";
 import payIcon from "../assets/pay.png";
 import remindIcon from "../assets/reminder.png";
 import {
+  CARRY_OVER_FIELD,
+  CARRY_OVER_LABEL,
+  getCurrentInstallmentIndex,
   getCollectedAmount,
+  getCarryOverTotals,
+  getDisplayDownpaymentAmount,
   getEffectiveTotalFee,
   getLatestPaymentReminderToken,
+  getPreviousSemesterBalanceAmount,
+  hasRolledToRemainingBalance,
   INSTALLMENT_PAID_AMOUNT_FIELDS,
+  INSTALLMENT_FIELDS,
   normalizeStudentFinancials,
   PAYMENT_MODES,
 } from "../utils/fees";
+import { isSecondSemester } from "../utils/semester";
 import TablePagination from "./TablePagination";
 import useTablePagination from "../hooks/useTablePagination";
 
@@ -31,6 +40,7 @@ const PAYMENT_FIELD_LABELS = {
   PreFinal: "Pre-Final",
   Finals: "Finals",
   FullPaymentAmount: "Full Payment",
+  TotalBalance: "Total Balance",
 };
 
 const formatPaymentDate = (value) => {
@@ -46,6 +56,15 @@ const formatPaymentDate = (value) => {
   return tableDateFormatter.format(parsedDate);
 };
 
+const formatOrLabel = (value) => {
+  const normalized = String(value || "").trim();
+  if (!normalized || normalized === "N/A") {
+    return "";
+  }
+
+  return /^OR\b/i.test(normalized) ? normalized : `OR ${normalized}`;
+};
+
 const isStagePaid = (student, field, amount, dateValue) => {
   const paidAmountField = INSTALLMENT_PAID_AMOUNT_FIELDS[field];
   const paidAmount = Number(student?.[paidAmountField] ?? 0);
@@ -59,6 +78,9 @@ function StudentFeeTable({
   onRemind,
   onRemindSelected,
   sendingReminder = false,
+  activeSemester = "",
+  onRequestCarryOver,
+  isCarryOverAvailable,
 }) {
   const [selectedRows, setSelectedRows] = useState(new Set());
   const [paymentDetailModal, setPaymentDetailModal] = useState({
@@ -78,7 +100,7 @@ function StudentFeeTable({
 
   const getRowKey = useCallback((student) => {
     const originalIndex = students.indexOf(student);
-    return student.StudentID || `row-${originalIndex}`;
+    return student.id || student.OriginalStudentID || student.StudentID || `row-${originalIndex}`;
   }, [students]);
 
   const visibleRowKeys = useMemo(
@@ -179,10 +201,86 @@ function StudentFeeTable({
         return "final_date";
       case "FullPaymentAmount":
         return "total_balance_date";
+      case "TotalBalance":
+        return "total_balance_date";
       default:
         return "";
     }
   };
+
+  const getLatestTotalBalanceSettlement = useCallback((student) => {
+    const paymentHistory = Array.isArray(student?.payment_history) ? student.payment_history : [];
+    const totalBalanceDate = student?.total_balance_date;
+    const normalizedTotalBalanceDate = totalBalanceDate ? new Date(totalBalanceDate).getTime() : NaN;
+    const isMatchingSemester = (item) =>
+      !activeSemester || !item?.semester || String(item.semester).trim() === String(activeSemester).trim();
+
+    const matchingItems = paymentHistory.filter((item) => {
+      if (!isMatchingSemester(item)) {
+        return false;
+      }
+
+      const paymentTimestamp = item?.payment_date ? new Date(item.payment_date).getTime() : NaN;
+      if (Number.isFinite(normalizedTotalBalanceDate) && Number.isFinite(paymentTimestamp)) {
+        return paymentTimestamp === normalizedTotalBalanceDate;
+      }
+
+      return false;
+    });
+
+    if (matchingItems.length > 0) {
+      return matchingItems;
+    }
+
+    if (paymentHistory.length === 0) {
+      return [];
+    }
+
+    const semesterHistory = paymentHistory.filter(isMatchingSemester);
+    if (semesterHistory.length === 0) {
+      return [];
+    }
+
+    const latestTimestamp = Math.max(
+      ...semesterHistory.map((item) => {
+        const timestamp = item?.payment_date ? new Date(item.payment_date).getTime() : NaN;
+        return Number.isFinite(timestamp) ? timestamp : -Infinity;
+      })
+    );
+
+    if (!Number.isFinite(latestTimestamp)) {
+      return [];
+    }
+
+    return semesterHistory.filter((item) => {
+      const timestamp = item?.payment_date ? new Date(item.payment_date).getTime() : NaN;
+      return timestamp === latestTimestamp;
+    });
+  }, [activeSemester]);
+
+  const getTotalBalancePaymentDetail = useCallback((student) => {
+    const settlementItems = getLatestTotalBalanceSettlement(student);
+    const uniqueOrNumbers = Array.from(
+      new Set(
+        settlementItems
+          .map((item) => item?.or_number || "")
+          .map((value) => String(value || "").trim())
+          .filter(Boolean)
+      )
+    );
+    const fallbackOrNumber =
+      student?.stage_or_numbers?.TotalBalance ||
+      student?.official_receipt ||
+      uniqueOrNumbers.join(", ");
+
+    return {
+      amount: Number(student?.total_balance_paid_amount ?? 0) || settlementItems.reduce(
+        (total, item) => total + Number(item?.amount_paid ?? 0),
+        0
+      ),
+      orNumber: fallbackOrNumber || "N/A",
+    };
+  }, [getLatestTotalBalanceSettlement]);
 
   const renderPaymentCell = (student, field, amount, dateValue) => {
     const paid = isStagePaid(student, field, amount, dateValue);
@@ -204,6 +302,76 @@ function StudentFeeTable({
         }}
       >
         <span>{paid ? "PAID" : currencyFormatter.format(amount)}</span>
+      </button>
+    );
+  };
+
+  const getCarryOverPaymentDetail = (student, field) => {
+    if (field !== "Downpayment") {
+      return null;
+    }
+
+    const paymentHistory = Array.isArray(student?.payment_history) ? student.payment_history : [];
+    const carryOverEntry = [...paymentHistory]
+      .reverse()
+      .find((item) => item?.field === CARRY_OVER_FIELD && Number(item?.amount_paid) > 0);
+
+    if (!carryOverEntry) {
+      return null;
+    }
+
+    return {
+      label: CARRY_OVER_LABEL,
+      amount: Number(carryOverEntry.amount_paid ?? 0),
+      orNumber: carryOverEntry.or_number || student?.stage_or_numbers?.[CARRY_OVER_FIELD] || "N/A",
+      semester: carryOverEntry.semester || getCarryOverTotals(student).source_semester || "1st Semester",
+    };
+  };
+
+  const canCarryOverBalance = (student) => {
+    if (activeSemester !== "1st Semester" || typeof onRequestCarryOver !== "function") {
+      return false;
+    }
+
+    if (typeof isCarryOverAvailable === "function") {
+      return isCarryOverAvailable(student);
+    }
+
+    const normalized = normalizeStudentFinancials(student);
+    const currentInstallmentIndex = getCurrentInstallmentIndex(normalized);
+    return (
+      normalized.TotalBalance > 0 &&
+      (currentInstallmentIndex === INSTALLMENT_FIELDS.length - 1 || currentInstallmentIndex === -1)
+    );
+  };
+
+  const renderTotalBalanceCell = (student) => {
+    const canOpenDetail =
+      Number(student?.TotalBalance ?? 0) <= 0 &&
+      Boolean(student?.total_balance_date) &&
+      (isSecondSemester(activeSemester) || Boolean(student?.stage_or_numbers?.TotalBalance));
+
+    if (!canOpenDetail) {
+      return (
+        <span className={`balance-pill ${student.TotalBalance > 0 ? "due" : "paid"}`}>
+          {currencyFormatter.format(student.TotalBalance)}
+        </span>
+      );
+    }
+
+    return (
+      <button
+        type="button"
+        className={`balance-pill balance-pill-button ${student.TotalBalance > 0 ? "due" : "paid"}`}
+        onClick={() =>
+          setPaymentDetailModal({
+            open: true,
+            student,
+            field: "TotalBalance",
+          })
+        }
+      >
+        {currencyFormatter.format(student.TotalBalance)}
       </button>
     );
   };
@@ -276,6 +444,7 @@ function StudentFeeTable({
                 const rowKey = getRowKey(student);
                 const isSelected = selectedRows.has(rowKey);
                 const normalized = normalizeStudentFinancials(student);
+                const rolledToRemainingBalance = hasRolledToRemainingBalance(normalized);
                 const isPaid = normalized.TotalBalance <= 0;
                 const reminderToken = getLatestPaymentReminderToken(normalized);
                 const reminderAlreadySent =
@@ -309,17 +478,55 @@ function StudentFeeTable({
                         {normalized.PaymentMode === PAYMENT_MODES.FULL ? "Full" : "Installment"}
                       </span>
                     </td>
-                    <td>{currencyFormatter.format(getEffectiveTotalFee(normalized))}</td>
-                    <td>{renderPaymentCell(normalized, "Downpayment", normalized.Downpayment, normalized.downpayment_date)}</td>
+                    <td>
+                      <div className="fee-total-display">
+                        <span>{currencyFormatter.format(getEffectiveTotalFee(normalized))}</span>
+                        {getPreviousSemesterBalanceAmount(normalized) > 0 ? (
+                          <span className="fee-effective-note">
+                            Includes previous balance: {currencyFormatter.format(getPreviousSemesterBalanceAmount(normalized))}
+                          </span>
+                        ) : null}
+                      </div>
+                    </td>
+                    <td>
+                      <div className="fee-total-display">
+                        {renderPaymentCell(
+                          normalized,
+                          "Downpayment",
+                          getDisplayDownpaymentAmount(normalized),
+                          normalized.downpayment_date
+                        )}
+                        {getPreviousSemesterBalanceAmount(normalized) > 0 ? (
+                          <span className="fee-effective-note">
+                            Current sem: {currencyFormatter.format(normalized.Downpayment)}
+                          </span>
+                        ) : null}
+                      </div>
+                    </td>
                     <td>{renderPaymentCell(normalized, "Prelim", normalized.Prelim, normalized.prelim_date)}</td>
                     <td>{renderPaymentCell(normalized, "Midterm", normalized.Midterm, normalized.midterm_date)}</td>
                     <td>{renderPaymentCell(normalized, "PreFinal", normalized.PreFinal, normalized.prefinal_date)}</td>
-                    <td>{renderPaymentCell(normalized, "Finals", normalized.Finals, normalized.final_date)}</td>
+                    <td>
+                      {renderPaymentCell(
+                        normalized,
+                        "Finals",
+                        rolledToRemainingBalance ? 0 : normalized.Finals,
+                        rolledToRemainingBalance ? normalized.final_date || normalized.total_balance_date || true : normalized.final_date
+                      )}
+                    </td>
                     <td>{currencyFormatter.format(normalized.FullPaymentAmount)}</td>
                     <td>
-                      <span className={`balance-pill ${normalized.TotalBalance > 0 ? "due" : "paid"}`}>
-                        {currencyFormatter.format(normalized.TotalBalance)}
-                      </span>
+                      {canCarryOverBalance(normalized) ? (
+                        <button
+                          type="button"
+                          className={`balance-pill balance-pill-button ${normalized.TotalBalance > 0 ? "due" : "paid"}`}
+                          onClick={() => onRequestCarryOver?.(normalized)}
+                        >
+                          {currencyFormatter.format(normalized.TotalBalance)}
+                        </button>
+                      ) : (
+                        renderTotalBalanceCell(normalized)
+                      )}
                     </td>
                     <td>
                       <div className="action-buttons">
@@ -380,30 +587,32 @@ function StudentFeeTable({
               </button>
             </div>
             {paymentDetailModal.student ? (
+              (() => {
+                const carryOverDetail = getCarryOverPaymentDetail(
+                  paymentDetailModal.student,
+                  paymentDetailModal.field
+                );
+                const primaryOrNumber =
+                  paymentDetailModal.field === "TotalBalance"
+                    ? getTotalBalancePaymentDetail(paymentDetailModal.student).orNumber
+                    : paymentDetailModal.student.stage_or_numbers?.[paymentDetailModal.field] || "N/A";
+                const amountPaid = currencyFormatter.format(paymentDetailModal.field === "TotalBalance"
+                  ? getTotalBalancePaymentDetail(paymentDetailModal.student).amount
+                  : Number(
+                    paymentDetailModal.student[
+                      INSTALLMENT_PAID_AMOUNT_FIELDS[paymentDetailModal.field]
+                    ] ?? 0
+                  ));
+
+                return (
               <div className="payment-detail-grid">
-                <div>
-                  <span>Student</span>
-                  <strong>{paymentDetailModal.student.Name || "N/A"}</strong>
-                </div>
-                <div>
-                  <span>Student ID</span>
-                  <strong>{paymentDetailModal.student.StudentID || "N/A"}</strong>
-                </div>
                 <div>
                   <span>Payment Stage</span>
                   <strong>{PAYMENT_FIELD_LABELS[paymentDetailModal.field] || paymentDetailModal.field}</strong>
                 </div>
                 <div>
                   <span>Amount Paid</span>
-                  <strong>
-                    {currencyFormatter.format(
-                      Number(
-                        paymentDetailModal.student[
-                          INSTALLMENT_PAID_AMOUNT_FIELDS[paymentDetailModal.field]
-                        ] ?? 0
-                      )
-                    )}
-                  </strong>
+                  <strong>{amountPaid}</strong>
                 </div>
                 <div>
                   <span>Date Paid</span>
@@ -413,7 +622,25 @@ function StudentFeeTable({
                     ) || "N/A"}
                   </strong>
                 </div>
+                <div>
+                  <span>OR Number</span>
+                  <strong>{formatOrLabel(primaryOrNumber) || "N/A"}</strong>
+                </div>
+                {carryOverDetail ? (
+                  <div>
+                    <span>Previous Balance</span>
+                    <strong>{currencyFormatter.format(carryOverDetail.amount)}</strong>
+                  </div>
+                ) : null}
+                {carryOverDetail ? (
+                  <div>
+                    <span>Previous Balance OR Number</span>
+                    <strong>{formatOrLabel(carryOverDetail.orNumber) || "N/A"}</strong>
+                  </div>
+                ) : null}
               </div>
+                );
+              })()
             ) : null}
           </div>
         </div>

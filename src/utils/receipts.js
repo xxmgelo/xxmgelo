@@ -53,8 +53,42 @@ const getStageLabelFromField = (stageField, fallback = "Installment") => {
   }
 };
 
-const buildReceiptMessage = ({ stageLabel, amountPaid, remainingBalance, datePaid, paymentBreakdown }) => {
+const buildLineItems = (payment = {}) => {
+  const lineItems = Array.isArray(payment.payment_line_items)
+    ? payment.payment_line_items.filter((item) => Number(item?.amount_paid) > 0)
+    : [];
+
+  if (lineItems.length > 0) {
+    return lineItems;
+  }
+
+  return [
+    {
+      label: payment.stage_label || getStageLabelFromField(payment.stage_field, "Payment"),
+      amount_paid: toPositiveAmount(payment.stage_amount_paid ?? payment.amount_applied),
+      or_number: payment.official_receipt || "",
+    },
+  ].filter((item) => item.amount_paid > 0);
+};
+
+const buildReceiptMessage = ({
+  stageLabel,
+  amountPaid,
+  remainingBalance,
+  datePaid,
+  paymentBreakdown,
+  schoolYear,
+  semester,
+  lineItems,
+}) => {
   const stageGuidance = getStageBalanceGuidance(remainingBalance);
+  const paymentLines = (lineItems || [])
+    .map((item, index) => [
+      `${index + 1}. ${item.label}`,
+      `   Amount Paid: ${formatCurrency(item.amount_paid)}`,
+      `   OR Number: ${item.or_number || "N/A"}`,
+    ].join("\n"))
+    .join("\n");
 
   return [
     "Good day,",
@@ -63,8 +97,11 @@ const buildReceiptMessage = ({ stageLabel, amountPaid, remainingBalance, datePai
     "",
     "Payment Received:",
     `Type: ${stageLabel}`,
+    `School Year: ${schoolYear || "N/A"}`,
+    `Semester: ${semester || "N/A"}`,
     `Amount Paid: ${formatCurrency(amountPaid)}`,
     `Date Paid: ${formatDatePaid(datePaid)}`,
+    ...(paymentLines ? ["", "Payment Breakdown:", paymentLines] : []),
     "",
     "Remaining Balance Breakdown:",
     `Prelim: ${formatCurrency(paymentBreakdown?.Prelim ?? 0)}`,
@@ -92,6 +129,7 @@ const getReceiptStageDetails = (student = {}, payment = {}) => {
     PreFinal: student.PreFinal ?? 0,
     Finals: student.Finals ?? 0,
   };
+  const lineItems = buildLineItems(payment);
 
   if (paymentMode === PAYMENT_MODES.FULL) {
     const amountPaid = toPositiveAmount(payment.amount_applied);
@@ -103,6 +141,9 @@ const getReceiptStageDetails = (student = {}, payment = {}) => {
       remainingBalance,
       datePaid,
       paymentBreakdown,
+      lineItems,
+      schoolYear: payment.school_year_label || student.school_year_label || "",
+      semester: payment.semester || student.Semester || student.semester || "",
     };
   }
 
@@ -118,6 +159,9 @@ const getReceiptStageDetails = (student = {}, payment = {}) => {
     remainingBalance,
     datePaid,
     paymentBreakdown,
+    lineItems,
+    schoolYear: payment.school_year_label || student.school_year_label || "",
+    semester: payment.semester || student.Semester || student.semester || "",
   };
 };
 
@@ -137,17 +181,27 @@ export const buildPaymentReceiptDraft = (student = {}, payment = {}) => {
     bodyParagraphs: [
       "This is to confirm that your recent tuition fee payment has been successfully recorded.",
       "Your payment has been applied to the specified installment stage.",
+      `School Year: ${details.schoolYear || "N/A"}`,
+      `Semester: ${details.semester || "N/A"}`,
       `Date Paid: ${formatDatePaid(details.datePaid)}`,
       stageGuidance,
       "If you have any questions or concerns regarding your account, please contact the accounting office.",
     ],
     highlightRows: [
       { label: "Payment Type", value: details.stageLabel },
+      { label: "School Year", value: details.schoolYear || "N/A" },
+      { label: "Semester", value: details.semester || "N/A" },
       { label: "Amount Paid", value: formatCurrency(details.amountPaid) },
       { label: "Date Paid", value: formatDatePaid(details.datePaid) },
       { label: "Total Balance", value: formatCurrency(details.remainingBalance) },
     ],
-    breakdownRows: [
+    breakdownTitle: "Payment Breakdown",
+    breakdownRows: details.lineItems.map((item) => ({
+      label: `${item.label} (${item.or_number || "No OR"})`,
+      value: formatCurrency(item.amount_paid),
+    })),
+    secondaryBreakdownTitle: "Remaining Balance Breakdown",
+    secondaryBreakdownRows: [
       { label: "Prelim", value: formatCurrency(details.paymentBreakdown?.Prelim ?? 0) },
       { label: "Midterm", value: formatCurrency(details.paymentBreakdown?.Midterm ?? 0) },
       { label: "Prefinal", value: formatCurrency(details.paymentBreakdown?.PreFinal ?? 0) },
@@ -169,5 +223,6 @@ export const buildPaymentReceiptDraft = (student = {}, payment = {}) => {
     remainingBalance: details.remainingBalance,
     datePaid: details.datePaid,
     paymentBreakdown: details.paymentBreakdown,
+    lineItems: details.lineItems,
   };
 };

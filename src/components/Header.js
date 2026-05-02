@@ -1,12 +1,24 @@
 import React from "react";
 import aclcLogo from "../assets/aclclogo.png";
+import backIcon from "../assets/backicon.png";
 import lightIcon from "../assets/light.png";
 import darkIcon from "../assets/dark.png";
 
-function Header({ darkMode, toggleTheme, viewTitle, userName, studentCount }) {
+function Header({ darkMode, toggleTheme, viewTitle, userName, studentCount, schoolYearLabel, showBackButton, onBack }) {
   return (
     <header className="header">
       <div className="header-content">
+        {showBackButton ? (
+          <button
+            type="button"
+            className="header-back-btn"
+            onClick={onBack}
+            aria-label="Back to school year selection"
+            title="Back to school year selection"
+          >
+            <img src={backIcon} alt="Back" className="header-back-icon" />
+          </button>
+        ) : null}
         <div className="header-brand-mark">
           <img src={aclcLogo} alt="ACLC Logo" className="header-logo" />
         </div>
@@ -20,6 +32,10 @@ function Header({ darkMode, toggleTheme, viewTitle, userName, studentCount }) {
         </div>
       </div>
       <div className="header-actions">
+        <div className="header-stat">
+          <span className="header-stat-label">School Year</span>
+          <strong>{schoolYearLabel || "Not selected"}</strong>
+        </div>
         <div className="header-stat">
           <span className="header-stat-label">Students</span>
           <strong>{studentCount}</strong>

@@ -11,19 +11,19 @@ const PERIOD_KEYS = INSTALLMENT_FIELDS;
 const hasPaymentMarker = (student = {}) =>
   Boolean(
     student.date_paid ||
-    student.DatePaid ||
-    student.downpayment_date ||
-    student.prelim_date ||
-    student.midterm_date ||
-    student.prefinal_date ||
-    student.final_date ||
-    student.total_balance_date ||
-    student.downpayment_paid_amount > 0 ||
-    student.prelim_paid_amount > 0 ||
-    student.midterm_paid_amount > 0 ||
-    student.prefinal_paid_amount > 0 ||
-    student.final_paid_amount > 0 ||
-    student.total_balance_paid_amount > 0
+      student.DatePaid ||
+      student.downpayment_date ||
+      student.prelim_date ||
+      student.midterm_date ||
+      student.prefinal_date ||
+      student.final_date ||
+      student.total_balance_date ||
+      student.downpayment_paid_amount > 0 ||
+      student.prelim_paid_amount > 0 ||
+      student.midterm_paid_amount > 0 ||
+      student.prefinal_paid_amount > 0 ||
+      student.final_paid_amount > 0 ||
+      student.total_balance_paid_amount > 0
   );
 
 const classifyPaymentStatus = (student, collectedAmount) => {
@@ -112,9 +112,8 @@ export function calculateAnalytics(students = []) {
     }
   });
 
-  metrics.collectionRate = metrics.totalFees > 0
-    ? Math.round((metrics.totalCollected / metrics.totalFees) * 100)
-    : 0;
+  metrics.collectionRate =
+    metrics.totalFees > 0 ? Math.round((metrics.totalCollected / metrics.totalFees) * 100) : 0;
 
   metrics.topBalances = normalizedStudents
     .filter((student) => student.TotalBalance > 0)

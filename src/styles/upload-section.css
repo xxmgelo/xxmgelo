@@ -79,6 +79,10 @@
   white-space: nowrap;
 }
 
+.upload-file-input {
+  display: none;
+}
+
 .upload-inline-tools {
   display: flex;
   align-items: center;

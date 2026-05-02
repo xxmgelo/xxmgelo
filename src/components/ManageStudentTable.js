@@ -5,6 +5,8 @@ import useTablePagination from "../hooks/useTablePagination";
 
 function ManageStudentTable({ students, filteredStudents, onRemoveSelected, onDeleteStudent, onEditStudent }) {
   const [selectedRows, setSelectedRows] = useState(new Set());
+  const getRowKey = (student, fallbackIndex = -1) =>
+    student.id || student.OriginalStudentID || student.StudentID || `row-${fallbackIndex}`;
   const {
     currentPage,
     setCurrentPage,
@@ -19,7 +21,7 @@ function ManageStudentTable({ students, filteredStudents, onRemoveSelected, onDe
     () =>
       paginatedItems.map((student) => {
         const originalIndex = students.indexOf(student);
-        return student.StudentID || `row-${originalIndex}`;
+        return getRowKey(student, originalIndex);
       }),
     [paginatedItems, students]
   );
@@ -54,7 +56,7 @@ function ManageStudentTable({ students, filteredStudents, onRemoveSelected, onDe
     }
     const selectedStudents = filteredStudents.filter((student) => {
       const originalIndex = students.indexOf(student);
-      const rowKey = student.StudentID || `row-${originalIndex}`;
+      const rowKey = getRowKey(student, originalIndex);
       return selectedRows.has(rowKey);
     });
     onRemoveSelected(selectedStudents);
@@ -120,7 +122,7 @@ function ManageStudentTable({ students, filteredStudents, onRemoveSelected, onDe
             {filteredStudents.length > 0 ? (
               paginatedItems.map((student, index) => {
                 const originalIndex = students.indexOf(student);
-                const rowKey = student.StudentID || `row-${originalIndex}`;
+                const rowKey = getRowKey(student, originalIndex);
                 const isSelected = selectedRows.has(rowKey);
                 return (
                   <tr key={rowKey} className={isSelected ? "row-selected" : ""}>

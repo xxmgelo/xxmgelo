@@ -302,14 +302,11 @@ Minimal request body:
 }
 ```
 
-**PUT `/students.php?view=full`**  
-Updates a student record. This endpoint can update profile fields, fee fields, payment status, payment dates, and payment amounts.
-
-When changing the student ID, include `OriginalStudentID` so the API can locate the old record and keep the financial record linked.
+**PATCH `/students.php?view=full`**  
+Supported by the backend for Postman student updates. Keep the request body limited to `StudentID`, `Name`, `Program`, `YearLevel`, and `Gmail`.
 
 ```json
 {
-  "OriginalStudentID": "22000080800",
   "StudentID": "22000080811",
   "Name": "Juan Dela Cruz",
   "Program": "Bachelor of Science in Information System (BSIS)",
@@ -317,9 +314,6 @@ When changing the student ID, include `OriginalStudentID` so the API can locate 
   "Gmail": "juan.updated@example.com"
 }
 ```
-
-**PATCH `/students.php?view=full`**  
-Supported by the backend for partial student updates. It follows the same payload structure as `PUT`.
 
 **DELETE `/students.php?student_id={student_id}&view=full`**  
 Removes an active student record, deletes the linked financial record, and stores the student profile in `removed_students`.

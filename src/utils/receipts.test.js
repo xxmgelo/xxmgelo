@@ -15,6 +15,9 @@ describe("payment receipt drafts", () => {
         stage_amount_paid: 2000,
         stage_amount_remaining: 4100,
         amount_applied: 2000,
+        official_receipt: "OR-2026-000001",
+        school_year_label: "2026-2027",
+        semester: "1st Semester",
         date_paid: "2026-04-11T09:30:00.000Z",
       }
     );
@@ -22,15 +25,19 @@ describe("payment receipt drafts", () => {
     expect(draft.subject).toBe("Payment Confirmation - ACLC Fee Management System");
     expect(draft.message).toContain("This is to confirm that your recent tuition fee payment has been successfully recorded.");
     expect(draft.message).toContain("Type: Prelim");
+    expect(draft.message).toContain("School Year: 2026-2027");
+    expect(draft.message).toContain("Semester: 1st Semester");
+    expect(draft.message).toContain("OR Number: OR-2026-000001");
     expect(draft.message).toContain("Amount Paid:");
     expect(draft.message).toContain("Date Paid: April 11, 2026");
-    expect(draft.message).toContain("Remaining Balance:");
+    expect(draft.message).toContain("Remaining Balance Breakdown:");
     expect(draft.message).toContain("Please ensure that the remaining balance is settled within the required period.");
     expect(draft.message).not.toContain("Requested Amount");
     expect(draft.message).not.toContain("Applied Amount");
     expect(draft.message).not.toContain("Outstanding Before");
     expect(draft.message).not.toContain("Outstanding After");
     expect(draft.html).toContain("Payment Details");
+    expect(draft.html).toContain("Payment Breakdown");
     expect(draft.html).toContain("Prelim");
     expect(draft.html).toContain("Date Paid");
     expect(draft.html).toContain("receivednotif.png");

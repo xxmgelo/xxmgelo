@@ -1,7 +1,10 @@
 const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost/aclcapi/api";
 
+const isPendingUsnDisplay = (value) => String(value ?? "").trim().toUpperCase() === "N/A";
+
 const resolveStudentId = (student = {}) =>
-  student.StudentID ??
+  (isPendingUsnDisplay(student.StudentID) ? student.OriginalStudentID : student.StudentID) ??
+  student.OriginalStudentID ??
   student.student_id ??
   student.studentId ??
   student.id_number ??
@@ -16,10 +19,18 @@ const resolveStudentId = (student = {}) =>
   "";
 
 function toStudentPayload(student = {}) {
+  const resolvedStudentId = resolveStudentId(student);
+  const visibleStudentId = String(student.StudentID ?? "").trim();
+
   return {
-    StudentID: resolveStudentId(student),
-    OriginalStudentID: student.OriginalStudentID ?? student.original_student_id ?? resolveStudentId(student),
+    StudentID: isPendingUsnDisplay(visibleStudentId) ? "" : resolvedStudentId,
+    OriginalStudentID: student.OriginalStudentID ?? student.original_student_id ?? resolvedStudentId,
     Name: student.Name ?? student.name ?? "",
+    Surname: student.Surname ?? student.surname ?? "",
+    GivenName: student.GivenName ?? student.given_name ?? student.givenName ?? "",
+    Initial: student.Initial ?? student.initial ?? "",
+    SchoolYearID: student.SchoolYearID ?? student.school_year_id ?? 0,
+    Semester: student.Semester ?? student.semester ?? "",
     Program: student.Program ?? student.program ?? "",
     YearLevel: student.YearLevel ?? student.year_level ?? "",
     Gmail: student.Gmail ?? student.gmail ?? "",
@@ -36,10 +47,11 @@ async function request(path, options = {}) {
   });
 
   const text = await response.text();
+  const normalizedText = text.replace(/^\uFEFF/, "");
   let data = null;
-  if (text) {
+  if (normalizedText) {
     try {
-      data = JSON.parse(text);
+      data = JSON.parse(normalizedText);
     } catch (error) {
       data = null;
     }
@@ -55,8 +67,45 @@ async function request(path, options = {}) {
   return data;
 }
 
-export async function getStudents() {
-  return request("/students.php?view=full");
+export async function getSchoolYears() {
+  return request("/school_years.php");
+}
+
+export async function importSchoolYearStudents(targetSchoolYearId) {
+  return request("/school_years.php", {
+    method: "POST",
+    body: JSON.stringify({
+      action: "import_students",
+      target_school_year_id: targetSchoolYearId,
+    }),
+  });
+}
+
+export async function createSchoolYear(importPreviousStudents = false, startYear = 0) {
+  return request("/school_years.php", {
+    method: "POST",
+    body: JSON.stringify({
+      action: "create_school_year",
+      import_previous_students: importPreviousStudents,
+      start_year: startYear,
+    }),
+  });
+}
+
+export async function deleteSchoolYears(schoolYearIds) {
+  return request("/school_years.php", {
+    method: "POST",
+    body: JSON.stringify({
+      action: "delete_school_years",
+      school_year_ids: schoolYearIds,
+    }),
+  });
+}
+
+export async function getStudents(schoolYearId, semester = "") {
+  const schoolYearQuery = schoolYearId ? `&school_year_id=${encodeURIComponent(schoolYearId)}` : "";
+  const semesterQuery = semester ? `&semester=${encodeURIComponent(semester)}` : "";
+  return request(`/students.php?view=full${schoolYearQuery}${semesterQuery}`);
 }
 
 export async function createStudent(student) {
@@ -80,13 +129,28 @@ export async function updateStudent(student) {
 }
 
 export async function deleteStudent(student) {
-  const studentId = typeof student === "object"
-    ? resolveStudentId(student)
-    : student;
-  const rowId = typeof student === "object" ? student.id ?? 0 : 0;
-  const query = studentId
-    ? `student_id=${encodeURIComponent(studentId)}`
-    : `id=${encodeURIComponent(rowId)}`;
+  const rowId = typeof student === "object" ? student.id ?? student.ID ?? 0 : 0;
+  const studentId = typeof student === "object" ? resolveStudentId(student) : student;
+  const schoolYearId =
+    typeof student === "object" ? student.SchoolYearID ?? student.school_year_id ?? 0 : 0;
+  const semester =
+    typeof student === "object" ? student.Semester ?? student.semester ?? "" : "";
+  const queryParts = [];
+
+  if (rowId) {
+    queryParts.push(`id=${encodeURIComponent(rowId)}`);
+  }
+  if (studentId) {
+    queryParts.push(`student_id=${encodeURIComponent(studentId)}`);
+  }
+  if (schoolYearId) {
+    queryParts.push(`school_year_id=${encodeURIComponent(schoolYearId)}`);
+  }
+  if (semester) {
+    queryParts.push(`semester=${encodeURIComponent(semester)}`);
+  }
+
+  const query = queryParts.join("&");
 
   return request(`/students.php?${query}&view=full`, {
     method: "DELETE",

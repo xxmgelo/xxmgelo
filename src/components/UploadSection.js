@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useRef } from "react";
 import searchIcon from "../assets/search.png";
 import addIcon from "../assets/add.png";
 
@@ -17,7 +17,10 @@ function UploadSection({
   noteText,
   showAllFilter,
   filtersOnLeft,
+  onUploadStudents,
+  uploadingStudents,
 }) {
+  const uploadInputRef = useRef(null);
   const sectionClassName = [
     "upload-section",
     isManageTab ? "upload-section-manage" : "",
@@ -81,10 +84,31 @@ function UploadSection({
           {!hideActionButton && (
             <div className="upload-action-cluster">
               {isManageTab ? (
-                <button className="add-student-btn" onClick={onAddStudent} type="button">
-                  <img src={addIcon} alt="Add" className="btn-icon" />
-                  Add Student
-                </button>
+                <>
+                  {onUploadStudents ? (
+                    <>
+                      <input
+                        ref={uploadInputRef}
+                        type="file"
+                        accept=".xlsx,.xls"
+                        className="upload-file-input"
+                        onChange={onUploadStudents}
+                      />
+                      <button
+                        className="upload-btn"
+                        type="button"
+                        onClick={() => uploadInputRef.current?.click()}
+                        disabled={uploadingStudents}
+                      >
+                        {uploadingStudents ? "Uploading..." : "Upload Excel"}
+                      </button>
+                    </>
+                  ) : null}
+                  <button className="add-student-btn" onClick={onAddStudent} type="button">
+                    <img src={addIcon} alt="Add" className="btn-icon" />
+                    Add Student
+                  </button>
+                </>
               ) : null}
             </div>
           )}

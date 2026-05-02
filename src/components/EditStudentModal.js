@@ -14,24 +14,48 @@ function EditStudentModal({ showEditModal, editStudent, onClose, onSubmit, onInp
               type="text"
               name="StudentID"
               value={editStudent.StudentID}
-              onChange={(event) => {
-                const digitsOnly = event.target.value.replace(/\D/g, "");
-                onInputChange({ target: { name: "StudentID", value: digitsOnly } });
-              }}
+              onChange={onInputChange}
               placeholder="Enter USN number"
               required
             />
           </div>
           <div className="form-group">
             <label>Student Name *</label>
-            <input
-              type="text"
-              name="Name"
-              value={editStudent.Name}
-              onChange={onInputChange}
-              placeholder="Enter Student Name"
-              required
-            />
+            <div className="form-row">
+              <div className="form-group">
+                <input
+                  type="text"
+                  name="Surname"
+                  value={editStudent.Surname || ""}
+                  onChange={onInputChange}
+                  placeholder="Enter Surname"
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <input
+                  type="text"
+                  name="GivenName"
+                  value={editStudent.GivenName || ""}
+                  onChange={onInputChange}
+                  placeholder="Enter Given Name"
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <input
+                  type="text"
+                  name="Initial"
+                  value={editStudent.Initial || ""}
+                  onChange={(event) => {
+                    const sanitizedInitial = event.target.value.replace(/[^a-z]/gi, "").slice(0, 1).toUpperCase();
+                    onInputChange({ target: { name: "Initial", value: sanitizedInitial } });
+                  }}
+                  placeholder="Initial"
+                  maxLength={1}
+                />
+              </div>
+            </div>
           </div>
           <div className="form-group">
             <label>Program/Course</label>

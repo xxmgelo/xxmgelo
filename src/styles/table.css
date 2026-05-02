@@ -251,6 +251,16 @@ th .checklist-box {
   text-transform: uppercase;
 }
 
+.balance-pill-button {
+  border: 0;
+  cursor: pointer;
+}
+
+.balance-pill-button:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+
 .balance-pill.due {
   background: rgba(var(--accent-warning-rgb), 0.12);
   color: var(--autumn-ember);

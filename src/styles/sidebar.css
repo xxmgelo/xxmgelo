@@ -173,17 +173,6 @@
   box-shadow: var(--shadow);
 }
 
-.nav-item:not(.nav-logout).active::before {
-  content: "";
-  position: absolute;
-  left: 10px;
-  right: 10px;
-  bottom: 6px;
-  height: 3px;
-  border-radius: 999px;
-  background: var(--accent-primary);
-}
-
 .nav-icon {
   width: 16px;
   height: 16px;
@@ -277,11 +266,6 @@
   min-width: 0;
   justify-content: center;
   padding: 9px 12px;
-}
-
-.menu-bar.collapsed .nav-item:not(.nav-logout).active::before {
-  left: 8px;
-  right: 8px;
 }
 
 .menu-bar.collapsed .nav-copy {

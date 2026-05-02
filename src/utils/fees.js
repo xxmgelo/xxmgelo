@@ -46,6 +46,9 @@ export const INSTALLMENT_LABELS = {
   Finals: "Finals",
 };
 
+export const CARRY_OVER_FIELD = "PreviousBalance";
+export const CARRY_OVER_LABEL = "Previous Balance from 1st Semester";
+
 const roundCurrency = (value) => Math.round(value * 100) / 100;
 const INSTALLMENT_COUNT = INSTALLMENT_FIELDS.length;
 const MAX_DISCOUNT_PERCENT = 100;
@@ -98,6 +101,31 @@ export const getInstallmentBalances = (student = {}) =>
     return balances;
   }, {});
 
+export const getCarryOverTotals = (student = {}) => {
+  const total = toPositiveAmount(
+    student.CarriedOverAmount ??
+    student.carried_over_amount ??
+    student.carry_over_amount
+  );
+  const paid = toPositiveAmount(
+    student.CarriedOverPaidAmount ??
+    student.carried_over_paid_amount ??
+    student.carry_over_paid_amount
+  );
+  const sourceSemester =
+    student.carried_over_from_semester ??
+    student.CarriedOverFromSemester ??
+    student.carry_over_from_semester ??
+    "1st Semester";
+
+  return {
+    total,
+    paid: Math.min(paid, total),
+    remaining: roundCurrency(Math.max(total - Math.min(paid, total), 0)),
+    source_semester: sourceSemester,
+  };
+};
+
 export const getDiscountPercent = (student = {}) =>
   toDiscountPercent(
     student.Discount ??
@@ -114,6 +142,16 @@ export const sumInstallments = (student = {}) =>
 
 export const getCurrentInstallmentIndex = (student = {}) =>
   INSTALLMENT_FIELDS.findIndex((field) => toPositiveAmount(student[field]) > 0);
+
+export const hasRolledToRemainingBalance = (student = {}) => {
+  const normalized = normalizeStudentFinancials(student);
+  const currentIndex = getCurrentInstallmentIndex(normalized);
+  return (
+    normalized.PaymentMode === PAYMENT_MODES.INSTALLMENT &&
+    currentIndex === INSTALLMENT_FIELDS.length - 1 &&
+    normalized.TotalBalance > 0
+  );
+};
 
 export const getReminderDueDetails = (student = {}) => {
   const normalized = normalizeStudentFinancials(student);
@@ -154,7 +192,7 @@ export const getReminderDueDetails = (student = {}) => {
 
   const currentIndex = getCurrentInstallmentIndex(normalized);
 
-  if (currentIndex !== -1) {
+  if (currentIndex !== -1 && !hasRolledToRemainingBalance(normalized)) {
     const dueField = INSTALLMENT_FIELDS[currentIndex];
     return {
       type: "installment_stage",
@@ -270,6 +308,7 @@ export const normalizeStudentFinancials = (student = {}) => {
   const prefinalPaidAmount = student.prefinal_paid_amount ?? student.PreFinalPaidAmount ?? null;
   const finalPaidAmount = student.final_paid_amount ?? student.FinalPaidAmount ?? null;
   const totalBalancePaidAmount = student.total_balance_paid_amount ?? student.TotalBalancePaidAmount ?? null;
+  const carryOver = getCarryOverTotals(student);
   const discount = getDiscountPercent(student);
   let installmentBalances = getInstallmentBalances(student);
   const rawTotalFee = toPositiveAmount(student.TotalFee ?? student.total_fee);
@@ -291,6 +330,7 @@ export const normalizeStudentFinancials = (student = {}) => {
   const rawTotalBalance = student.TotalBalance ?? student.total_balance;
   const hasExplicitTotalBalance = rawTotalBalance !== undefined && rawTotalBalance !== null && rawTotalBalance !== "";
   const resolvedRawTotalBalance = toPositiveAmount(rawTotalBalance);
+  const currentSemesterResolvedBalance = resolvedRawTotalBalance;
   const stageTotal = sumInstallments(installmentBalances);
 
   if (stageTotal === 0 && totalFee > 0 && (!hasExplicitTotalBalance || resolvedRawTotalBalance > 0)) {
@@ -298,7 +338,7 @@ export const normalizeStudentFinancials = (student = {}) => {
   }
 
   if (paymentMode === PAYMENT_MODES.FULL) {
-    totalFee = totalFee > 0 ? totalFee : Math.max(fullPaymentAmount, toPositiveAmount(student.TotalBalance));
+    totalFee = totalFee > 0 ? totalFee : Math.max(fullPaymentAmount, currentSemesterResolvedBalance);
     fullPaymentAmount = totalFee > 0 ? Math.min(fullPaymentAmount, totalFee) : fullPaymentAmount;
 
     return {
@@ -330,31 +370,77 @@ export const normalizeStudentFinancials = (student = {}) => {
       prefinal_paid_amount: prefinalPaidAmount,
       final_paid_amount: finalPaidAmount,
       total_balance_paid_amount: totalBalancePaidAmount,
+      CarriedOverAmount: carryOver.total,
+      carried_over_amount: carryOver.total,
+      CarriedOverPaidAmount: carryOver.paid,
+      carried_over_paid_amount: carryOver.paid,
+      carried_over_remaining: carryOver.remaining,
       TotalFee: totalFee,
-      TotalBalance: roundCurrency(Math.max(totalFee - fullPaymentAmount, 0)),
+      TotalBalance: roundCurrency(Math.max(totalFee - fullPaymentAmount, 0) + carryOver.remaining),
     };
   }
 
-  let totalBalance = toPositiveAmount(student.TotalBalance ?? student.total_balance);
+  let totalBalance = currentSemesterResolvedBalance;
   let nextStageTotal = sumInstallments(installmentBalances);
+  let currentSemesterBalance =
+    totalBalance > 0 ? roundCurrency(Math.max(totalBalance - carryOver.remaining, 0)) : 0;
 
-  totalFee = totalFee > 0 ? totalFee : Math.max(totalBalance, nextStageTotal);
-  totalBalance = totalBalance > 0 ? totalBalance : nextStageTotal;
+  const totalBalanceLikelyMissingCarryOver =
+    carryOver.remaining > 0 &&
+    totalBalance > 0 &&
+    nextStageTotal > 0 &&
+    roundCurrency(totalBalance) === roundCurrency(nextStageTotal) &&
+    totalFee > 0 &&
+    roundCurrency(nextStageTotal) === roundCurrency(totalFee);
 
-  if (nextStageTotal === 0 && totalBalance > 0) {
-    installmentBalances = distributeTotalAcrossInstallments(totalBalance);
+  // Older/sync-lagged rows can save the current semester schedule and balance
+  // without adding the previous-semester carry-over into TotalBalance yet.
+  // In that case, preserve the configured installment plan and add carry-over
+  // back on top instead of shrinking the last stage.
+  if (totalBalanceLikelyMissingCarryOver) {
+    currentSemesterBalance = nextStageTotal;
+    totalBalance = roundCurrency(nextStageTotal + carryOver.remaining);
+  }
+
+  totalFee = totalFee > 0 ? totalFee : Math.max(currentSemesterBalance, nextStageTotal);
+  totalBalance = totalBalance > 0 ? totalBalance : roundCurrency(nextStageTotal + carryOver.remaining);
+  currentSemesterBalance =
+    currentSemesterBalance > 0
+      ? currentSemesterBalance
+      : roundCurrency(Math.max(totalBalance - carryOver.remaining, 0));
+
+  // If an older saved row baked the previous balance into the installment columns,
+  // trim that overflow back out so only the current semester tuition is distributed
+  // across Downpayment..Finals. The carried balance stays separate.
+  if (carryOver.remaining > 0 && totalFee > 0 && nextStageTotal > totalFee) {
+    const alignedToSemesterFee = fitInstallmentsToTotal(installmentBalances, totalFee);
+    INSTALLMENT_FIELDS.forEach((field) => {
+      installmentBalances[field] = alignedToSemesterFee[field];
+    });
     nextStageTotal = sumInstallments(installmentBalances);
   }
 
-  if (totalBalance > 0 && nextStageTotal !== totalBalance) {
-    const alignedBalances = fitInstallmentsToTotal(installmentBalances, totalBalance);
+  if (nextStageTotal === 0 && currentSemesterBalance > 0) {
+    installmentBalances = distributeTotalAcrossInstallments(currentSemesterBalance);
+    nextStageTotal = sumInstallments(installmentBalances);
+  }
+
+  if (currentSemesterBalance > 0 && nextStageTotal !== currentSemesterBalance) {
+    const alignedBalances = fitInstallmentsToTotal(installmentBalances, currentSemesterBalance);
     INSTALLMENT_FIELDS.forEach((field) => {
       installmentBalances[field] = alignedBalances[field];
     });
     nextStageTotal = sumInstallments(installmentBalances);
   }
 
-  totalFee = Math.max(totalFee, nextStageTotal);
+  if (carryOver.remaining > 0) {
+    const inferredCurrentSemesterFee = Math.max(nextStageTotal, currentSemesterBalance);
+    if (inferredCurrentSemesterFee > 0) {
+      totalFee = inferredCurrentSemesterFee;
+    }
+  } else {
+    totalFee = Math.max(totalFee, nextStageTotal);
+  }
 
   return {
     ...student,
@@ -381,19 +467,57 @@ export const normalizeStudentFinancials = (student = {}) => {
     prefinal_paid_amount: prefinalPaidAmount,
     final_paid_amount: finalPaidAmount,
     total_balance_paid_amount: totalBalancePaidAmount,
+    CarriedOverAmount: carryOver.total,
+    carried_over_amount: carryOver.total,
+    CarriedOverPaidAmount: carryOver.paid,
+    carried_over_paid_amount: carryOver.paid,
+    carried_over_remaining: carryOver.remaining,
     TotalFee: totalFee,
-    TotalBalance: nextStageTotal,
+    TotalBalance: roundCurrency(nextStageTotal + carryOver.remaining),
   };
 };
 
 export const getCollectedAmount = (student = {}) => {
   const normalized = normalizeStudentFinancials(student);
-  return roundCurrency(Math.max(normalized.TotalFee - normalized.TotalBalance, 0));
+  const carryOver = getCarryOverTotals(normalized);
+  const totalObligation = roundCurrency(normalized.TotalFee + carryOver.total);
+  return roundCurrency(Math.max(totalObligation - normalized.TotalBalance, 0));
 };
 
 export const getEffectiveTotalFee = (student = {}) => {
   const normalized = normalizeStudentFinancials(student);
-  return normalized.TotalFee;
+  const carryOver = getCarryOverTotals(normalized);
+  return roundCurrency(normalized.TotalFee + carryOver.remaining);
+};
+
+export const getCurrentSemesterTuitionAmount = (student = {}) => {
+  const normalized = normalizeStudentFinancials(student);
+  return roundCurrency(normalized.TotalFee);
+};
+
+export const getPreviousSemesterBalanceAmount = (student = {}) => {
+  const normalized = normalizeStudentFinancials(student);
+  const carryOver = getCarryOverTotals(normalized);
+  return roundCurrency(carryOver.remaining);
+};
+
+export const getTotalPayableAmount = (student = {}) => {
+  const normalized = normalizeStudentFinancials(student);
+  return roundCurrency(
+    getCurrentSemesterTuitionAmount(normalized) + getPreviousSemesterBalanceAmount(normalized)
+  );
+};
+
+export const getDisplayDownpaymentAmount = (student = {}) => {
+  const normalized = normalizeStudentFinancials(student);
+  const carryOver = getCarryOverTotals(normalized);
+  const hasConfiguredFee = Number(normalized.BaseTotalFee || normalized.TotalFee || 0) > 0;
+  return roundCurrency(
+    normalized.Downpayment +
+      (hasConfiguredFee && normalized.PaymentMode === PAYMENT_MODES.INSTALLMENT
+        ? carryOver.remaining
+        : 0)
+  );
 };
 
 export const applyFeeFieldChange = (student, field, value) => {
@@ -410,6 +534,7 @@ export const applyFeeFieldChange = (student, field, value) => {
     const nextBaseTotalFee = toPositiveAmount(value);
     const discountPercent = getDiscountPercent(current);
     const nextTotalFee = applyDiscount(nextBaseTotalFee, discountPercent);
+    const carryOver = getCarryOverTotals(current);
 
     if (current.PaymentMode === PAYMENT_MODES.FULL) {
       return normalizeStudentFinancials({
@@ -435,7 +560,7 @@ export const applyFeeFieldChange = (student, field, value) => {
       Finals: 0,
       BaseTotalFee: nextBaseTotalFee,
       TotalFee: nextTotalFee,
-      TotalBalance: nextTotalFee,
+      TotalBalance: roundCurrency(nextTotalFee + carryOver.remaining),
     });
   }
 
@@ -477,18 +602,26 @@ export const applyFeeFieldChange = (student, field, value) => {
       BaseTotalFee: nextBaseTotalFee,
       Discount: nextDiscount,
       TotalFee: nextTotalFee,
-      TotalBalance: nextTotalFee,
+      TotalBalance: roundCurrency(nextTotalFee + getCarryOverTotals(current).remaining),
     });
   }
 
   if (INSTALLMENT_FIELDS.includes(field)) {
     const nextBalances = getInstallmentBalances(current);
-    nextBalances[field] = toPositiveAmount(value);
+    const carryOver = getCarryOverTotals(current);
+    const hasConfiguredFee = Number(current.BaseTotalFee || current.TotalFee || 0) > 0;
+    const normalizedValue = toPositiveAmount(value);
+    nextBalances[field] =
+      field === "Downpayment" &&
+      hasConfiguredFee &&
+      current.PaymentMode === PAYMENT_MODES.INSTALLMENT
+        ? Math.max(roundCurrency(normalizedValue - carryOver.remaining), 0)
+        : normalizedValue;
 
     return normalizeStudentFinancials({
       ...current,
       ...nextBalances,
-      TotalBalance: sumInstallments(nextBalances),
+      TotalBalance: roundCurrency(sumInstallments(nextBalances) + carryOver.remaining),
     });
   }
 
@@ -509,10 +642,36 @@ export const previewPaymentApplication = (student, paymentAmount, overrides = {}
   const rejectedAmount = roundCurrency(requestedAmount - appliedAmount);
 
   if (source.PaymentMode === PAYMENT_MODES.FULL) {
-    const nextFullPaymentAmount = roundCurrency(source.FullPaymentAmount + appliedAmount);
+    const breakdown = [];
+    const carryOver = getCarryOverTotals(source);
+    const carryApplied = Math.min(carryOver.remaining, appliedAmount);
+    const fullApplied = roundCurrency(appliedAmount - carryApplied);
+    const nextFullPaymentAmount = roundCurrency(source.FullPaymentAmount + fullApplied);
     const nextStudent = normalizeStudentFinancials({
       ...source,
+      CarriedOverPaidAmount: roundCurrency(carryOver.paid + carryApplied),
       FullPaymentAmount: nextFullPaymentAmount,
+    });
+
+    if (carryApplied > 0) {
+      breakdown.push({
+        field: CARRY_OVER_FIELD,
+        label: CARRY_OVER_LABEL,
+        before: carryOver.remaining,
+        applied: carryApplied,
+        after: roundCurrency(carryOver.remaining - carryApplied),
+        payment_category: "previous_balance",
+        source_semester: student.carried_over_from_semester ?? "1st Semester",
+      });
+    }
+
+    breakdown.push({
+      field: "FullPaymentAmount",
+      label: "Full Payment",
+      before: source.FullPaymentAmount,
+      applied: fullApplied,
+      after: nextStudent.FullPaymentAmount,
+      payment_category: "current_semester_payment",
     });
 
     return {
@@ -522,30 +681,39 @@ export const previewPaymentApplication = (student, paymentAmount, overrides = {}
       rejectedAmount,
       outstandingBefore: source.TotalBalance,
       outstandingAfter: nextStudent.TotalBalance,
-      breakdown: [
-        {
-          field: "FullPaymentAmount",
-          label: "Full Payment",
-          before: source.FullPaymentAmount,
-          applied: appliedAmount,
-          after: nextStudent.FullPaymentAmount,
-        },
-      ],
+      breakdown,
       nextStudent,
     };
   }
 
   const nextBalances = getInstallmentBalances(source);
   const breakdown = [];
+  const carryOver = getCarryOverTotals(source);
+  let remainingPayment = appliedAmount;
+
+  if (carryOver.remaining > 0) {
+    const carryApplied = Math.min(carryOver.remaining, remainingPayment);
+    remainingPayment = roundCurrency(remainingPayment - carryApplied);
+    breakdown.push({
+      field: CARRY_OVER_FIELD,
+      label: CARRY_OVER_LABEL,
+      before: carryOver.remaining,
+      applied: carryApplied,
+      after: roundCurrency(carryOver.remaining - carryApplied),
+      payment_category: "previous_balance",
+      source_semester: student.carried_over_from_semester ?? "1st Semester",
+    });
+  }
+
   const currentIndex = getCurrentInstallmentIndex(nextBalances);
 
-  if (currentIndex !== -1) {
+  if (currentIndex !== -1 && remainingPayment > 0) {
     const currentField = INSTALLMENT_FIELDS[currentIndex];
     const currentDue = nextBalances[currentField];
-    const difference = roundCurrency(currentDue - appliedAmount);
+    const difference = roundCurrency(currentDue - remainingPayment);
 
     if (currentIndex === INSTALLMENT_FIELDS.length - 1) {
-      nextBalances[currentField] = roundCurrency(Math.max(currentDue - appliedAmount, 0));
+      nextBalances[currentField] = roundCurrency(Math.max(currentDue - remainingPayment, 0));
     } else {
       if (difference > 0) {
         nextBalances[currentField] = 0;
@@ -578,12 +746,14 @@ export const previewPaymentApplication = (student, paymentAmount, overrides = {}
       before: source[field],
       applied: roundCurrency(source[field] - nextBalances[field]),
       after: nextBalances[field],
+      payment_category: field === "Downpayment" ? "downpayment" : "current_semester_payment",
     });
   });
 
   const nextStudent = normalizeStudentFinancials({
     ...source,
     ...nextBalances,
+    CarriedOverPaidAmount: roundCurrency(carryOver.paid + (breakdown[0]?.field === CARRY_OVER_FIELD ? breakdown[0].applied : 0)),
     TotalBalance: sumInstallments(nextBalances),
   });
 

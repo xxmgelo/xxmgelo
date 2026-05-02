@@ -12,7 +12,8 @@
 
 .student-dashboard,
 .home-dashboard,
-.analytics-dashboard {
+.analytics-dashboard,
+.school-years-page {
   position: relative;
   background: var(--bg-secondary);
   border: 1px solid var(--border-color);
@@ -29,12 +30,14 @@
 
 .dark-mode .student-dashboard,
 .dark-mode .home-dashboard,
-.dark-mode .analytics-dashboard {
+.dark-mode .analytics-dashboard,
+.dark-mode .school-years-page {
   background: var(--bg-secondary);
 }
 
 .home-dashboard,
-.analytics-dashboard {
+.analytics-dashboard,
+.school-years-page {
   overflow: hidden;
 }
 
@@ -44,7 +47,8 @@
 
 .student-dashboard::before,
 .home-dashboard::before,
-.analytics-dashboard::before {
+.analytics-dashboard::before,
+.school-years-page::before {
   content: "";
   position: absolute;
   inset: 0 0 auto;
@@ -112,10 +116,281 @@
   padding: 10px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 12px;
   flex: 1;
   min-height: 0;
-  overflow: hidden;
+  overflow: auto;
+}
+
+.dashboard-school-year-layout {
+  gap: 10px;
+}
+
+.dashboard-module-layout {
+  padding: 16px;
+  overflow: auto;
+}
+
+.dashboard-back-row {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.dashboard-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 14px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  font-size: 12px;
+  font-weight: 700;
+  box-shadow: var(--shadow-sm);
+}
+
+.dashboard-back-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.dashboard-back-icon {
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
+  display: block;
+  filter: var(--icon-filter-neutral);
+}
+
+.school-year-gate-main {
+  display: flex;
+  min-height: 0;
+  padding: 16px;
+}
+
+.dashboard-school-year-hero {
+  grid-template-columns: 1fr;
+  padding: 12px 14px;
+}
+
+.dashboard-school-year-indicator {
+  padding: 6px 4px;
+  border-radius: 0;
+  background: var(--bg-secondary);
+  border: none;
+  box-shadow: none;
+  display: grid;
+  gap: 4px;
+  align-content: center;
+}
+
+.dashboard-school-year-indicator strong {
+  font-size: clamp(1.3rem, 1.6vw, 1.7rem);
+  color: var(--text-primary);
+  line-height: 1.1;
+}
+
+.dashboard-school-year-main,
+.dashboard-shortcuts {
+  display: block;
+}
+
+.dashboard-school-year-grid {
+  grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+  gap: 10px;
+}
+
+.dashboard-school-year-card {
+  min-height: 128px;
+  padding: 18px;
+  gap: 8px;
+}
+
+.dashboard-school-year-card strong {
+  font-size: clamp(1.35rem, 1.55vw, 1.7rem);
+}
+
+.dashboard-shortcut-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.dashboard-shortcut-card {
+  min-height: 88px;
+  justify-content: center;
+}
+
+.school-year-card-shell {
+  display: grid;
+  gap: 10px;
+}
+
+.school-year-card-shell.selected {
+  border-color: rgba(var(--accent-primary-rgb), 0.42);
+  box-shadow: 0 0 0 1px rgba(var(--accent-primary-rgb), 0.18), var(--shadow-lg);
+}
+
+.school-year-card-button {
+  display: grid;
+  gap: 8px;
+  text-align: left;
+  background: transparent;
+  border: none;
+  padding: 0;
+}
+
+.school-year-import-btn {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(var(--accent-primary-rgb), 0.14);
+  background: rgba(var(--accent-primary-rgb), 0.06);
+  color: var(--text-primary);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.school-year-import-btn:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.school-years-page {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  flex: 1 1 0;
+  overflow: auto;
+}
+
+.school-years-hero {
+  padding: 20px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, rgba(var(--accent-primary-rgb), 0.12), rgba(var(--accent-primary-rgb), 0.04));
+  border: 1px solid rgba(var(--accent-primary-rgb), 0.16);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.school-year-hero-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.school-years-hero h2 {
+  margin: 6px 0 0;
+  font-size: clamp(1.45rem, 1.8vw, 2rem);
+  color: var(--text-primary);
+}
+
+.school-years-hero p {
+  margin: 10px 0 0;
+  max-width: 720px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.school-year-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px;
+}
+
+.school-year-create-btn {
+  padding: 10px 14px;
+  border-radius: 14px;
+  background: var(--accent-primary);
+  color: var(--text-inverse);
+  border: 1px solid transparent;
+  font-size: 12px;
+  font-weight: 700;
+  box-shadow: var(--shadow-sm);
+}
+
+.school-year-secondary-btn,
+.school-year-danger-btn {
+  padding: 10px 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(var(--accent-primary-rgb), 0.14);
+  font-size: 12px;
+  font-weight: 700;
+  box-shadow: var(--shadow-sm);
+}
+
+.school-year-secondary-btn {
+  background: rgba(var(--accent-primary-rgb), 0.06);
+  color: var(--text-primary);
+}
+
+.school-year-danger-btn {
+  background: rgba(var(--accent-warning-rgb), 0.14);
+  color: var(--autumn-ember);
+}
+
+.school-year-card {
+  display: grid;
+  gap: 10px;
+  padding: 18px;
+  text-align: left;
+  border-radius: 18px;
+  border: 1px solid rgba(var(--accent-primary-rgb), 0.14);
+  background:
+    radial-gradient(circle at top right, rgba(var(--accent-primary-rgb), 0.14), transparent 42%),
+    linear-gradient(180deg, rgba(var(--accent-primary-rgb), 0.08), rgba(var(--accent-primary-rgb), 0.03));
+  box-shadow: var(--shadow);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease, opacity 0.2s ease;
+}
+
+.school-year-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-lg);
+  opacity: 0.96;
+}
+
+.school-year-card.selected {
+  border-color: rgba(var(--accent-primary-rgb), 0.42);
+  box-shadow: 0 0 0 1px rgba(var(--accent-primary-rgb), 0.18), var(--shadow-lg);
+}
+
+.school-year-card.removal-selected {
+  border-color: rgba(var(--accent-warning-rgb), 0.4);
+  box-shadow: 0 0 0 1px rgba(var(--accent-warning-rgb), 0.16), var(--shadow-lg);
+}
+
+.school-year-select-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.school-year-select-toggle input {
+  width: 16px;
+  height: 16px;
+}
+
+.school-year-card-icon {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+  filter: var(--icon-filter-accent);
+}
+
+.school-year-card strong {
+  font-size: 22px;
+  line-height: 1.1;
+  color: var(--text-primary);
 }
 
 .home-hero {
@@ -995,6 +1270,10 @@
 }
 
 @media (max-width: 1360px) {
+  .dashboard-shortcut-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
   .home-analytics-grid {
     grid-template-columns: minmax(0, 1fr) minmax(240px, 0.8fr);
   }
@@ -1013,6 +1292,14 @@
 }
 
 @media (max-width: 1180px) {
+  .dashboard-school-year-hero {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-shortcut-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .home-metric-grid,
   .analytics-insight-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1038,5 +1325,12 @@
 
   .home-card-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .dashboard-shortcut-grid,
+  .dashboard-school-year-grid {
+    grid-template-columns: 1fr;
   }
 }

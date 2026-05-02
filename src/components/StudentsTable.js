@@ -40,8 +40,9 @@ function StudentsTable({ students, filteredStudents }) {
             {filteredStudents.length > 0 ? (
               paginatedItems.map((student, index) => {
                 const originalIndex = students.indexOf(student);
+                const rowKey = student.id || student.OriginalStudentID || student.StudentID || `${student.Name}-${originalIndex}`;
                 return (
-                  <tr key={student.StudentID || `${student.Name}-${originalIndex}`}>
+                  <tr key={rowKey}>
                     <td>{rangeStart + index}</td>
                     <td>{student.StudentID || "N/A"}</td>
                     <td>{student.Name || "N/A"}</td>

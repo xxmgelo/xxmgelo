@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import "./index.css";
+import * as XLSX from "xlsx";
 import Header from "./components/Header";
 import Navigation from "./components/Navigation";
 import HomeDashboard from "./components/HomeDashboard";
@@ -15,19 +16,33 @@ import EditStudentModal from "./components/EditStudentModal";
 import ConfirmModal from "./components/ConfirmModal";
 import LoginPage from "./components/LoginPage";
 import AdminSettingsPage from "./components/AdminSettingsPage";
+import SchoolYearsPage from "./components/SchoolYearsPage";
+import CreateSchoolYearModal from "./components/CreateSchoolYearModal";
 import mainAdminAvatar from "./assets/admin.png";
 import assistantAdminAvatar from "./assets/administrator.png";
-import { handleAddStudent, handleInputChange, INITIAL_STUDENT } from "./utils/handlers";
+import { composeStudentName, handleAddStudent, handleInputChange, INITIAL_STUDENT } from "./utils/handlers";
 import {
   applyFeeFieldChange,
+  CARRY_OVER_FIELD,
+  getCarryOverTotals,
+  getCurrentInstallmentIndex,
   INSTALLMENT_DATE_FIELDS,
+  INSTALLMENT_FIELDS,
   getLatestPaymentReminderToken,
   normalizeStudentFinancials,
+  previewPaymentApplication,
 } from "./utils/fees";
+import { collectExistingOrNumbers } from "./utils/orNumbers";
+import { SEMESTERS, formatActiveContextLabel, getPreviousSemester, isSecondSemester } from "./utils/semester";
 import { buildReminderDraft } from "./utils/reminders";
 import { buildPaymentReceiptDraft } from "./utils/receipts";
 import {
+  getSchoolYears,
+  importSchoolYearStudents,
+  createSchoolYear,
+  deleteSchoolYears,
   getStudents,
+  createStudent,
   deleteStudent,
   updateStudent,
   adminLogin,
@@ -42,7 +57,13 @@ const ASSISTANT_ADMIN_USERNAME = "assistantadmin";
 const THEME_STORAGE_KEY = "aclc_theme_preferences";
 const DARK_MODE_STORAGE_KEY = "aclc_dark_mode";
 const PAYMENT_CACHE_STORAGE_KEY = "aclc_payment_detail_cache";
+const ACTIVE_CONTEXT_STORAGE_KEY = "aclc_active_school_context";
 const HEX_COLOR_PATTERN = /^#[0-9A-F]{6}$/;
+const CARRY_OVER_STATUS = {
+  NOT_CARRIED: "not_carried",
+  CARRIED_OVER: "carried_over",
+  PAID: "paid",
+};
 
 const DEFAULT_THEME = {
   start: "#007877",
@@ -51,8 +72,8 @@ const DEFAULT_THEME = {
 
 const VIEW_META = {
   home: {
-    title: "Operations Dashboard",
-    description: "Monitor collections, student records, and the next high-impact action from one workspace.",
+    title: "Dashboard",
+    description: "Choose the school year that should drive the records shown across the existing modules.",
   },
   studentFee: {
     title: "Student Fee",
@@ -173,6 +194,82 @@ const getStageLabelFromField = (stageField) => {
   }
 };
 
+const STUDENT_UPLOAD_HEADER_ALIASES = {
+  studentid: "StudentID",
+  usn: "StudentID",
+  usnnumber: "StudentID",
+  usnno: "StudentID",
+  studentnumber: "StudentID",
+  studentno: "StudentID",
+  originalstudentid: "OriginalStudentID",
+  name: "Name",
+  surname: "Surname",
+  lastname: "Surname",
+  givenname: "GivenName",
+  firstname: "GivenName",
+  middlename: "Initial",
+  middleinitial: "Initial",
+  initial: "Initial",
+  program: "Program",
+  programcourse: "Program",
+  course: "Program",
+  yearlevel: "YearLevel",
+  year: "YearLevel",
+  gmail: "Gmail",
+  email: "Gmail",
+};
+
+const normalizeUploadHeaderKey = (value) =>
+  String(value ?? "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, "");
+
+const readUploadCell = (row, keys) => {
+  for (const key of keys) {
+    const value = row[key];
+    if (value !== undefined && value !== null && String(value).trim() !== "") {
+      return String(value).trim();
+    }
+  }
+  return "";
+};
+
+const normalizeUploadRow = (row, context = {}) => {
+  const mapped = {};
+
+  Object.entries(row || {}).forEach(([rawKey, rawValue]) => {
+    const mappedKey = STUDENT_UPLOAD_HEADER_ALIASES[normalizeUploadHeaderKey(rawKey)];
+    if (!mappedKey) {
+      return;
+    }
+
+    mapped[mappedKey] = rawValue;
+  });
+
+  const surname = readUploadCell(mapped, ["Surname"]);
+  const givenName = readUploadCell(mapped, ["GivenName"]);
+  const initial = readUploadCell(mapped, ["Initial"]).replace(/[^A-Za-z]/g, "").slice(0, 1).toUpperCase();
+  const composedName =
+    surname && givenName ? composeStudentName({ Surname: surname, GivenName: givenName, Initial: initial }) : "";
+  const studentId = readUploadCell(mapped, ["StudentID", "OriginalStudentID"]);
+  const name = readUploadCell(mapped, ["Name"]) || composedName;
+
+  return normalizeStudentFinancials({
+    ...INITIAL_STUDENT,
+    StudentID: studentId,
+    OriginalStudentID: readUploadCell(mapped, ["OriginalStudentID"]) || studentId,
+    Name: name,
+    Surname: surname,
+    GivenName: givenName,
+    Initial: initial,
+    Program: readUploadCell(mapped, ["Program"]),
+    YearLevel: readUploadCell(mapped, ["YearLevel"]),
+    Gmail: readUploadCell(mapped, ["Gmail"]),
+    SchoolYearID: context.schoolYearId || 0,
+    Semester: context.semester || "",
+  });
+};
+
 const loadPaymentDetailCache = () => {
   try {
     const stored = localStorage.getItem(PAYMENT_CACHE_STORAGE_KEY);
@@ -196,23 +293,111 @@ const savePaymentDetailCache = (cache) => {
   }
 };
 
-const mergePaymentDetailsIntoStudent = (student, cache = {}) => {
+const getContextStudentKeyCandidates = (schoolYearId, semester, student = {}) => {
+  const candidates = [
+    student.id,
+    student.OriginalStudentID,
+    student.original_student_id,
+    student.student_id,
+    student.StudentID,
+    student.studentId,
+  ]
+    .map((value) => String(value || "").trim())
+    .filter(Boolean);
+
+  const uniqueCandidates = Array.from(new Set(candidates));
+  return uniqueCandidates.map((value) => `${schoolYearId || 0}::${semester || ""}::${value}`);
+};
+
+const buildContextStudentKey = (schoolYearId, semester, student) =>
+  getContextStudentKeyCandidates(schoolYearId, semester, student)[0] || `${schoolYearId || 0}::${semester || ""}::`;
+
+const extractSemesterSnapshot = (student = {}) => ({
+  ...extractPersistedPaymentDetails(student),
+  PaymentMode: student.PaymentMode,
+  TotalFee: student.TotalFee,
+  BaseTotalFee: student.BaseTotalFee,
+  Discount: student.Discount,
+  Downpayment: student.Downpayment,
+  Prelim: student.Prelim,
+  Midterm: student.Midterm,
+  PreFinal: student.PreFinal,
+  Finals: student.Finals,
+  FullPaymentAmount: student.FullPaymentAmount,
+  TotalBalance: student.TotalBalance,
+  carried_over_amount: student.carried_over_amount ?? 0,
+  carried_over_paid_amount: student.carried_over_paid_amount ?? 0,
+  carried_over_remaining: student.carried_over_remaining ?? 0,
+  carried_over_from_semester: student.carried_over_from_semester ?? "",
+  carry_over_confirmed: Boolean(student.carry_over_confirmed),
+  carry_over_confirmed_at: student.carry_over_confirmed_at ?? null,
+  carried_over_to_semester: student.carried_over_to_semester ?? "",
+  stage_or_numbers: student.stage_or_numbers ?? {},
+  payment_history: Array.isArray(student.payment_history) ? student.payment_history : [],
+});
+
+const getContextCacheEntry = (cache, schoolYearId, semester, student) => {
+  const keyCandidates = getContextStudentKeyCandidates(schoolYearId, semester, student);
+  for (const key of keyCandidates) {
+    if (cache[key]) {
+      return cache[key];
+    }
+  }
+  return null;
+};
+
+const writeContextCacheEntry = (cache, schoolYearId, semester, student, value) => {
+  const keyCandidates = getContextStudentKeyCandidates(schoolYearId, semester, student);
+  keyCandidates.forEach((key) => {
+    cache[key] = value;
+  });
+};
+
+const mergePaymentDetailsIntoStudent = (student, cache = {}, context = {}) => {
   if (!student || !student.StudentID) {
     return student;
   }
 
-  const cacheKey = String(student.StudentID);
-  const cached = cache[cacheKey];
+  const cached = getContextCacheEntry(cache, context.schoolYearId, context.semester, student);
   if (!cached || typeof cached !== "object") {
-    return student;
+    if (!isSecondSemester(context.semester)) {
+      return student;
+    }
   }
 
-  return {
+  const merged = {
     ...student,
     ...Object.fromEntries(
-      Object.entries(cached).filter(([, value]) => value !== undefined && value !== null && value !== "")
+      Object.entries(cached || {}).filter(([, value]) => value !== undefined && value !== null && value !== "")
     ),
   };
+
+  if (isSecondSemester(context.semester)) {
+    const firstSemesterSnapshot = getContextCacheEntry(
+      cache,
+      context.schoolYearId,
+      getPreviousSemester(context.semester),
+      student
+    );
+
+    if (firstSemesterSnapshot && typeof firstSemesterSnapshot === "object") {
+      const firstSemesterStudent = normalizeStudentFinancials({
+        ...student,
+        ...firstSemesterSnapshot,
+      });
+      const remainingCarry = Math.max(firstSemesterStudent.TotalBalance || 0, 0);
+      const currentCarryPaid = Number(merged.carried_over_paid_amount ?? 0);
+
+      Object.assign(merged, {
+        carried_over_amount: remainingCarry + currentCarryPaid,
+        carried_over_paid_amount: currentCarryPaid,
+        carried_over_remaining: remainingCarry,
+        carried_over_from_semester: SEMESTERS.FIRST,
+      });
+    }
+  }
+
+  return merged;
 };
 
 const extractPersistedPaymentDetails = (student = {}) => ({
@@ -231,11 +416,61 @@ const extractPersistedPaymentDetails = (student = {}) => ({
   date_paid: student.date_paid ?? student.DatePaid ?? null,
   DatePaid: student.DatePaid ?? student.date_paid ?? null,
   reminder_sent_token: student.reminder_sent_token ?? null,
+  official_receipt: student.official_receipt ?? null,
 });
+
+const splitStudentName = (student = {}) => {
+  const surname = String(student.Surname ?? student.surname ?? "").trim();
+  const givenName = String(student.GivenName ?? student.given_name ?? student.givenName ?? "").trim();
+  const initial = String(student.Initial ?? student.initial ?? "").trim();
+
+  if (surname || givenName || initial) {
+    return { Surname: surname, GivenName: givenName, Initial: initial };
+  }
+
+  const fullName = String(student.Name ?? student.name ?? "").trim();
+  if (!fullName) {
+    return { Surname: "", GivenName: "", Initial: "" };
+  }
+
+  const [rawSurname = "", rawRemainder = ""] = fullName.split(/,\s*/, 2);
+  const remainderParts = rawRemainder.trim().split(/\s+/).filter(Boolean);
+  const maybeInitial = remainderParts.length > 1 ? remainderParts[remainderParts.length - 1] : "";
+  const isInitial = /^[A-Za-z]\.?$/.test(maybeInitial);
+
+  return {
+    Surname: rawSurname.trim(),
+    GivenName: isInitial ? remainderParts.slice(0, -1).join(" ") : rawRemainder.trim(),
+    Initial: isInitial ? maybeInitial : "",
+  };
+};
+
+const getStudentRowKey = (student = {}) =>
+  student.id || student.OriginalStudentID || student.student_id || student.StudentID || "";
+
+const isDeleteAlreadySatisfiedError = (error) =>
+  String(error?.message || "").trim().toLowerCase().includes("student not found");
 
 function App() {
   const [students, setStudents] = useState([]);
+  const [schoolYears, setSchoolYears] = useState([]);
+  const [selectedSchoolYearId, setSelectedSchoolYearId] = useState(0);
+  const [selectedSemester, setSelectedSemester] = useState("");
+  const [importingSchoolYear, setImportingSchoolYear] = useState(false);
+  const [creatingSchoolYear, setCreatingSchoolYear] = useState(false);
+  const [showCreateSchoolYearModal, setShowCreateSchoolYearModal] = useState(false);
+  const [createSchoolYearError, setCreateSchoolYearError] = useState("");
+  const [schoolYearSelectionMode, setSchoolYearSelectionMode] = useState(false);
+  const [selectedSchoolYearIdsForRemoval, setSelectedSchoolYearIdsForRemoval] = useState([]);
+  const [schoolYearDeleteConfirm, setSchoolYearDeleteConfirm] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [carryOverModalState, setCarryOverModalState] = useState({
+    open: false,
+    student: null,
+    secondSemesterStudent: null,
+    status: CARRY_OVER_STATUS.NOT_CARRIED,
+    loading: false,
+  });
   const [showAddStudentModal, setShowAddStudentModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState(null);
@@ -260,6 +495,7 @@ function App() {
   const [authError, setAuthError] = useState("");
   const [themePrefs, setThemePrefs] = useState(DEFAULT_THEME);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [uploadingStudents, setUploadingStudents] = useState(false);
   const reminderNoticeTimerRef = useRef(null);
 
   const toggleTheme = () => {
@@ -414,6 +650,40 @@ function App() {
   }, [applyThemeColors, normalizeThemePrefs]);
 
   useEffect(() => {
+    try {
+      const stored = localStorage.getItem(ACTIVE_CONTEXT_STORAGE_KEY);
+      if (!stored) {
+        return;
+      }
+
+      const parsed = JSON.parse(stored);
+      if (parsed?.schoolYearId) {
+        setSelectedSchoolYearId(parsed.schoolYearId);
+      }
+      if (parsed?.semester) {
+        setSelectedSemester(parsed.semester);
+      }
+    } catch (error) {
+      console.warn("Failed to parse active school context.", error);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!selectedSchoolYearId || !selectedSemester) {
+      localStorage.removeItem(ACTIVE_CONTEXT_STORAGE_KEY);
+      return;
+    }
+
+    localStorage.setItem(
+      ACTIVE_CONTEXT_STORAGE_KEY,
+      JSON.stringify({
+        schoolYearId: selectedSchoolYearId,
+        semester: selectedSemester,
+      })
+    );
+  }, [selectedSchoolYearId, selectedSemester]);
+
+  useEffect(() => {
     applyThemeColors(themePrefs);
   }, [themePrefs, applyThemeColors]);
 
@@ -430,14 +700,41 @@ function App() {
       return;
     }
 
+    const loadSchoolYears = async () => {
+      try {
+        const data = await getSchoolYears();
+        const nextSchoolYears = Array.isArray(data) ? data : [];
+        setSchoolYears(nextSchoolYears);
+        setSelectedSchoolYearId((prev) => (
+          prev && nextSchoolYears.some((item) => item.id === prev) ? prev : 0
+        ));
+      } catch (error) {
+        console.error(error);
+        setSchoolYears([]);
+      }
+    };
+
+    loadSchoolYears();
+  }, [authUser]);
+
+  useEffect(() => {
+    if (!authUser || !selectedSchoolYearId) {
+      return;
+    }
+
     const loadStudents = async () => {
       try {
-        const data = await getStudents();
+        const data = await getStudents(selectedSchoolYearId, selectedSemester);
         if (Array.isArray(data)) {
           const paymentCache = loadPaymentDetailCache();
           setStudents(
             data.map((student) =>
-              normalizeStudentFinancials(mergePaymentDetailsIntoStudent(student, paymentCache))
+              normalizeStudentFinancials(
+                mergePaymentDetailsIntoStudent(student, paymentCache, {
+                  schoolYearId: selectedSchoolYearId,
+                  semester: selectedSemester,
+                })
+              )
             )
           );
         }
@@ -447,7 +744,15 @@ function App() {
     };
 
     loadStudents();
-  }, [authUser]);
+  }, [authUser, selectedSchoolYearId, selectedSemester]);
+
+  useEffect(() => {
+    if (!selectedSchoolYearId || !selectedSemester) {
+      return;
+    }
+
+    setNewStudent((prev) => ({ ...prev, SchoolYearID: selectedSchoolYearId, Semester: selectedSemester }));
+  }, [selectedSchoolYearId, selectedSemester]);
 
   const handleLogin = async ({ identifier, password }) => {
     setAuthError("");
@@ -495,12 +800,20 @@ function App() {
     setSearchQuery("");
     setProgramFilter("");
     setYearFilter("");
+    setSchoolYears([]);
+    setSelectedSchoolYearId(0);
+    setSelectedSemester("");
     setActiveTab("home");
   };
 
+  const normalizedSchoolYears = Array.isArray(schoolYears) ? schoolYears : [];
   const normalizedQuery = searchQuery.toLowerCase();
   const normalizedProgramFilter = programFilter.toLowerCase();
   const normalizedYearFilter = yearFilter.toLowerCase();
+  const selectedSchoolYear =
+    normalizedSchoolYears.find((item) => item.id === selectedSchoolYearId) || null;
+  const activeContextLabel = formatActiveContextLabel(selectedSchoolYear?.label, selectedSemester);
+  const existingOrNumbers = collectExistingOrNumbers(loadPaymentDetailCache());
   const activeView = VIEW_META[activeTab] || VIEW_META.home;
 
   const filteredStudents = students.filter((student) => {
@@ -521,16 +834,259 @@ function App() {
     return matchesSearch && matchesProgram && matchesYear;
   });
 
+  const getCarryOverEligibility = useCallback((student, secondSemesterStudent = null) => {
+    const normalized = normalizeStudentFinancials(student);
+    const currentInstallmentIndex = getCurrentInstallmentIndex(normalized);
+    const hasCarryEligibleBalance =
+      normalized.TotalBalance > 0 &&
+      (currentInstallmentIndex === INSTALLMENT_FIELDS.length - 1 || currentInstallmentIndex === -1);
+    const isAlreadyConfirmed = Boolean(
+      normalized.carry_over_confirmed ||
+      normalized.carry_over_confirmed_at ||
+      normalized.carried_over_to_semester
+    );
+
+    const normalizedSecondSemester = secondSemesterStudent
+      ? normalizeStudentFinancials(secondSemesterStudent)
+      : null;
+    const carryOverTotals = normalizedSecondSemester ? getCarryOverTotals(normalizedSecondSemester) : null;
+
+    let status = CARRY_OVER_STATUS.NOT_CARRIED;
+    if (isAlreadyConfirmed || (carryOverTotals && carryOverTotals.total > 0)) {
+      status =
+        carryOverTotals && carryOverTotals.total > 0 && carryOverTotals.remaining <= 0
+          ? CARRY_OVER_STATUS.PAID
+          : CARRY_OVER_STATUS.CARRIED_OVER;
+    }
+
+    return {
+      hasCarryEligibleBalance,
+      status,
+      isClickable:
+        selectedSemester === SEMESTERS.FIRST &&
+        hasCarryEligibleBalance &&
+        status === CARRY_OVER_STATUS.NOT_CARRIED,
+      normalizedSecondSemester,
+    };
+  }, [selectedSemester]);
+
+  const getMatchingStudentRecord = useCallback((records, targetStudent) => {
+    const targetStudentId = String(
+      targetStudent?.OriginalStudentID ||
+      targetStudent?.StudentID ||
+      targetStudent?.student_id ||
+      ""
+    ).trim();
+
+    return (records || []).find((record) => {
+      const recordStudentId = String(
+        record?.OriginalStudentID ||
+        record?.StudentID ||
+        record?.student_id ||
+        ""
+      ).trim();
+
+      if (targetStudentId && recordStudentId) {
+        return recordStudentId === targetStudentId;
+      }
+
+      return (
+        String(record?.Name || "").trim().toLowerCase() === String(targetStudent?.Name || "").trim().toLowerCase() &&
+        String(record?.Program || "").trim().toLowerCase() === String(targetStudent?.Program || "").trim().toLowerCase() &&
+        String(record?.Gmail || "").trim().toLowerCase() === String(targetStudent?.Gmail || "").trim().toLowerCase()
+      );
+    }) || null;
+  }, []);
+
   const handlePaid = (student) => {
     setSelectedStudent(normalizeStudentFinancials(student));
     setShowPaymentModal(true);
+  };
+
+  const handleRequestCarryOver = async (student) => {
+    const normalizedStudent = normalizeStudentFinancials(student);
+    const nextSemester = SEMESTERS.SECOND;
+
+    setCarryOverModalState({
+      open: true,
+      student: normalizedStudent,
+      secondSemesterStudent: null,
+      status: CARRY_OVER_STATUS.NOT_CARRIED,
+      loading: true,
+    });
+
+    try {
+      const secondSemesterRecords = await getStudents(selectedSchoolYearId, nextSemester);
+      const rawMatchedSecondSemester = getMatchingStudentRecord(secondSemesterRecords, normalizedStudent);
+      const paymentCache = loadPaymentDetailCache();
+      const matchedSecondSemester = rawMatchedSecondSemester
+        ? mergePaymentDetailsIntoStudent(rawMatchedSecondSemester, paymentCache, {
+            schoolYearId: selectedSchoolYearId,
+            semester: nextSemester,
+          })
+        : null;
+      const eligibility = getCarryOverEligibility(normalizedStudent, matchedSecondSemester);
+
+      setCarryOverModalState({
+        open: true,
+        student: normalizedStudent,
+        secondSemesterStudent: eligibility.normalizedSecondSemester,
+        status: eligibility.status,
+        loading: false,
+      });
+    } catch (error) {
+      console.error(error);
+      setCarryOverModalState({
+        open: true,
+        student: normalizedStudent,
+        secondSemesterStudent: null,
+        status: CARRY_OVER_STATUS.NOT_CARRIED,
+        loading: false,
+      });
+      alert(error?.message || "Unable to load the 2nd Semester record for carry-over.");
+    }
+  };
+
+  const handleConfirmCarryOver = async () => {
+    if (!carryOverModalState.student || carryOverModalState.loading) {
+      return;
+    }
+
+    const normalizedFirstSemester = normalizeStudentFinancials(carryOverModalState.student);
+    const firstSemesterCarryAmount = Number(normalizedFirstSemester.TotalBalance || 0);
+
+    if (firstSemesterCarryAmount <= 0) {
+      return;
+    }
+
+    if (carryOverModalState.status !== CARRY_OVER_STATUS.NOT_CARRIED) {
+      return;
+    }
+
+    setCarryOverModalState((prev) => ({ ...prev, loading: true }));
+
+    try {
+      let secondSemesterStudent = carryOverModalState.secondSemesterStudent;
+      const carryConfirmedAt = new Date().toISOString();
+
+      if (!secondSemesterStudent) {
+        const preparedSecondSemesterStudent = normalizeStudentFinancials({
+          ...normalizedFirstSemester,
+          SchoolYearID: selectedSchoolYearId,
+          Semester: SEMESTERS.SECOND,
+          TotalFee: 0,
+          BaseTotalFee: 0,
+          Discount: 0,
+          Downpayment: 0,
+          Prelim: 0,
+          Midterm: 0,
+          PreFinal: 0,
+          Finals: 0,
+          FullPaymentAmount: 0,
+          TotalBalance: 0,
+          carry_over_amount: firstSemesterCarryAmount,
+          carried_over_amount: firstSemesterCarryAmount,
+          carried_over_paid_amount: 0,
+          carried_over_from_semester: SEMESTERS.FIRST,
+          carry_over_confirmed: true,
+          carry_over_confirmed_at: carryConfirmedAt,
+          carried_over_to_semester: SEMESTERS.SECOND,
+        });
+        const createdSecondSemester = await createStudent(
+          preparedSecondSemesterStudent
+        );
+        secondSemesterStudent = normalizeStudentFinancials({
+          ...preparedSecondSemesterStudent,
+          ...createdSecondSemester,
+        });
+      } else {
+        const preparedSecondSemesterStudent = normalizeStudentFinancials({
+          ...secondSemesterStudent,
+          SchoolYearID: selectedSchoolYearId,
+          Semester: SEMESTERS.SECOND,
+          carry_over_amount: firstSemesterCarryAmount,
+          carried_over_amount: firstSemesterCarryAmount,
+          carried_over_paid_amount: secondSemesterStudent.carried_over_paid_amount ?? 0,
+          carried_over_from_semester: SEMESTERS.FIRST,
+          carry_over_confirmed: true,
+          carry_over_confirmed_at: carryConfirmedAt,
+          carried_over_to_semester: SEMESTERS.SECOND,
+        });
+        secondSemesterStudent = normalizeStudentFinancials(
+          {
+            ...preparedSecondSemesterStudent,
+            ...(await updateStudent(preparedSecondSemesterStudent)),
+          }
+        );
+      }
+
+      const nextCache = loadPaymentDetailCache();
+      const firstSemesterExistingEntry =
+        getContextCacheEntry(nextCache, selectedSchoolYearId, selectedSemester, normalizedFirstSemester) || {};
+      const secondSemesterExistingEntry =
+        getContextCacheEntry(nextCache, selectedSchoolYearId, SEMESTERS.SECOND, secondSemesterStudent) || {};
+      writeContextCacheEntry(
+        nextCache,
+        selectedSchoolYearId,
+        selectedSemester,
+        normalizedFirstSemester,
+        {
+          ...firstSemesterExistingEntry,
+          ...extractSemesterSnapshot({
+            ...normalizedFirstSemester,
+            carry_over_confirmed: true,
+            carry_over_confirmed_at: carryConfirmedAt,
+            carried_over_to_semester: SEMESTERS.SECOND,
+          }),
+        }
+      );
+      writeContextCacheEntry(
+        nextCache,
+        selectedSchoolYearId,
+        SEMESTERS.SECOND,
+        secondSemesterStudent,
+        {
+          ...secondSemesterExistingEntry,
+          ...extractSemesterSnapshot(secondSemesterStudent),
+        }
+      );
+      savePaymentDetailCache(nextCache);
+
+      setStudents((prev) =>
+        prev.map((item) =>
+          getStudentRowKey(item) === getStudentRowKey(normalizedFirstSemester)
+            ? normalizeStudentFinancials({
+                ...item,
+                carry_over_confirmed: true,
+                carry_over_confirmed_at: carryConfirmedAt,
+                carried_over_to_semester: SEMESTERS.SECOND,
+              })
+            : item
+        )
+      );
+
+      setCarryOverModalState({
+        open: false,
+        student: null,
+        secondSemesterStudent: null,
+        status: CARRY_OVER_STATUS.NOT_CARRIED,
+        loading: false,
+      });
+    } catch (error) {
+      console.error(error);
+      setCarryOverModalState((prev) => ({ ...prev, loading: false }));
+      alert(error?.message || "Carry-over failed. Please try again.");
+    }
   };
 
   const handleEditStudent = (student) => {
     if (!student) return;
     setEditStudent({
       ...student,
-      OriginalStudentID: student.StudentID || student.student_id || "",
+      SchoolYearID: student.SchoolYearID || selectedSchoolYearId,
+      Semester: student.Semester || selectedSemester,
+      ...splitStudentName(student),
+      OriginalStudentID: student.OriginalStudentID || student.student_id || student.StudentID || "",
     });
     setShowEditModal(true);
   };
@@ -614,7 +1170,7 @@ function App() {
       await sendPaymentReminder(payload);
       setStudents((prev) =>
         prev.map((item) =>
-          item.StudentID === normalizedStudent.StudentID
+          getStudentRowKey(item) === getStudentRowKey(normalizedStudent)
             ? normalizeStudentFinancials({
                 ...item,
                 CanRemind: false,
@@ -632,30 +1188,55 @@ function App() {
   };
 
   const handleFeeFieldChange = (rowKey, field, value) => {
+    if (field !== "PaymentMode") {
+      return;
+    }
+
     setStudents((prev) =>
       prev.map((student, index) => {
-        const key = student.StudentID || `row-${index}`;
+        const key = getStudentRowKey(student) || `row-${index}`;
         if (key !== rowKey) return student;
         return applyFeeFieldChange(student, field, value);
       })
     );
   };
 
-  const handleFeeFieldCommit = async (rowKey) => {
-    const studentToSave = students.find((student, index) => {
-      const key = student.StudentID || `row-${index}`;
-      return key === rowKey;
-    });
+  const handleFeeFieldCommit = async (rowKey, field = null, value = null) => {
+    let studentToSave = null;
+
+    setStudents((prev) =>
+      prev.map((student, index) => {
+        const key = getStudentRowKey(student) || `row-${index}`;
+        if (key !== rowKey) {
+          return student;
+        }
+
+        const nextStudent = field ? applyFeeFieldChange(student, field, value) : student;
+        studentToSave = nextStudent;
+        return nextStudent;
+      })
+    );
 
     if (!studentToSave || !studentToSave.StudentID) {
       return;
     }
 
     try {
-      const updated = normalizeStudentFinancials(await updateStudent(studentToSave));
+      const persistedStudent = await updateStudent(studentToSave);
+      const updated = normalizeStudentFinancials({
+        ...studentToSave,
+        ...persistedStudent,
+      });
+      const nextCache = loadPaymentDetailCache();
+      const cacheKey = buildContextStudentKey(selectedSchoolYearId, selectedSemester, updated);
+      nextCache[cacheKey] = {
+        ...nextCache[cacheKey],
+        ...extractSemesterSnapshot(updated),
+      };
+      savePaymentDetailCache(nextCache);
       setStudents((prev) =>
         prev.map((item) =>
-          item.StudentID === updated.StudentID ? updated : item
+          getStudentRowKey(item) === getStudentRowKey(updated) ? updated : item
         )
       );
     } catch (error) {
@@ -665,21 +1246,41 @@ function App() {
   };
 
   const handleEditInputChange = (e) => {
-    const { name, value } = e.target;
-    setEditStudent((prev) => ({ ...prev, [name]: value }));
+    const { name } = e.target;
+    const value =
+      name === "Initial"
+        ? String(e.target.value || "").replace(/[^a-z]/gi, "").slice(0, 1).toUpperCase()
+        : e.target.value;
+    setEditStudent((prev) => {
+      const nextStudent = { ...prev, [name]: value };
+      nextStudent.Name = composeStudentName(nextStudent);
+      return nextStudent;
+    });
   };
 
   const handleUpdateStudent = async (e) => {
     e.preventDefault();
-    if (!editStudent || !editStudent.StudentID) {
+    if (!editStudent || !editStudent.StudentID || !editStudent.Surname || !editStudent.GivenName) {
       return;
     }
 
     try {
-      const updated = normalizeStudentFinancials(await updateStudent(editStudent));
+      const updated = normalizeStudentFinancials(
+        await updateStudent({
+          ...editStudent,
+          Name: composeStudentName(editStudent),
+        })
+      );
+      const nextCache = loadPaymentDetailCache();
+      const cacheKey = buildContextStudentKey(selectedSchoolYearId, selectedSemester, updated);
+      nextCache[cacheKey] = {
+        ...nextCache[cacheKey],
+        ...extractSemesterSnapshot(updated),
+      };
+      savePaymentDetailCache(nextCache);
       setStudents((prev) =>
         prev.map((item) =>
-          item.StudentID === (editStudent.OriginalStudentID || editStudent.StudentID)
+          getStudentRowKey(item) === getStudentRowKey(editStudent)
             ? updated
             : item
         )
@@ -705,12 +1306,25 @@ function App() {
     }
 
     try {
-      await Promise.all(deletableStudents.map((student) => deleteStudent(student)));
+      const deleteResults = await Promise.allSettled(
+        deletableStudents.map((student) => deleteStudent(student))
+      );
+      const blockingFailures = deleteResults.filter(
+        (result) =>
+          result.status === "rejected" && !isDeleteAlreadySatisfiedError(result.reason)
+      );
+
+      if (blockingFailures.length > 0) {
+        throw blockingFailures[0].reason;
+      }
+
       const nextCache = loadPaymentDetailCache();
       deletableStudents.forEach((student) => {
-        if (student.StudentID) {
-          delete nextCache[String(student.StudentID)];
-        }
+        getContextStudentKeyCandidates(selectedSchoolYearId, selectedSemester, student).forEach((cacheKey) => {
+          if (cacheKey) {
+            delete nextCache[cacheKey];
+          }
+        });
       });
       savePaymentDetailCache(nextCache);
       setStudents((prev) =>
@@ -718,8 +1332,7 @@ function App() {
           (student) =>
             !deletableStudents.some(
               (deleted) =>
-                (deleted.StudentID && student.StudentID === deleted.StudentID) ||
-                (!deleted.StudentID && deleted.id && student.id === deleted.id)
+                getStudentRowKey(deleted) === getStudentRowKey(student)
             )
         )
       );
@@ -735,18 +1348,23 @@ function App() {
     }
 
     try {
-      await deleteStudent(student);
-      const nextCache = loadPaymentDetailCache();
-      if (student.StudentID) {
-        delete nextCache[String(student.StudentID)];
+      try {
+        await deleteStudent(student);
+      } catch (error) {
+        if (!isDeleteAlreadySatisfiedError(error)) {
+          throw error;
+        }
       }
+
+      const nextCache = loadPaymentDetailCache();
+      getContextStudentKeyCandidates(selectedSchoolYearId, selectedSemester, student).forEach((cacheKey) => {
+        if (cacheKey) {
+          delete nextCache[cacheKey];
+        }
+      });
       savePaymentDetailCache(nextCache);
       setStudents((prev) =>
-        prev.filter((item) =>
-          student.StudentID
-            ? item.StudentID !== student.StudentID
-            : item.id !== student.id
-        )
+        prev.filter((item) => getStudentRowKey(item) !== getStudentRowKey(student))
       );
     } catch (error) {
       console.error(error);
@@ -794,15 +1412,17 @@ function App() {
     const paymentAmountFields = resolvePaymentAmountFields(paymentMeta);
     const receiptPaymentMeta = paymentMeta
       ? {
-        ...paymentMeta,
-        date_paid: datePaid,
-        payment_type: getStageLabelFromField(paymentMeta.stage_field),
-        stage_label: getStageLabelFromField(paymentMeta.stage_field),
-      }
+          ...paymentMeta,
+          date_paid: datePaid,
+          payment_type: getStageLabelFromField(paymentMeta.stage_field),
+          stage_label: paymentMeta.stage_label || getStageLabelFromField(paymentMeta.stage_field),
+        }
       : null;
     const normalizedIncomingStudent = normalizeStudentFinancials({
       ...incomingStudent,
       CanRemind: true,
+      Semester: selectedSemester,
+      school_year_label: selectedSchoolYear?.label || "",
       date_paid: datePaid,
       DatePaid: datePaid,
       ...paymentDateFields,
@@ -816,17 +1436,91 @@ function App() {
         ...persistedStudent,
       });
       const nextCache = loadPaymentDetailCache();
-      nextCache[String(savedStudent.StudentID)] = {
-        ...nextCache[String(savedStudent.StudentID)],
-        ...extractPersistedPaymentDetails(savedStudent),
+      const cacheKey = buildContextStudentKey(selectedSchoolYearId, selectedSemester, savedStudent);
+      const existingEntry = nextCache[cacheKey] || {};
+      const paymentLineItems = Array.isArray(receiptPaymentMeta?.payment_line_items)
+        ? receiptPaymentMeta.payment_line_items
+        : [];
+      const stageOrNumbers = {
+        ...(existingEntry.stage_or_numbers || {}),
+      };
+      paymentLineItems.forEach((item) => {
+        if (item?.field && item?.or_number) {
+          stageOrNumbers[item.field] = item.or_number;
+        }
+      });
+      if (Number(receiptPaymentMeta?.outstanding_after) <= 0 && receiptPaymentMeta?.official_receipt) {
+        stageOrNumbers.TotalBalance = receiptPaymentMeta.official_receipt;
+      }
+      nextCache[cacheKey] = {
+        ...existingEntry,
+        ...extractSemesterSnapshot({
+          ...savedStudent,
+          stage_or_numbers: stageOrNumbers,
+          payment_history: [
+            ...(Array.isArray(existingEntry.payment_history) ? existingEntry.payment_history : []),
+            ...paymentLineItems.map((item) => ({
+              ...item,
+              student_id: savedStudent.StudentID,
+              school_year_id: selectedSchoolYearId,
+              school_year_label: selectedSchoolYear?.label || "",
+              semester: item.semester || selectedSemester,
+              payment_date: datePaid,
+            })),
+          ],
+        }),
       };
       savePaymentDetailCache(nextCache);
+
+      const carryOverLineItem = paymentLineItems.find((item) => item.field === CARRY_OVER_FIELD);
+      if (carryOverLineItem && Number(carryOverLineItem.amount_paid) > 0) {
+        const firstSemesterKey = buildContextStudentKey(
+          selectedSchoolYearId,
+          getPreviousSemester(selectedSemester),
+          savedStudent
+        );
+        const firstSemesterEntry = nextCache[firstSemesterKey];
+
+        if (firstSemesterEntry) {
+          const firstSemesterStudent = normalizeStudentFinancials({
+            ...savedStudent,
+            ...firstSemesterEntry,
+          });
+          const firstSemesterPreview = previewPaymentApplication(firstSemesterStudent, carryOverLineItem.amount_paid);
+          nextCache[firstSemesterKey] = {
+            ...firstSemesterEntry,
+            ...extractSemesterSnapshot({
+              ...firstSemesterPreview.nextStudent,
+              CanRemind: true,
+              date_paid: datePaid,
+              DatePaid: datePaid,
+              stage_or_numbers: {
+                ...(firstSemesterEntry.stage_or_numbers || {}),
+                [CARRY_OVER_FIELD]: carryOverLineItem.or_number,
+              },
+              payment_history: [
+                ...(Array.isArray(firstSemesterEntry.payment_history) ? firstSemesterEntry.payment_history : []),
+                {
+                  ...carryOverLineItem,
+                  semester: getPreviousSemester(selectedSemester),
+                  payment_date: datePaid,
+                  note: `Settled during ${selectedSemester}`,
+                },
+              ],
+            }),
+          };
+          savePaymentDetailCache(nextCache);
+        }
+      }
+
       setStudents((prev) =>
         prev.map((student) =>
-          student.StudentID === savedStudent.StudentID
+          getStudentRowKey(student) === getStudentRowKey(savedStudent)
             ? normalizeStudentFinancials({
                 ...savedStudent,
                 reminder_sent_token: null,
+                stage_or_numbers: stageOrNumbers,
+                payment_history: nextCache[cacheKey].payment_history,
               })
             : student
         )
@@ -851,17 +1545,23 @@ function App() {
             TotalFee: savedStudent.TotalFee,
             TotalBalance: savedStudent.TotalBalance,
             FullPaymentAmount: savedStudent.FullPaymentAmount,
+            SchoolYearID: selectedSchoolYearId,
+            school_year_label: selectedSchoolYear?.label || "",
+            semester: selectedSemester,
             amount_requested: receiptPaymentMeta.amount_requested,
             amount_applied: receiptPaymentMeta.amount_applied,
             outstanding_before: receiptPaymentMeta.outstanding_before,
             outstanding_after: receiptPaymentMeta.outstanding_after,
             official_receipt: receiptPaymentMeta.official_receipt,
+            payment_line_items: receiptPaymentMeta.payment_line_items,
             stage_field: receiptPaymentMeta.stage_field,
             stage_label: receiptPaymentMeta.stage_label,
             stage_amount_before: receiptPaymentMeta.stage_amount_before,
             stage_amount_paid: receiptPaymentMeta.stage_amount_paid,
             stage_amount_remaining: receiptPaymentMeta.stage_amount_remaining,
             payment_type: receiptPaymentMeta.payment_type,
+            carried_over_amount: normalizedIncomingStudent.carried_over_amount ?? 0,
+            carried_over_paid_amount: normalizedIncomingStudent.carried_over_paid_amount ?? 0,
             date_paid: datePaid,
             DatePaid: datePaid,
             downpayment_date: normalizedIncomingStudent.downpayment_date,
@@ -935,7 +1635,7 @@ function App() {
         try {
           await sendPaymentReminder(payload);
           successCount += 1;
-          successfullyRemindedIds.push(reminderStudent.StudentID);
+          successfullyRemindedIds.push(getStudentRowKey(reminderStudent));
         } catch (error) {
           failures.push({
             name: reminderStudent.Name || reminderStudent.StudentID,
@@ -963,7 +1663,7 @@ function App() {
       if (successfullyRemindedIds.length > 0) {
         setStudents((prev) =>
           prev.map((item) =>
-            successfullyRemindedIds.includes(item.StudentID)
+            successfullyRemindedIds.includes(getStudentRowKey(item))
               ? normalizeStudentFinancials({
                   ...item,
                   CanRemind: false,
@@ -979,7 +1679,7 @@ function App() {
 
   const closeAddStudentModal = () => {
     setShowAddStudentModal(false);
-    setNewStudent(INITIAL_STUDENT);
+    setNewStudent({ ...INITIAL_STUDENT, SchoolYearID: selectedSchoolYearId, Semester: selectedSemester });
     setAddStudentError("");
   };
 
@@ -990,6 +1690,229 @@ function App() {
 
   const closeConfirmModal = () => {
     setConfirmState({ show: false, type: null, payload: null });
+  };
+
+  const handleSelectSchoolYear = (schoolYear) => {
+    if (!schoolYear?.id) {
+      return;
+    }
+
+    setSelectedSchoolYearId(schoolYear.id);
+    setSelectedSemester("");
+    setStudents([]);
+    setProgramFilter("");
+    setYearFilter("");
+    setSearchQuery("");
+    setActiveTab("home");
+  };
+
+  const handleSelectSemester = (semester) => {
+    if (!selectedSchoolYearId || !semester) {
+      return;
+    }
+
+    setSelectedSemester(semester);
+    setProgramFilter("");
+    setYearFilter("");
+    setSearchQuery("");
+    setActiveTab("home");
+  };
+
+  const handleImportSchoolYearStudents = async (targetSchoolYear, previousSchoolYear) => {
+    if (!targetSchoolYear?.id || !previousSchoolYear?.id) {
+      return;
+    }
+
+    const confirmed = window.confirm("Import student list from previous school year?");
+    if (!confirmed) {
+      return;
+    }
+
+    setImportingSchoolYear(true);
+    try {
+      await importSchoolYearStudents(targetSchoolYear.id);
+      const refreshedSchoolYears = await getSchoolYears();
+      if (Array.isArray(refreshedSchoolYears)) {
+        setSchoolYears(refreshedSchoolYears);
+      }
+      alert(`Student list imported from School Year ${previousSchoolYear.label}.`);
+    } catch (error) {
+      console.error(error);
+      alert(error?.message || "Student import failed. Please try again.");
+    } finally {
+      setImportingSchoolYear(false);
+    }
+  };
+
+  const handleUploadStudents = async (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+
+    if (!file) {
+      return;
+    }
+
+    if (!selectedSchoolYearId || !selectedSemester) {
+      alert("Select a school year and semester before uploading students.");
+      return;
+    }
+
+    setUploadingStudents(true);
+
+    try {
+      const buffer = await file.arrayBuffer();
+      const workbook = XLSX.read(buffer, { type: "array" });
+      const firstSheetName = workbook.SheetNames[0];
+      const firstSheet = firstSheetName ? workbook.Sheets[firstSheetName] : null;
+
+      if (!firstSheet) {
+        throw new Error("The uploaded workbook does not contain a readable sheet.");
+      }
+
+      const rawRows = XLSX.utils.sheet_to_json(firstSheet, {
+        defval: "",
+        raw: false,
+      });
+
+      const preparedRows = rawRows
+        .map((row) =>
+          normalizeUploadRow(row, {
+            schoolYearId: selectedSchoolYearId,
+            semester: selectedSemester,
+          })
+        )
+        .filter((student) => student.StudentID && student.Name && student.Program);
+
+      if (preparedRows.length === 0) {
+        throw new Error("No valid student rows were found. Required columns include StudentID/USN, Name or surname/given name, and Program.");
+      }
+
+      const existingById = new Map(
+        students.map((student) => [
+          String(student.OriginalStudentID || student.StudentID || "").trim(),
+          student,
+        ])
+      );
+
+      for (const student of preparedRows) {
+        const existing = existingById.get(String(student.OriginalStudentID || student.StudentID).trim());
+        if (existing) {
+          await updateStudent({
+            ...existing,
+            ...student,
+            id: existing.id,
+          });
+        } else {
+          await createStudent(student);
+        }
+      }
+
+      const refreshed = await getStudents(selectedSchoolYearId, selectedSemester);
+      setStudents(
+        Array.isArray(refreshed)
+          ? refreshed.map((student) => normalizeStudentFinancials(student))
+          : []
+      );
+      alert(`${preparedRows.length} student record${preparedRows.length === 1 ? "" : "s"} uploaded successfully.`);
+    } catch (error) {
+      console.error(error);
+      alert(error?.message || "Student upload failed. Please try again.");
+    } finally {
+      setUploadingStudents(false);
+    }
+  };
+
+  const handleCreateSchoolYear = async ({ importPreviousStudents, startYear }) => {
+    setCreatingSchoolYear(true);
+    setCreateSchoolYearError("");
+    try {
+      const result = await createSchoolYear(importPreviousStudents, startYear);
+      const nextSchoolYearsResponse = Array.isArray(result?.school_years)
+        ? result.school_years
+        : await getSchoolYears();
+      const nextSchoolYears = Array.isArray(nextSchoolYearsResponse) ? nextSchoolYearsResponse : [];
+      setSchoolYears(nextSchoolYears);
+
+      const createdSchoolYear = result?.school_year || null;
+      if (createdSchoolYear?.id) {
+        setSelectedSchoolYearId(0);
+        setSelectedSemester("");
+      }
+
+      setShowCreateSchoolYearModal(false);
+    } catch (error) {
+      console.error(error);
+      setCreateSchoolYearError(error?.message || "School year creation failed. Please try again.");
+    } finally {
+      setCreatingSchoolYear(false);
+    }
+  };
+
+  const handleBackToSchoolYearSelection = () => {
+    setSelectedSchoolYearId(0);
+    setSelectedSemester("");
+    setStudents([]);
+    setSearchQuery("");
+    setProgramFilter("");
+    setYearFilter("");
+    setActiveTab("home");
+    setShowAddStudentModal(false);
+    setShowEditModal(false);
+    setShowPaymentModal(false);
+    setSelectedStudent(null);
+    setEditStudent(null);
+    setAddStudentError("");
+    setSchoolYearSelectionMode(false);
+    setSelectedSchoolYearIdsForRemoval([]);
+    setSchoolYearDeleteConfirm(false);
+  };
+
+  const toggleSchoolYearSelectionMode = () => {
+    setSchoolYearSelectionMode((prev) => !prev);
+    setSelectedSchoolYearIdsForRemoval([]);
+  };
+
+  const toggleSchoolYearSelection = (schoolYear) => {
+    if (!schoolYear?.id) {
+      return;
+    }
+
+    setSelectedSchoolYearIdsForRemoval((prev) =>
+      prev.includes(schoolYear.id)
+        ? prev.filter((item) => item !== schoolYear.id)
+        : [...prev, schoolYear.id]
+    );
+  };
+
+  const selectedSchoolYearsForRemoval = schoolYears.filter((item) =>
+    selectedSchoolYearIdsForRemoval.includes(item.id)
+  );
+
+  const handleRequestDeleteSchoolYears = () => {
+    if (selectedSchoolYearIdsForRemoval.length === 0) {
+      return;
+    }
+
+    setSchoolYearDeleteConfirm(true);
+  };
+
+  const handleDeleteSelectedSchoolYears = async () => {
+    if (selectedSchoolYearIdsForRemoval.length === 0) {
+      return;
+    }
+
+    try {
+      await deleteSchoolYears(selectedSchoolYearIdsForRemoval);
+      const refreshedSchoolYears = await getSchoolYears();
+      const nextSchoolYears = Array.isArray(refreshedSchoolYears) ? refreshedSchoolYears : [];
+      setSchoolYears(nextSchoolYears);
+      setSchoolYearSelectionMode(false);
+      setSelectedSchoolYearIdsForRemoval([]);
+      setSchoolYearDeleteConfirm(false);
+    } catch (error) {
+      console.error(error);
+      alert(error?.message || "School year removal failed. Please try again.");
+    }
   };
 
   const handleUpdateAdminProfile = async (payload) => {
@@ -1057,6 +1980,65 @@ function App() {
     );
   }
 
+  if (!selectedSchoolYearId || !selectedSemester) {
+    return (
+      <div className={`dashboard ${darkMode ? 'dark-mode' : 'light-mode'}`}>
+        <Header
+          darkMode={darkMode}
+          toggleTheme={toggleTheme}
+          viewTitle="School Years"
+          viewDescription="Select a school year and semester to enter the system."
+          userName={authUser?.name}
+          studentCount={0}
+          schoolYearLabel=""
+          showBackButton={false}
+        />
+        <main className="main-content school-year-gate-main">
+          <SchoolYearsPage
+            schoolYears={schoolYears}
+            selectedSchoolYearId={selectedSchoolYearId}
+            onSelectSchoolYear={handleSelectSchoolYear}
+            selectedSemester={selectedSemester}
+            onSelectSemester={handleSelectSemester}
+            onImportStudents={handleImportSchoolYearStudents}
+            importLoading={importingSchoolYear}
+            onCreateSchoolYear={() => setShowCreateSchoolYearModal(true)}
+            selectionMode={schoolYearSelectionMode}
+            selectedSchoolYearIds={selectedSchoolYearIdsForRemoval}
+            onToggleSelectionMode={toggleSchoolYearSelectionMode}
+            onToggleSchoolYearSelection={toggleSchoolYearSelection}
+            onRequestDeleteSelected={handleRequestDeleteSchoolYears}
+          />
+          <CreateSchoolYearModal
+            show={showCreateSchoolYearModal}
+            onClose={() => {
+              setShowCreateSchoolYearModal(false);
+              setCreateSchoolYearError("");
+            }}
+            onSubmit={handleCreateSchoolYear}
+            creating={creatingSchoolYear}
+            existingSchoolYears={schoolYears}
+            errorMessage={createSchoolYearError}
+          />
+          <ConfirmModal
+            show={schoolYearDeleteConfirm}
+            title="Delete School Year Records"
+            message="Are you sure you want to delete the selected School Year record(s)? This action is sensitive and may remove related student and financial context."
+            details={[
+              `Selected School Years: ${selectedSchoolYearsForRemoval.map((item) => item.label).join(", ")}`,
+              "Review carefully before continuing.",
+              "Deleting historical records can affect reporting, imports, and semester access.",
+            ]}
+            confirmLabel="Delete"
+            cancelLabel="Cancel"
+            onConfirm={handleDeleteSelectedSchoolYears}
+            onCancel={() => setSchoolYearDeleteConfirm(false)}
+          />
+        </main>
+      </div>
+    );
+  }
+
   return (
     <div className={`dashboard ${darkMode ? 'dark-mode' : 'light-mode'}`}>
       {reminderNotice.visible ? (
@@ -1071,6 +2053,9 @@ function App() {
         viewDescription={activeView.description}
         userName={authUser?.name}
         studentCount={students.length}
+        schoolYearLabel={activeContextLabel}
+        showBackButton={activeTab === "home"}
+        onBack={handleBackToSchoolYearSelection}
       />
       <div className={`dashboard-container${sidebarCollapsed ? " sidebar-collapsed" : ""}`}>
         <Navigation
@@ -1090,7 +2075,10 @@ function App() {
         />
         <main className="main-content">
       {activeTab === 'home' && (
-        <HomeDashboard setActiveTab={setActiveTab} students={students} />
+        <HomeDashboard
+          setActiveTab={setActiveTab}
+          onBackToSchoolYears={handleBackToSchoolYearSelection}
+        />
       )}
 
       {activeTab === 'studentFee' && (
@@ -1114,6 +2102,9 @@ function App() {
             onRemind={handleRemind}
             onRemindSelected={handleSendRemindersAtOnce}
             sendingReminder={sendingReminder}
+            activeSemester={selectedSemester}
+            onRequestCarryOver={handleRequestCarryOver}
+            isCarryOverAvailable={(student) => getCarryOverEligibility(student).isClickable}
           />
         </>
       )}
@@ -1126,12 +2117,17 @@ function App() {
             isManageTab={true}
             panelVariant="student-actions"
             sectionTitle="Student Actions"
-            onAddStudent={() => setShowAddStudentModal(true)}
+            onAddStudent={() => {
+              setNewStudent({ ...INITIAL_STUDENT, SchoolYearID: selectedSchoolYearId, Semester: selectedSemester });
+              setShowAddStudentModal(true);
+            }}
             programFilter={programFilter}
             onProgramFilterChange={setProgramFilter}
             yearFilter={yearFilter}
             onYearFilterChange={setYearFilter}
             noteText="Keep the roster current by adding, editing, or removing records from one workspace."
+            onUploadStudents={handleUploadStudents}
+            uploadingStudents={uploadingStudents}
           />
           <ManageStudentTable 
             students={students}
@@ -1212,6 +2208,9 @@ function App() {
         selectedStudent={selectedStudent}
         onClose={closePaymentModal}
         onSavePayment={handleSavePayment}
+        existingOrNumbers={existingOrNumbers}
+        activeSchoolYearLabel={selectedSchoolYear?.label || ""}
+        activeSemester={selectedSemester}
       />
 
       <AddStudentModal 
@@ -1236,7 +2235,7 @@ function App() {
           }
           handleInputChange(e, newStudent, setNewStudent);
         }}
-the      />
+      />
 
       <EditStudentModal
         showEditModal={showEditModal}
@@ -1259,6 +2258,78 @@ the      />
         onConfirm={confirmAction}
         onCancel={closeConfirmModal}
       />
+
+      {carryOverModalState.open ? (
+        <div
+          className="modal"
+          onClick={() =>
+            !carryOverModalState.loading &&
+            setCarryOverModalState({
+              open: false,
+              student: null,
+              secondSemesterStudent: null,
+              status: CARRY_OVER_STATUS.NOT_CARRIED,
+              loading: false,
+            })
+          }
+        >
+          <div className="modal-content" onClick={(event) => event.stopPropagation()}>
+            <h2>Confirm Carry Over</h2>
+            <p>
+              This remaining balance will be added to the student&apos;s 2nd Semester fee/downpayment.
+            </p>
+            {carryOverModalState.student ? (
+              <div className="confirm-detail-list">
+                <p>{`Student Name: ${carryOverModalState.student.Name || "N/A"}`}</p>
+                <p>{`School Year: ${selectedSchoolYear?.label || "N/A"}`}</p>
+                <p>{`Current Semester: ${selectedSemester || "N/A"}`}</p>
+                <p>{`Remaining Balance: PHP ${Number(carryOverModalState.student.TotalBalance || 0).toLocaleString("en-PH")}`}</p>
+                <p>Destination: 2nd Semester</p>
+                <p>
+                  {carryOverModalState.status === CARRY_OVER_STATUS.CARRIED_OVER
+                    ? "This balance was already carried over."
+                    : carryOverModalState.status === CARRY_OVER_STATUS.PAID
+                      ? "This carried-over balance has already been paid."
+                      : "The previous semester balance will be locked as a required fee line in 2nd Semester."}
+                </p>
+              </div>
+            ) : null}
+            <div className="modal-buttons">
+              <button
+                className="save-btn"
+                type="button"
+                onClick={handleConfirmCarryOver}
+                disabled={
+                  carryOverModalState.loading ||
+                  carryOverModalState.status !== CARRY_OVER_STATUS.NOT_CARRIED
+                }
+              >
+                {carryOverModalState.loading
+                  ? "Saving..."
+                  : carryOverModalState.status === CARRY_OVER_STATUS.NOT_CARRIED
+                    ? "Confirm Carry Over"
+                    : "Already Carried Over"}
+              </button>
+              <button
+                className="close-btn"
+                type="button"
+                onClick={() =>
+                  setCarryOverModalState({
+                    open: false,
+                    student: null,
+                    secondSemesterStudent: null,
+                    status: CARRY_OVER_STATUS.NOT_CARRIED,
+                    loading: false,
+                  })
+                }
+                disabled={carryOverModalState.loading}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       <ConfirmModal
         show={showLogoutConfirm}

@@ -2,8 +2,12 @@ import {
   PAYMENT_MODES,
   applyFeeFieldChange,
   getCollectedAmount,
+  getDisplayDownpaymentAmount,
   getEffectiveTotalFee,
+  hasRolledToRemainingBalance,
+  getPreviousSemesterBalanceAmount,
   getReminderDueDetails,
+  getTotalPayableAmount,
   normalizeStudentFinancials,
   previewPaymentApplication,
 } from "./fees";
@@ -216,6 +220,109 @@ describe("fee utilities", () => {
     expect(effective).toBe(24000);
   });
 
+  test("keeps current semester installment split unchanged and adds previous balance only to downpayment display and total payable", () => {
+    const normalized = normalizeStudentFinancials({
+      TotalFee: 35000,
+      BaseTotalFee: 35000,
+      PaymentMode: PAYMENT_MODES.INSTALLMENT,
+      Downpayment: 7000,
+      Prelim: 7000,
+      Midterm: 7000,
+      PreFinal: 7000,
+      Finals: 7000,
+      carried_over_amount: 1000,
+      carried_over_paid_amount: 0,
+      TotalBalance: 36000,
+    });
+
+    expect(normalized.Downpayment).toBe(7000);
+    expect(normalized.Prelim).toBe(7000);
+    expect(normalized.Midterm).toBe(7000);
+    expect(normalized.PreFinal).toBe(7000);
+    expect(normalized.Finals).toBe(7000);
+    expect(getPreviousSemesterBalanceAmount(normalized)).toBe(1000);
+    expect(getDisplayDownpaymentAmount(normalized)).toBe(8000);
+    expect(getTotalPayableAmount(normalized)).toBe(36000);
+    expect(normalized.TotalBalance).toBe(36000);
+  });
+
+  test("keeps the admin-set installment total intact and prevents carry-over from reducing finals", () => {
+    const normalized = normalizeStudentFinancials({
+      TotalFee: 25000,
+      BaseTotalFee: 25000,
+      PaymentMode: PAYMENT_MODES.INSTALLMENT,
+      Downpayment: 5000,
+      Prelim: 5000,
+      Midterm: 5000,
+      PreFinal: 5000,
+      Finals: 5000,
+      carried_over_amount: 1000,
+      carried_over_paid_amount: 0,
+      TotalBalance: 26000,
+    });
+
+    expect(normalized.TotalFee).toBe(25000);
+    expect(normalized.Downpayment).toBe(5000);
+    expect(normalized.Finals).toBe(5000);
+    expect(getDisplayDownpaymentAmount(normalized)).toBe(6000);
+    expect(getEffectiveTotalFee(normalized)).toBe(26000);
+    expect(getTotalPayableAmount(normalized)).toBe(26000);
+    expect(normalized.TotalBalance).toBe(26000);
+  });
+
+  test("restores carry-over on top of an unchanged installment plan when saved total balance omitted it", () => {
+    const normalized = normalizeStudentFinancials({
+      TotalFee: 25000,
+      BaseTotalFee: 25000,
+      PaymentMode: PAYMENT_MODES.INSTALLMENT,
+      Downpayment: 5000,
+      Prelim: 5000,
+      Midterm: 5000,
+      PreFinal: 5000,
+      Finals: 5000,
+      carried_over_amount: 1000,
+      carried_over_paid_amount: 0,
+      TotalBalance: 25000,
+    });
+
+    expect(normalized.TotalFee).toBe(25000);
+    expect(normalized.Downpayment).toBe(5000);
+    expect(normalized.Prelim).toBe(5000);
+    expect(normalized.Midterm).toBe(5000);
+    expect(normalized.PreFinal).toBe(5000);
+    expect(normalized.Finals).toBe(5000);
+    expect(getDisplayDownpaymentAmount(normalized)).toBe(6000);
+    expect(getTotalPayableAmount(normalized)).toBe(26000);
+    expect(normalized.TotalBalance).toBe(26000);
+  });
+
+  test("applies 2nd semester installment payments to previous balance first, then current downpayment", () => {
+    const preview = previewPaymentApplication(
+      {
+        TotalFee: 35000,
+        BaseTotalFee: 35000,
+        PaymentMode: PAYMENT_MODES.INSTALLMENT,
+        Downpayment: 7000,
+        Prelim: 7000,
+        Midterm: 7000,
+        PreFinal: 7000,
+        Finals: 7000,
+        carried_over_amount: 1000,
+        carried_over_paid_amount: 0,
+        TotalBalance: 36000,
+      },
+      5000
+    );
+
+    expect(preview.appliedAmount).toBe(5000);
+    expect(preview.breakdown[0].field).toBe("PreviousBalance");
+    expect(preview.breakdown[0].applied).toBe(1000);
+    expect(preview.nextStudent.carried_over_remaining).toBe(0);
+    expect(preview.nextStudent.Downpayment).toBe(3000);
+    expect(preview.nextStudent.Prelim).toBe(7000);
+    expect(preview.nextStudent.TotalBalance).toBe(31000);
+  });
+
   test("maps alternate API id fields into StudentID for UI display", () => {
     const normalized = normalizeStudentFinancials({
       id_number: "2026-0099",
@@ -261,5 +368,25 @@ describe("fee utilities", () => {
     expect(due.type).toBe("remaining_balance");
     expect(due.label).toBe("Total Remaining Balance");
     expect(due.amount).toBe(1200);
+  });
+
+  test("treats finals leftover as total remaining balance instead of an active finals stage", () => {
+    const student = normalizeStudentFinancials({
+      TotalFee: 50000,
+      PaymentMode: PAYMENT_MODES.INSTALLMENT,
+      Downpayment: 0,
+      Prelim: 0,
+      Midterm: 0,
+      PreFinal: 0,
+      Finals: 1000,
+      TotalBalance: 1000,
+    });
+
+    const due = getReminderDueDetails(student);
+
+    expect(hasRolledToRemainingBalance(student)).toBe(true);
+    expect(due.type).toBe("remaining_balance");
+    expect(due.field).toBe("TotalBalance");
+    expect(due.amount).toBe(1000);
   });
 });

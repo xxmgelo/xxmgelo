@@ -12,28 +12,50 @@ function AddStudentModal({ showAddStudentModal, newStudent, addStudentError, onC
             <label> USN # *</label>
             <input 
               type="text"
-              inputMode="numeric"
-              pattern="[0-9]*"
               name="StudentID" 
               value={newStudent.StudentID} 
-              onChange={(e) => {
-                const digitsOnly = e.target.value.replace(/\D/g, "");
-                onInputChange({ target: { name: "StudentID", value: digitsOnly } });
-              }}
+              onChange={onInputChange}
               placeholder="Enter USN #"
               required 
             />
           </div>
           <div className="form-group">
             <label>Student Name *</label>
-            <input 
-              type="text" 
-              name="Name" 
-              value={newStudent.Name} 
-              onChange={onInputChange}
-              placeholder="Enter Student Name"
-              required 
-            />
+            <div className="form-row">
+              <div className="form-group">
+                <input
+                  type="text"
+                  name="Surname"
+                  value={newStudent.Surname}
+                  onChange={onInputChange}
+                  placeholder="Enter Surname"
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <input
+                  type="text"
+                  name="GivenName"
+                  value={newStudent.GivenName}
+                  onChange={onInputChange}
+                  placeholder="Enter Given Name"
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <input
+                  type="text"
+                  name="Initial"
+                  value={newStudent.Initial}
+                  onChange={(event) => {
+                    const sanitizedInitial = event.target.value.replace(/[^a-z]/gi, "").slice(0, 1).toUpperCase();
+                    onInputChange({ target: { name: "Initial", value: sanitizedInitial } });
+                  }}
+                  placeholder="Initial"
+                  maxLength={1}
+                />
+              </div>
+            </div>
           </div>
           <div className="form-group">
             <label>Program/Course *</label>
