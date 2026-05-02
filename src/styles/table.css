@@ -8,7 +8,7 @@
   border: 1px solid var(--border-color);
   background: rgba(255, 255, 255, 0.92);
   box-shadow: var(--shadow);
-  scrollbar-gutter: stable both-edges;
+  scrollbar-gutter: stable;
 }
 
 .dark-mode .table-container {
@@ -43,8 +43,8 @@ table {
 th,
 td {
   padding: 5px 7px;
-  border-bottom: 1px solid var(--border-color);
-  border-right: 1px solid rgba(15, 23, 42, 0.04);
+  border-bottom: 1px solid rgba(148, 163, 184, 0.28);
+  border-right: 1px solid rgba(148, 163, 184, 0.22);
   font-variant-numeric: tabular-nums;
   line-height: 1.1;
   text-align: left;
@@ -66,7 +66,9 @@ th {
   text-align: center;
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-  box-shadow: inset 0 -1px 0 var(--border-color);
+  box-shadow:
+    inset 0 -1px 0 rgba(148, 163, 184, 0.34),
+    inset -1px 0 0 rgba(148, 163, 184, 0.18);
 }
 
 .dark-mode th {
@@ -84,6 +86,12 @@ td {
 
 .dark-mode td {
   background: rgba(255, 255, 255, 0.01);
+}
+
+.dark-mode th,
+.dark-mode td {
+  border-bottom-color: rgba(148, 163, 184, 0.2);
+  border-right-color: rgba(148, 163, 184, 0.16);
 }
 
 tbody tr {
@@ -106,6 +114,46 @@ td:first-child {
 th:last-child,
 td:last-child {
   border-right: none;
+}
+
+.student-dashboard th:last-child,
+.student-dashboard td:last-child {
+  min-width: 138px;
+}
+
+.student-dashboard td:last-child {
+  padding-right: 14px;
+}
+
+.manage-fees-dashboard td:nth-child(n + 7) {
+  text-align: center;
+}
+
+.manage-fees-dashboard td:nth-child(n + 7) .fee-input,
+.manage-fees-dashboard td:nth-child(n + 7) .fee-total-display,
+.manage-fees-dashboard td:nth-child(n + 7) .payment-mode-pill,
+.manage-fees-dashboard td:nth-child(n + 7) .balance-pill {
+  margin-inline: auto;
+}
+
+.manage-fees-dashboard td:last-child {
+  padding-right: 7px;
+}
+
+.student-fee-dashboard td:nth-child(n + 8) {
+  text-align: center;
+}
+
+.student-fee-dashboard td:nth-child(n + 8) .payment-amount-cell,
+.student-fee-dashboard td:nth-child(n + 8) .fee-total-display,
+.student-fee-dashboard td:nth-child(n + 8) .payment-mode-pill,
+.student-fee-dashboard td:nth-child(n + 8) .balance-pill,
+.student-fee-dashboard td:nth-child(n + 8) .action-buttons {
+  margin-inline: auto;
+}
+
+.student-fee-dashboard td:last-child {
+  padding-right: 7px;
 }
 
 tr:last-child td {
@@ -354,8 +402,24 @@ th .checklist-box {
 .manage-student-dashboard th:last-child,
 .manage-student-dashboard td:last-child {
   text-align: center;
+  min-width: 112px;
+  width: 112px;
+  padding-right: 7px;
 }
 
 .manage-student-dashboard td:last-child .action-buttons {
   justify-content: center;
+  margin-inline: auto;
+  min-width: 0;
+  width: auto;
+}
+
+.manage-student-dashboard th:nth-child(5),
+.manage-student-dashboard td:nth-child(5) {
+  min-width: 260px;
+}
+
+.manage-student-dashboard td:nth-child(5) {
+  white-space: normal;
+  line-height: 1.3;
 }

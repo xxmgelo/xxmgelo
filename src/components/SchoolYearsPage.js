@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import schoolYearDashboardIcon from "../assets/schoolyeardb.png";
+import aclcLogo from "../assets/aclclogo.png";
 import { SEMESTER_OPTIONS } from "../utils/semester";
 
 function SchoolYearsPage({
@@ -85,6 +86,12 @@ function SchoolYearsPage({
                   setSemesterModalSchoolYear(schoolYear);
                 }}
               >
+                <img
+                  src={aclcLogo}
+                  alt=""
+                  aria-hidden="true"
+                  className="school-year-card-peek-logo"
+                />
                 <img
                   src={schoolYearDashboardIcon}
                   alt="School Year"

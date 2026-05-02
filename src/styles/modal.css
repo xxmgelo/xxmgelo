@@ -407,7 +407,7 @@
   margin-top: 18px;
 }
 
-.payment-detail-grid div {
+.payment-detail-grid > div {
   padding: 14px 16px;
   border-radius: 16px;
   background: var(--bg-secondary);
@@ -428,6 +428,67 @@
   margin-top: 8px;
   color: var(--text-primary);
   font-size: 16px;
+}
+
+.payment-detail-display {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.payment-detail-display strong {
+  margin-top: 0;
+}
+
+.payment-detail-edit {
+  display: grid;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.payment-detail-edit input {
+  width: 100%;
+  min-width: 0;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font: inherit;
+}
+
+.payment-detail-edit-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.payment-detail-edit-actions .pay-btn {
+  background: var(--accent-primary);
+  color: var(--text-inverse);
+  border-color: var(--accent-primary);
+}
+
+.payment-detail-edit-actions .remind-btn {
+  background: var(--accent-warning);
+  color: #ffffff;
+  border-color: var(--accent-warning);
+}
+
+.payment-detail-edit-actions .remind-btn .btn-icon {
+  filter: var(--icon-filter-inverse);
+}
+
+.payment-detail-error-text {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--accent-danger);
+  color: #ffffff;
+  font-size: 12px;
+  line-height: 1.45;
+  font-weight: 600;
 }
 
 @media (max-width: 640px) {

@@ -115,7 +115,7 @@ function StudentFeeAdminTable({
   );
 
   return (
-    <main className="student-dashboard">
+    <main className="student-dashboard manage-fees-dashboard">
       <div className="section-header">
         <div>
           <h2>Manage Fees</h2>

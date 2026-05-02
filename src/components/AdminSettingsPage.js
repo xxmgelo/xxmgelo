@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-import uploadIcon from "../assets/upload.png";
 
 function AdminSettingsPage({
   admin,
@@ -14,8 +13,6 @@ function AdminSettingsPage({
   const [activeSection, setActiveSection] = useState("general");
   const [fullName, setFullName] = useState("");
   const [username, setUsername] = useState("");
-  const [avatarPreview, setAvatarPreview] = useState("");
-  const [avatarPayload, setAvatarPayload] = useState("");
   const [profileStatus, setProfileStatus] = useState({ loading: false, error: "", success: "" });
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
@@ -31,8 +28,6 @@ function AdminSettingsPage({
   useEffect(() => {
     setFullName(admin?.fullName || admin?.name || "");
     setUsername(admin?.username || "");
-    setAvatarPreview(admin?.avatarUrl || "");
-    setAvatarPayload("");
     setIsEditingProfile(false);
     setIsEditingPassword(false);
   }, [admin]);
@@ -42,19 +37,6 @@ function AdminSettingsPage({
       setAccentColor(themeColors.start);
     }
   }, [themeColors]);
-
-  const handleAvatarChange = (event) => {
-    const file = event.target.files && event.target.files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = () => {
-      const result = typeof reader.result === "string" ? reader.result : "";
-      setAvatarPreview(result);
-      setAvatarPayload(result);
-    };
-    reader.readAsDataURL(file);
-  };
 
   const handleProfileSubmit = async (event) => {
     event.preventDefault();
@@ -67,9 +49,7 @@ function AdminSettingsPage({
       await onUpdateProfile({
         full_name: fullName.trim(),
         username: username.trim(),
-        avatar: avatarPayload,
       });
-      setAvatarPayload("");
       setIsEditingProfile(false);
       setProfileStatus({ loading: false, error: "", success: "Profile updated successfully." });
     } catch (error) {
@@ -185,24 +165,6 @@ function AdminSettingsPage({
                 >
                   {isEditingProfile ? "Cancel" : "Edit"}
                 </button>
-              </div>
-
-              <div className="admin-settings-avatar">
-                {avatarPreview ? (
-                  <img src={avatarPreview} alt="Admin avatar" className="admin-settings-avatar-img" />
-                ) : (
-                  <div className="admin-settings-avatar-placeholder">No Image</div>
-                )}
-                <label className="admin-settings-upload-button">
-                  <img src={uploadIcon} alt="Upload" className="admin-upload-icon" />
-                  Upload Image
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleAvatarChange}
-                    disabled={!isEditingProfile}
-                  />
-                </label>
               </div>
 
               <form className="admin-settings-form" onSubmit={handleProfileSubmit}>

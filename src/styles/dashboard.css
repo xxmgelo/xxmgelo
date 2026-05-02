@@ -1,12 +1,10 @@
 @keyframes fadeInUp {
   from {
     opacity: 0;
-    transform: translateY(12px);
   }
 
   to {
     opacity: 1;
-    transform: translateY(0);
   }
 }
 
@@ -212,13 +210,30 @@
 }
 
 .dashboard-shortcut-grid {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 10px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
 }
 
 .dashboard-shortcut-card {
-  min-height: 88px;
-  justify-content: center;
+  min-height: 186px;
+  justify-content: space-between;
+  background: linear-gradient(180deg, rgba(var(--accent-primary-rgb), 0.08), rgba(var(--accent-primary-rgb), 0.03));
+  border: 1px solid rgba(var(--accent-primary-rgb), 0.14);
+  color: var(--text-primary);
+}
+
+.dashboard-shortcut-card .home-card-icon {
+  filter: var(--icon-filter-accent);
+}
+
+.dark-mode .dashboard-shortcut-card {
+  background: linear-gradient(180deg, rgba(var(--accent-primary-rgb), 0.12), rgba(var(--accent-primary-rgb), 0.05));
+  border: 1px solid rgba(var(--accent-primary-rgb), 0.18);
+  color: var(--text-primary);
+}
+
+.dark-mode .dashboard-shortcut-card .home-card-icon {
+  filter: var(--dark-icon-filter-accent);
 }
 
 .school-year-card-shell {
@@ -232,12 +247,31 @@
 }
 
 .school-year-card-button {
+  position: relative;
+  z-index: 1;
   display: grid;
   gap: 8px;
   text-align: left;
   background: transparent;
   border: none;
   padding: 0;
+}
+
+.school-year-card-peek-logo {
+  position: absolute;
+  top: 50%;
+  right: -58px;
+  width: 140px;
+  height: 140px;
+  object-fit: contain;
+  opacity: 0.16;
+  transform: translateY(-50%);
+  pointer-events: none;
+  user-select: none;
+}
+
+.school-years-page::before {
+  content: none;
 }
 
 .school-year-import-btn {
@@ -269,7 +303,7 @@
   padding: 20px;
   border-radius: 20px;
   background: linear-gradient(135deg, rgba(var(--accent-primary-rgb), 0.12), rgba(var(--accent-primary-rgb), 0.04));
-  border: 1px solid rgba(var(--accent-primary-rgb), 0.16);
+  border: none;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -335,17 +369,17 @@
 }
 
 .school-year-card {
+  position: relative;
   display: grid;
   gap: 10px;
   padding: 18px;
   text-align: left;
   border-radius: 18px;
-  border: 1px solid rgba(var(--accent-primary-rgb), 0.14);
-  background:
-    radial-gradient(circle at top right, rgba(var(--accent-primary-rgb), 0.14), transparent 42%),
-    linear-gradient(180deg, rgba(var(--accent-primary-rgb), 0.08), rgba(var(--accent-primary-rgb), 0.03));
+  border: 1px solid rgba(var(--accent-primary-rgb), 0.08);
+  background: linear-gradient(180deg, rgba(var(--accent-primary-rgb), 0.06), rgba(var(--accent-primary-rgb), 0.02));
   box-shadow: var(--shadow);
   transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease, opacity 0.2s ease;
+  overflow: hidden;
 }
 
 .school-year-card:hover {
@@ -766,8 +800,8 @@
 
 .home-card-grid {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 6px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
   flex: 1;
   min-height: 0;
 }
@@ -777,10 +811,10 @@
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 6px;
-  min-height: 72px;
-  padding: 9px;
-  border-radius: 12px;
+  gap: 12px;
+  min-height: 170px;
+  padding: 18px;
+  border-radius: 18px;
   border: 1px solid transparent;
   box-shadow: var(--shadow);
   color: inherit;
@@ -790,7 +824,12 @@
 }
 
 .home-card::after {
-  content: none;
+  content: "";
+  position: absolute;
+  inset: auto 0 0;
+  height: 36%;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.12));
+  pointer-events: none;
 }
 
 .home-card:hover {
@@ -800,12 +839,30 @@
   filter: brightness(0.9);
 }
 
+.home-card-peek-icon {
+  position: absolute;
+  top: 50%;
+  right: -8px;
+  width: 112px;
+  height: 112px;
+  object-fit: contain;
+  opacity: 0.18;
+  transform: translateY(-50%);
+  pointer-events: none;
+  user-select: none;
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+  transition: transform var(--transition-fast), opacity var(--transition-fast), filter var(--transition-fast);
+}
+
 .home-card-top {
   width: 100%;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
-  gap: 6px;
+  gap: 12px;
+  position: relative;
+  z-index: 1;
 }
 
 .home-card-icon,
@@ -827,65 +884,113 @@
   transform: scale(1.05);
 }
 
+.home-card:hover .home-card-peek-icon {
+  transform: translateY(-50%) scale(1.03);
+  opacity: 0.24;
+}
+
 .home-card-meta,
 .analytics-spotlight-chip {
-  padding: 5px 8px;
+  padding: 6px 10px;
   border-radius: 999px;
-  background: #ffffff;
-  font-size: 9px;
+  background: rgba(255, 255, 255, 0.24);
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  font-size: 10px;
   font-weight: 700;
 }
 
+.home-card-body {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: 8px;
+  margin-top: auto;
+}
+
 .home-card-label {
-  font-size: 12px;
+  font-size: 18px;
   font-weight: 700;
   font-family: var(--font-family-display);
   color: currentColor;
 }
 
-.students-card {
-  background: #e7f9f7;
-  color: #17474b;
+.home-card-description {
+  margin: 0;
+  max-width: 30ch;
+  font-size: 12px;
+  line-height: 1.45;
+  color: currentColor;
+  opacity: 0.78;
 }
 
-.students-card .home-card-icon {
-  filter: var(--icon-filter-accent);
+.home-card-footer {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: auto;
+}
+
+.home-card-link,
+.home-card-index {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: currentColor;
+  opacity: 0.76;
+}
+
+.home-card-index {
+  opacity: 0.5;
+}
+
+.students-card {
+  background: #00bfbf;
+  color: #2f3545;
 }
 
 .student-fee-card {
-  background: #ebf3ff;
-  color: #1f4168;
-}
-
-.student-fee-card .home-card-icon {
-  filter: var(--icon-filter-secondary);
+  background: #b0ebeb;
+  color: #2f3545;
 }
 
 .manage-student-card {
-  background: #eefbf4;
-  color: #24563a;
-}
-
-.manage-student-card .home-card-icon {
-  filter: var(--icon-filter-success);
+  background: #9fd9d8;
+  color: #2f3545;
 }
 
 .manage-fee-card {
-  background: #fff6e9;
-  color: #6d4e22;
-}
-
-.manage-fee-card .home-card-icon {
-  filter: var(--icon-filter-warning);
+  background: #ff9300;
+  color: #2f3545;
 }
 
 .analytics-card {
-  background: #eff2ff;
-  color: #44306d;
+  background: #fba071;
+  color: #2f3545;
 }
 
-.analytics-card .home-card-icon {
-  filter: var(--icon-filter-accent-hover);
+.admin-settings-card {
+  background: #ffe3d3;
+  color: #2f3545;
+}
+
+.students-card .home-card-icon,
+.students-card .home-card-peek-icon,
+.student-fee-card .home-card-icon,
+.student-fee-card .home-card-peek-icon,
+.manage-student-card .home-card-icon,
+.manage-student-card .home-card-peek-icon,
+.manage-fee-card .home-card-icon,
+.manage-fee-card .home-card-peek-icon,
+.analytics-card .home-card-icon,
+.analytics-card .home-card-peek-icon,
+.admin-settings-card .home-card-icon,
+.admin-settings-card .home-card-peek-icon {
+  filter: brightness(0) saturate(100%) invert(20%) sepia(11%) saturate(644%) hue-rotate(186deg) brightness(93%) contrast(88%);
 }
 
 .dark-mode .home-card-description,
@@ -937,28 +1042,48 @@
 }
 
 .dark-mode .students-card {
-  background: #9fc8cb;
-  color: #143a3f;
+  background: #00bfbf;
+  color: #2f3545;
 }
 
 .dark-mode .student-fee-card {
-  background: #b2c6e2;
-  color: #1c3d64;
+  background: #b0ebeb;
+  color: #2f3545;
 }
 
 .dark-mode .manage-student-card {
-  background: #b1d1be;
-  color: #1f4b32;
+  background: #9fd9d8;
+  color: #2f3545;
 }
 
 .dark-mode .manage-fee-card {
-  background: #dcc8ad;
-  color: #5a401f;
+  background: #ff9300;
+  color: #2f3545;
 }
 
 .dark-mode .analytics-card {
-  background: #bcb8d8;
-  color: #3d2f61;
+  background: #ffb092;
+  color: #2f3545;
+}
+
+.dark-mode .admin-settings-card {
+  background: #ffe3d3;
+  color: #2f3545;
+}
+
+.dark-mode .students-card .home-card-icon,
+.dark-mode .students-card .home-card-peek-icon,
+.dark-mode .student-fee-card .home-card-icon,
+.dark-mode .student-fee-card .home-card-peek-icon,
+.dark-mode .manage-student-card .home-card-icon,
+.dark-mode .manage-student-card .home-card-peek-icon,
+.dark-mode .manage-fee-card .home-card-icon,
+.dark-mode .manage-fee-card .home-card-peek-icon,
+.dark-mode .analytics-card .home-card-icon,
+.dark-mode .analytics-card .home-card-peek-icon,
+.dark-mode .admin-settings-card .home-card-icon,
+.dark-mode .admin-settings-card .home-card-peek-icon {
+  filter: brightness(0) saturate(100%) invert(20%) sepia(11%) saturate(644%) hue-rotate(186deg) brightness(93%) contrast(88%);
 }
 
 .analytics-dashboard {

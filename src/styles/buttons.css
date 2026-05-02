@@ -3,7 +3,8 @@
   justify-content: flex-start;
   gap: 6px;
   flex-wrap: nowrap;
-  min-width: 106px;
+  min-width: 124px;
+  width: max-content;
 }
 
 .action-btn {

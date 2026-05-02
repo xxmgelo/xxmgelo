@@ -1,12 +1,11 @@
 import React from "react";
-import dashboardIcon from "../assets/dashboard.png";
+import dashboardIcon from "../assets/dashboardicon.png";
 import studentFeeIcon from "../assets/studentfee.png";
 import manageFeeIcon from "../assets/managefee.png";
 import manageStudentIcon from "../assets/managestudent.png";
 import studentsIcon from "../assets/students.png";
 import analyticsIcon from "../assets/analytics.png";
 import adminSettingsIcon from "../assets/adminsettings.png";
-import defaultAvatar from "../assets/admin.png";
 import logoutIcon from "../assets/logout.png";
 
 function Navigation({ activeTab, setActiveTab, onRequestLogout, userName, userAvatar, collapsed, onToggleCollapse }) {
@@ -90,17 +89,6 @@ function Navigation({ activeTab, setActiveTab, onRequestLogout, userName, userAv
             <span />
             <span />
           </button>
-          <div className="menu-bar-user">
-            <img
-              src={userAvatar || defaultAvatar}
-              alt={userName || "Admin"}
-              className="menu-bar-user-avatar"
-            />
-            <div className="menu-bar-user-text">
-              <span className="menu-bar-user-name">{userName || "Admin"}</span>
-              <span className="menu-bar-user-role">Administrator</span>
-            </div>
-          </div>
         </div>
         <div className="menu-bar-groups">
           {navGroups.map((group) => (

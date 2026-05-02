@@ -103,7 +103,6 @@
 }
 
 .admin-settings-edit,
-.admin-settings-upload-button,
 .admin-settings-default-btn {
   display: inline-flex;
   align-items: center;
@@ -113,57 +112,6 @@
   border-radius: 14px;
   font-size: 11px;
   font-weight: 700;
-}
-
-.admin-settings-upload-button {
-  background: var(--accent-primary);
-  color: var(--text-inverse);
-  border: none;
-}
-
-.admin-settings-upload-button input {
-  display: none;
-}
-
-.admin-settings-avatar {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  padding: 14px;
-  border-radius: 20px;
-  background: var(--surface-tint);
-  border: 1px solid rgba(var(--accent-primary-rgb), 0.1);
-}
-
-.admin-settings-avatar-img,
-.admin-settings-avatar-placeholder {
-  width: 82px;
-  height: 82px;
-  border-radius: 20px;
-}
-
-.admin-settings-avatar-img {
-  object-fit: cover;
-  border: 2px solid rgba(var(--accent-primary-rgb), 0.12);
-}
-
-.admin-settings-avatar-placeholder {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--bg-secondary);
-  border: 1px dashed rgba(var(--accent-primary-rgb), 0.2);
-  color: var(--text-muted);
-  font-size: 12px;
-  font-weight: 700;
-  text-transform: uppercase;
-}
-
-.admin-upload-icon {
-  width: 14px;
-  height: 14px;
-  object-fit: contain;
-  filter: var(--icon-filter-inverse);
 }
 
 .admin-settings-form {

@@ -32,7 +32,7 @@ import {
   normalizeStudentFinancials,
   previewPaymentApplication,
 } from "./utils/fees";
-import { collectExistingOrNumbers } from "./utils/orNumbers";
+import { collectExistingOrNumbers, isValidOrNumber, normalizeOrNumber } from "./utils/orNumbers";
 import { SEMESTERS, formatActiveContextLabel, getPreviousSemester, isSecondSemester } from "./utils/semester";
 import { buildReminderDraft } from "./utils/reminders";
 import { buildPaymentReceiptDraft } from "./utils/receipts";
@@ -1111,6 +1111,8 @@ function App() {
       Gmail: reminderStudent.Gmail,
       Program: reminderStudent.Program,
       YearLevel: reminderStudent.YearLevel,
+      SchoolYearID: reminderStudent.SchoolYearID || selectedSchoolYearId,
+      Semester: reminderStudent.Semester || selectedSemester,
       PaymentMode: reminderStudent.PaymentMode,
       TotalFee: reminderStudent.TotalFee,
       TotalBalance: reminderStudent.TotalBalance,
@@ -1677,6 +1679,98 @@ function App() {
     }
   };
 
+  const handleUpdatePaymentOrNumber = async ({ student, field, orNumber, targetSemester = "" }) => {
+    const normalizedOrNumber = normalizeOrNumber(orNumber);
+
+    if (!student || !field) {
+      throw new Error("Payment detail is missing.");
+    }
+
+    if (!normalizedOrNumber) {
+      throw new Error("OR Number is required.");
+    }
+
+    if (!isValidOrNumber(normalizedOrNumber)) {
+      throw new Error("Invalid OR Number format. Use OR-YYYY-000001.");
+    }
+
+    const nextCache = loadPaymentDetailCache();
+    const effectiveSemester = targetSemester || selectedSemester;
+    const cacheKey = buildContextStudentKey(selectedSchoolYearId, effectiveSemester, student);
+    const existingEntry = nextCache[cacheKey];
+
+    if (!existingEntry) {
+      throw new Error("Saved payment details were not found for this semester.");
+    }
+
+    const priorHistory = Array.isArray(existingEntry.payment_history) ? existingEntry.payment_history : [];
+    const existingNumbers = collectExistingOrNumbers(nextCache);
+    const matchingItems = priorHistory.filter((item) =>
+      field === "TotalBalance"
+        ? (item?.semester || effectiveSemester) === effectiveSemester
+        : item?.field === field && (item?.semester || effectiveSemester) === effectiveSemester
+    );
+
+    matchingItems.forEach((item) => {
+      const currentOr = normalizeOrNumber(item?.or_number);
+      if (currentOr) {
+        existingNumbers.delete(currentOr);
+      }
+    });
+
+    const priorStageOr = normalizeOrNumber(existingEntry?.stage_or_numbers?.[field]);
+    if (priorStageOr) {
+      existingNumbers.delete(priorStageOr);
+    }
+
+    if (field === "TotalBalance") {
+      const priorReceiptOr = normalizeOrNumber(existingEntry?.official_receipt);
+      if (priorReceiptOr) {
+        existingNumbers.delete(priorReceiptOr);
+      }
+    }
+
+    if (existingNumbers.has(normalizedOrNumber)) {
+      throw new Error(`${normalizedOrNumber} already exists. Enter a unique OR Number.`);
+    }
+
+    const nextHistory = priorHistory.map((item) =>
+      field === "TotalBalance"
+        ? ((item?.semester || effectiveSemester) === effectiveSemester
+          ? { ...item, or_number: normalizedOrNumber }
+          : item)
+        : (item?.field === field && (item?.semester || effectiveSemester) === effectiveSemester
+          ? { ...item, or_number: normalizedOrNumber }
+          : item)
+    );
+
+    const nextStageOrNumbers = {
+      ...(existingEntry.stage_or_numbers || {}),
+      [field]: normalizedOrNumber,
+    };
+
+    nextCache[cacheKey] = {
+      ...existingEntry,
+      stage_or_numbers: nextStageOrNumbers,
+      official_receipt: field === "TotalBalance" ? normalizedOrNumber : existingEntry.official_receipt,
+      payment_history: nextHistory,
+    };
+    savePaymentDetailCache(nextCache);
+
+    setStudents((prev) =>
+      prev.map((item) =>
+        getStudentRowKey(item) === getStudentRowKey(student)
+          ? normalizeStudentFinancials({
+              ...item,
+              stage_or_numbers: nextStageOrNumbers,
+              official_receipt: field === "TotalBalance" ? normalizedOrNumber : item.official_receipt,
+              payment_history: nextHistory,
+            })
+          : item
+      )
+    );
+  };
+
   const closeAddStudentModal = () => {
     setShowAddStudentModal(false);
     setNewStudent({ ...INITIAL_STUDENT, SchoolYearID: selectedSchoolYearId, Semester: selectedSemester });
@@ -2101,6 +2195,7 @@ function App() {
             onPaid={handlePaid}
             onRemind={handleRemind}
             onRemindSelected={handleSendRemindersAtOnce}
+            onUpdatePaymentOrNumber={handleUpdatePaymentOrNumber}
             sendingReminder={sendingReminder}
             activeSemester={selectedSemester}
             onRequestCarryOver={handleRequestCarryOver}
@@ -2145,6 +2240,7 @@ function App() {
             searchQuery={searchQuery}
             setSearchQuery={setSearchQuery}
             isManageTab={true}
+            panelVariant="student-actions"
             sectionTitle="Fee Controls"
             programFilter={programFilter}
             onProgramFilterChange={setProgramFilter}

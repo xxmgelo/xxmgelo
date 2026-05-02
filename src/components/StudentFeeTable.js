@@ -77,6 +77,7 @@ function StudentFeeTable({
   onPaid,
   onRemind,
   onRemindSelected,
+  onUpdatePaymentOrNumber,
   sendingReminder = false,
   activeSemester = "",
   onRequestCarryOver,
@@ -88,6 +89,13 @@ function StudentFeeTable({
     student: null,
     field: "",
   });
+  const [editingOrState, setEditingOrState] = useState({
+    value: "",
+    field: "",
+    semester: "",
+  });
+  const [isSavingOrNumber, setIsSavingOrNumber] = useState(false);
+  const [orNumberError, setOrNumberError] = useState("");
   const {
     currentPage,
     setCurrentPage,
@@ -294,11 +302,7 @@ function StudentFeeTable({
             return;
           }
 
-          setPaymentDetailModal({
-            open: true,
-            student,
-            field,
-          });
+          openPaymentDetailModal(student, field);
         }}
       >
         <span>{paid ? "PAID" : currencyFormatter.format(amount)}</span>
@@ -364,11 +368,7 @@ function StudentFeeTable({
         type="button"
         className={`balance-pill balance-pill-button ${student.TotalBalance > 0 ? "due" : "paid"}`}
         onClick={() =>
-          setPaymentDetailModal({
-            open: true,
-            student,
-            field: "TotalBalance",
-          })
+          openPaymentDetailModal(student, "TotalBalance")
         }
       >
         {currencyFormatter.format(student.TotalBalance)}
@@ -376,8 +376,85 @@ function StudentFeeTable({
     );
   };
 
+  const closePaymentDetailModal = () => {
+    setPaymentDetailModal({ open: false, student: null, field: "" });
+    setEditingOrState({ value: "", field: "", semester: "" });
+    setIsSavingOrNumber(false);
+    setOrNumberError("");
+  };
+
+  const openPaymentDetailModal = (student, field) => {
+    setPaymentDetailModal({
+      open: true,
+      student,
+      field,
+    });
+    setEditingOrState({ value: "", field: "", semester: "" });
+    setIsSavingOrNumber(false);
+    setOrNumberError("");
+  };
+
+  const getPrimaryOrNumber = useCallback((student, field) => {
+    if (field === "TotalBalance") {
+      return getTotalBalancePaymentDetail(student).orNumber;
+    }
+
+    return student?.stage_or_numbers?.[field] || "N/A";
+  }, [getTotalBalancePaymentDetail]);
+
+  const handleSaveEditedOrNumber = async () => {
+    if (!paymentDetailModal.student || !editingOrState.field || typeof onUpdatePaymentOrNumber !== "function") {
+      return;
+    }
+
+    setIsSavingOrNumber(true);
+    setOrNumberError("");
+
+    try {
+      await onUpdatePaymentOrNumber({
+        student: paymentDetailModal.student,
+        field: editingOrState.field,
+        orNumber: editingOrState.value,
+        targetSemester: editingOrState.semester || activeSemester,
+      });
+
+      const nextStudent = {
+        ...paymentDetailModal.student,
+        stage_or_numbers: {
+          ...(paymentDetailModal.student.stage_or_numbers || {}),
+          [editingOrState.field]: editingOrState.value,
+        },
+        official_receipt:
+          editingOrState.field === "TotalBalance"
+            ? editingOrState.value
+            : paymentDetailModal.student.official_receipt,
+        payment_history: Array.isArray(paymentDetailModal.student.payment_history)
+          ? paymentDetailModal.student.payment_history.map((item) =>
+              editingOrState.field === "TotalBalance"
+                ? ((item?.semester || activeSemester) === (editingOrState.semester || activeSemester)
+                  ? { ...item, or_number: editingOrState.value }
+                  : item)
+                : (item?.field === editingOrState.field && (item?.semester || activeSemester) === (editingOrState.semester || activeSemester)
+                  ? { ...item, or_number: editingOrState.value }
+                  : item)
+            )
+          : [],
+      };
+
+      setPaymentDetailModal((prev) => ({
+        ...prev,
+        student: nextStudent,
+      }));
+      setEditingOrState({ value: "", field: "", semester: "" });
+    } catch (error) {
+      setOrNumberError(error?.message || "Unable to update OR Number.");
+    } finally {
+      setIsSavingOrNumber(false);
+    }
+  };
+
   return (
-    <main className="student-dashboard">
+    <main className="student-dashboard student-fee-dashboard">
       <div className="section-header">
         <div>
           <h2>Student Fees</h2>
@@ -571,7 +648,7 @@ function StudentFeeTable({
         </table>
       </div>
       {paymentDetailModal.open ? (
-        <div className="modal" onClick={() => setPaymentDetailModal({ open: false, student: null, field: "" })}>
+        <div className="modal" onClick={closePaymentDetailModal}>
           <div className="modal-content payment-detail-modal" onClick={(event) => event.stopPropagation()}>
             <div className="modal-title-row">
               <div>
@@ -581,7 +658,7 @@ function StudentFeeTable({
               <button
                 type="button"
                 className="close-btn"
-                onClick={() => setPaymentDetailModal({ open: false, student: null, field: "" })}
+                onClick={closePaymentDetailModal}
               >
                 Close
               </button>
@@ -592,10 +669,10 @@ function StudentFeeTable({
                   paymentDetailModal.student,
                   paymentDetailModal.field
                 );
-                const primaryOrNumber =
-                  paymentDetailModal.field === "TotalBalance"
-                    ? getTotalBalancePaymentDetail(paymentDetailModal.student).orNumber
-                    : paymentDetailModal.student.stage_or_numbers?.[paymentDetailModal.field] || "N/A";
+                const primaryOrNumber = getPrimaryOrNumber(
+                  paymentDetailModal.student,
+                  paymentDetailModal.field
+                );
                 const amountPaid = currencyFormatter.format(paymentDetailModal.field === "TotalBalance"
                   ? getTotalBalancePaymentDetail(paymentDetailModal.student).amount
                   : Number(
@@ -624,7 +701,60 @@ function StudentFeeTable({
                 </div>
                 <div>
                   <span>OR Number</span>
-                  <strong>{formatOrLabel(primaryOrNumber) || "N/A"}</strong>
+                  {editingOrState.field === paymentDetailModal.field ? (
+                    <div className="payment-detail-edit">
+                      <input
+                        type="text"
+                        value={editingOrState.value}
+                        onChange={(event) =>
+                          setEditingOrState((prev) => ({ ...prev, value: event.target.value.toUpperCase() }))
+                        }
+                        placeholder="OR-YYYY-000001"
+                      />
+                      <div className="payment-detail-edit-actions">
+                        <button
+                          type="button"
+                          className="action-btn pay-btn"
+                          onClick={handleSaveEditedOrNumber}
+                          disabled={isSavingOrNumber}
+                        >
+                          {isSavingOrNumber ? "Saving..." : "Save"}
+                        </button>
+                        <button
+                          type="button"
+                          className="action-btn remind-btn"
+                          onClick={() => {
+                            setEditingOrState({ value: "", field: "", semester: "" });
+                            setOrNumberError("");
+                          }}
+                          disabled={isSavingOrNumber}
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                      {orNumberError ? (
+                        <p className="payment-detail-error-text">{orNumberError}</p>
+                      ) : null}
+                    </div>
+                  ) : (
+                    <div className="payment-detail-display">
+                      <strong>{formatOrLabel(primaryOrNumber) || "N/A"}</strong>
+                      <button
+                        type="button"
+                        className="action-btn pay-btn"
+                        onClick={() => {
+                          setEditingOrState({
+                            value: primaryOrNumber === "N/A" ? "" : primaryOrNumber,
+                            field: paymentDetailModal.field,
+                            semester: activeSemester,
+                          });
+                          setOrNumberError("");
+                        }}
+                      >
+                        Edit
+                      </button>
+                    </div>
+                  )}
                 </div>
                 {carryOverDetail ? (
                   <div>
@@ -635,7 +765,60 @@ function StudentFeeTable({
                 {carryOverDetail ? (
                   <div>
                     <span>Previous Balance OR Number</span>
-                    <strong>{formatOrLabel(carryOverDetail.orNumber) || "N/A"}</strong>
+                    {editingOrState.field === CARRY_OVER_FIELD ? (
+                      <div className="payment-detail-edit">
+                        <input
+                          type="text"
+                          value={editingOrState.value}
+                          onChange={(event) =>
+                            setEditingOrState((prev) => ({ ...prev, value: event.target.value.toUpperCase() }))
+                          }
+                          placeholder="OR-YYYY-000001"
+                        />
+                        <div className="payment-detail-edit-actions">
+                          <button
+                            type="button"
+                            className="action-btn pay-btn"
+                            onClick={handleSaveEditedOrNumber}
+                            disabled={isSavingOrNumber}
+                          >
+                            {isSavingOrNumber ? "Saving..." : "Save"}
+                          </button>
+                          <button
+                            type="button"
+                            className="action-btn remind-btn"
+                            onClick={() => {
+                              setEditingOrState({ value: "", field: "", semester: "" });
+                              setOrNumberError("");
+                            }}
+                            disabled={isSavingOrNumber}
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                        {orNumberError ? (
+                          <p className="payment-detail-error-text">{orNumberError}</p>
+                        ) : null}
+                      </div>
+                    ) : (
+                      <div className="payment-detail-display">
+                        <strong>{formatOrLabel(carryOverDetail.orNumber) || "N/A"}</strong>
+                        <button
+                          type="button"
+                          className="action-btn pay-btn"
+                          onClick={() => {
+                            setEditingOrState({
+                              value: carryOverDetail.orNumber === "N/A" ? "" : carryOverDetail.orNumber,
+                              field: CARRY_OVER_FIELD,
+                              semester: carryOverDetail.semester || activeSemester,
+                            });
+                            setOrNumberError("");
+                          }}
+                        >
+                          Edit
+                        </button>
+                      </div>
+                    )}
                   </div>
                 ) : null}
               </div>
